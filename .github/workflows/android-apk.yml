@@ -4,17 +4,22 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    paths:
-      - '.github/workflows/android-apk.yml'
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build SkyRealm Hub APK
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -22,10 +27,36 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
-      - name: Check project files
+      - name: Check Android project
         run: |
-          echo "Checking repository files"
-          ls -la
-          test -f gradlew || echo "No Gradle wrapper found"
-          test -f settings.gradle || test -f settings.gradle.kts || echo "No Gradle settings file found"
+          echo "Checking Android project files..."
+          if [ ! -f settings.gradle ] && [ ! -f settings.gradle.kts ]; then
+            echo "::error::Missing settings.gradle or settings.gradle.kts"
+            exit 1
+          fi
+
+          if [ ! -f gradlew ]; then
+            echo "::error::Missing Gradle wrapper (gradlew)"
+            exit 1
+          fi
+
+          if [ ! -d app ]; then
+            echo "::error::Missing app directory"
+            exit 1
+          fi
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkyRealm-Hub-APK
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
