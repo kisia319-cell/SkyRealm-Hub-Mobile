@@ -1,11 +1,9 @@
-
 name: Build Android APK
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
@@ -14,7 +12,6 @@ jobs:
   build:
     name: Build SkyRealm Hub APK
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,29 +27,20 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
-      - name: Check Android project
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Verify project files
         run: |
-          echo "Checking Android project files..."
-          if [ ! -f settings.gradle ] && [ ! -f settings.gradle.kts ]; then
-            echo "::error::Missing settings.gradle or settings.gradle.kts"
-            exit 1
-          fi
-
-          if [ ! -f gradlew ]; then
-            echo "::error::Missing Gradle wrapper (gradlew)"
-            exit 1
-          fi
-
-          if [ ! -d app ]; then
-            echo "::error::Missing app directory"
-            exit 1
-          fi
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x gradlew
+          test -f settings.gradle
+          test -f build.gradle
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
