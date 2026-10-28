@@ -874,7 +874,7 @@
     saveGame();
   }
   function openTutorial(){const el=document.getElementById('tutorial-shade');if(!el)return;paused=true;keys.clear();renderTutorialStep();el.hidden=false;el.setAttribute('aria-hidden','false');}
-  function renderTutorialStep(){const step=tutorialSteps[Math.min(tutorialStep,tutorialSteps.length-1)];document.getElementById('tutorial-step-title').textContent=step.title;document.getElementById('tutorial-step-key').textContent=step.key;document.getElementById('tutorial-step-text').textContent=step.text;document.getElementById('tutorial-next').textContent=tutorialStep>=tutorialSteps.length-1?'Завершить обучение':'Следующий шаг';}
+  function renderTutorialStep(){const step=tutorialSteps[Math.min(tutorialStep,tutorialSteps.length-1)];document.getElementById('tutorial-step-title').textContent=step.title;document.getElementById('tutorial-step-key').textContent=step.key;document.getElementById('tutorial-step-text').textContent=step.text;document.getElementById('tutorial-next').textContent=tutorialStep>=tutorialSteps.length-1?'Завершить обучение':'Следующий шаг';const shade=document.getElementById('tutorial-shade');if(shade){shade.scrollTop=0;const dialog=shade.querySelector('.tutorial-dialog');if(dialog)dialog.scrollTop=0;}}
   function nextTutorialStep(){if(tutorialStep<tutorialSteps.length-1){tutorialStep++;renderTutorialStep();}else closeTutorial();}
   function closeTutorial(){const el=document.getElementById('tutorial-shade');if(!el)return;el.hidden=true;el.setAttribute('aria-hidden','true');localStorage.setItem('skyrealm_tutorial_seen_v1','1');paused=false;last=performance.now();canvas.focus();}
   function openInventory(){
@@ -1253,6 +1253,22 @@ if(Number.isInteger(d.playerLevel))playerLevel=Math.max(1,Math.min(999,d.playerL
     toast(gameSettings.windowMode==='fullscreen'?'Полноэкранный режим включён.':'Оконный режим включён.');
   }
   document.getElementById('shop-close')?.addEventListener('click',closeShop);
+  // Touch controls for the Android/WebView version.
+  (() => {
+    const area=document.getElementById('mobile-stick-area'), knob=document.getElementById('mobile-stick-knob');
+    if(!area||!knob)return;
+    let pointer=null, origin={x:0,y:0};
+    const release=()=>{pointer=null;keys.delete('w');keys.delete('a');keys.delete('s');keys.delete('d');knob.style.transform='translate(0px,0px)';};
+    area.addEventListener('pointerdown',e=>{if(paused||inMainMenu||signDialogOpen||inventoryDialogOpen)return;e.preventDefault();pointer=e.pointerId;const r=area.getBoundingClientRect();origin={x:r.left+r.width/2,y:r.top+r.height/2};try{area.setPointerCapture(pointer)}catch(_){}move(e);});
+    function move(e){if(pointer!==e.pointerId)return;e.preventDefault();const dx=e.clientX-origin.x,dy=e.clientY-origin.y,max=Math.max(20,area.clientWidth*.31),len=Math.hypot(dx,dy),scale=len>max?max/len:1,x=dx*scale,y=dy*scale;knob.style.transform='translate('+x+'px,'+y+'px)';['w','a','s','d'].forEach(k=>keys.delete(k));if(Math.abs(x)>10)keys.add(x<0?'a':'d');if(Math.abs(y)>10)keys.add(y<0?'w':'s');tutorialMoveSeen=true;}
+    area.addEventListener('pointermove',move);area.addEventListener('pointerup',release);area.addEventListener('pointercancel',release);area.addEventListener('lostpointercapture',release);
+    const bind=(id,fn)=>{const el=document.getElementById(id);if(!el)return;el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(el.setPointerCapture)try{el.setPointerCapture(e.pointerId)}catch(_){}fn();});};
+    bind('mobile-attack',()=>{if(!paused&&!inMainMenu&&!signDialogOpen&&!inventoryDialogOpen){tutorialCombatSeen=true;attackNearestMonster();}});
+    bind('mobile-interact',()=>{if(!paused&&!inMainMenu&&!signDialogOpen&&!inventoryDialogOpen){const e=new KeyboardEvent('keydown',{key:'e',bubbles:true,cancelable:true});document.dispatchEvent(e);}});
+    bind('mobile-inventory',()=>{if(inMainMenu)return;if(inventoryDialogOpen)closeInventory();else if(!paused&&!signDialogOpen)openInventory();});
+    bind('mobile-potion',()=>{if(!paused&&!inMainMenu&&!signDialogOpen&&!inventoryDialogOpen)useHealingPotion();});
+  })();
+
   document.addEventListener('keydown', e => {
     if(e.code==='F11'||e.key==='F11'){e.preventDefault();toggleFullscreen();return;}
     const k = gameKey(e);
