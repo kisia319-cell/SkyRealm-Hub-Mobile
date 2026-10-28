@@ -1,0 +1,12 @@
+.env
+server/.env
+.venv/
+server/.venv/
+build/
+dist/
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite
+*.log
+build_log.txt

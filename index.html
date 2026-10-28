@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071225">
+  <meta name="description" content="SkyRealm Launcher — регистрация, профиль игрока и новости фэнтези-проекта.">
+  <title>SkyRealm — игровой центр</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="window">
+  <aside class="sidebar">
+    <button class="brand" type="button" data-page="home" aria-label="SkyRealm — главная">
+      <span class="brand-mark"><svg viewBox="0 0 64 52" aria-hidden="true"><path d="M4 42 23 7l10 18L43 4l17 38-17-12-10 13-10-14z" fill="currentColor"/><path d="m22 38 11-16 10 15-10-6z" fill="#b7cbff"/></svg></span>
+      <span class="brand-copy"><span class="brand-name">SkyRealm</span><span class="brand-sub">LAUNCHER</span></span>
+    </button>
+
+    <div class="sidebar-label">ПРОЕКТ</div>
+    <nav class="nav" aria-label="Главное меню">
+      <button class="nav-item active" data-page="home"><span class="nav-ico">⌂</span><span>Главная</span></button>
+      <button class="nav-item" data-page="news"><span class="nav-ico">▤</span><span>Новости</span><span class="nav-badge">2</span></button>
+      <button class="nav-item" data-page="shop"><span class="nav-ico">◇</span><span>Магазин</span><span class="nav-soon">СКОРО</span></button>
+      <button class="nav-item" data-page="community"><span class="nav-ico">♧</span><span>Сообщество</span></button>
+      <button class="nav-item" data-page="settings"><span class="nav-ico">⚙</span><span>Настройки</span></button>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-status">
+      <span class="status-dot status-checking" id="sidebar-status-dot"></span>
+      <div><b id="sidebar-status-label">Проверяем сервер</b><small>Облачная авторизация</small></div>
+    </div>
+    <button class="sidebar-help" type="button" data-page="news"><span>?</span> Помощь и ответы</button>
+    <div class="side-version">SKYREALM <b>v0.6.0</b> · 2D PROTOTYPE</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="crumb"><span class="crumb-mark">✦</span><span id="crumb-label">ИГРОВОЙ ЦЕНТР</span></div>
+      <div class="top-actions">
+        <a class="top-status" id="cloud-status-pill" href="https://jaaguprbfrzrcwuusher.supabase.co/functions/v1/skyrealm-auth?route=%2Fhealth" target="_blank" rel="noreferrer" title="Открыть проверку облачного сервера">
+          <span class="status-dot status-checking" id="top-status-dot"></span><span id="top-status-label">Проверяем сервер…</span>
+        </a>
+        <button class="top-create" id="top-create-account" data-auth-mode="register" type="button"><span>＋</span> Создать аккаунт</button>
+        <button class="window-btn" id="minimize" title="Свернуть" aria-label="Свернуть">—</button>
+        <button class="window-btn close" id="close" title="Закрыть" aria-label="Закрыть">×</button>
+      </div>
+    </header>
+
+    <section class="page active" id="page-home">
+      <div class="home-intro">
+        <div class="eyebrow"><span class="eyebrow-spark">✦</span> ТВОЯ ИСТОРИЯ НАЧИНАЕТСЯ ЗДЕСЬ</div>
+        <h1>Добро пожаловать в <span>SkyRealm</span></h1>
+        <p>Создай аккаунт, подтверди почту и подготовься к путешествию по фэнтезийному миру.</p>
+      </div>
+
+      <section class="home-top-grid">
+        <article class="hero panel">
+          <div class="hero-copy-panel">
+            <div class="hero-kicker"><span class="live-dot"></span> ФЭНТЕЗИ-ПРОЕКТ В РАЗРАБОТКЕ</div>
+            <div class="hero-title">Sky<span>Realm</span></div>
+            <div class="hero-tagline">ТВОЙ МИР. ТВОИ ПРАВИЛА.</div>
+            <p class="hero-copy">Исследуй загадочные земли, открывай древние тайны и однажды создай собственную историю за горизонтом.</p>
+            <div class="feature-row"><span>✦ Исследование</span><span>⚔ Приключения</span><span>⌁ Развитие</span></div>
+            <div class="hero-buttons">
+              <button class="primary-btn play-button" id="play-game" type="button"><span class="play-button-icon">▶</span> Играть <span>→</span></button>
+              <button class="primary-btn hero-cta" id="hero-create-account" data-auth-mode="register" type="button">Создать аккаунт <span>→</span></button>
+              <button class="ghost-btn" id="hero-login" data-auth-mode="login" type="button">Уже есть аккаунт? <b>Войти</b></button>
+            </div>
+            <div class="play-note" id="play-note"><span class="play-lock">◈</span> Первая версия игры: лёгкая 2D-карта и герой. При первом запуске файлы установятся автоматически.</div>
+          </div>
+          <div class="hero-art" aria-label="Пейзаж мира SkyRealm">
+            <img src="realm.jpg" alt="Фэнтезийная долина, замок и путешественник на закате">
+            <div class="art-vignette"></div>
+            <div class="art-caption"><span class="art-caption-label">МИР 01</span><b>Первый рассвет</b><small>THE FIRST DAWN</small></div>
+            <div class="art-orb orb-one"></div><div class="art-orb orb-two"></div>
+          </div>
+        </article>
+
+        <article class="panel auth-panel" id="auth-panel">
+          <div class="auth-panel-top">
+            <div class="auth-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 20 6v5.1c0 5-3.4 8.1-8 10.1-4.6-2-8-5.1-8-10.1V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></div>
+            <div><div class="section-kicker">АККАУНТ ИГРОКА</div><h2 id="auth-title">Войти в SkyRealm</h2></div>
+          </div>
+          <p class="auth-intro" id="auth-intro">Войди, чтобы открыть свой профиль, или создай новый аккаунт.</p>
+          <div class="auth-tabs" role="tablist" aria-label="Вход и регистрация">
+            <button class="auth-tab active" data-auth="login" type="button" role="tab" aria-selected="true">Войти</button>
+            <button class="auth-tab" data-auth="register" type="button" role="tab" aria-selected="false">Создать аккаунт</button>
+          </div>
+
+          <form id="auth-form" autocomplete="on">
+            <label class="field-label" for="username" id="username-label">Почта или имя игрока</label>
+            <div class="field-wrap"><span class="field-icon" aria-hidden="true">♙</span><input id="username" name="username" placeholder="Введите почту или логин" autocomplete="username" minlength="3" maxlength="254" required></div>
+
+            <div id="email-field" class="hidden-field">
+              <label class="field-label" for="email">Электронная почта</label>
+              <div class="field-wrap"><span class="field-icon" aria-hidden="true">✉</span><input id="email" type="email" name="email" placeholder="name@example.com" autocomplete="email" maxlength="254"></div>
+              <p class="field-hint">На эту почту придёт код подтверждения.</p>
+            </div>
+
+            <label class="field-label" for="password">Пароль</label>
+            <div class="field-wrap"><span class="field-icon" aria-hidden="true">▣</span><input id="password" type="password" name="password" placeholder="Не менее 8 символов" autocomplete="current-password" minlength="8" maxlength="128" required><button class="show-pass" type="button" id="show-password" aria-label="Показать или скрыть пароль" title="Показать или скрыть пароль">◉</button></div>
+            <div class="auth-options"><label class="check-wrap"><input type="checkbox" id="remember" checked><span class="check-custom"></span>Оставаться в системе</label><button class="text-btn" type="button" id="forgot">Забыли пароль?</button></div>
+            <button class="primary-btn submit-btn" id="submit-auth" type="submit">Войти в аккаунт <span>→</span></button>
+            <div class="auth-switch-hint" id="auth-switch-hint"><span>Впервые в SkyRealm?</span><button type="button" id="switch-auth">Создать аккаунт <span>→</span></button></div>
+            <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+          </form>
+
+          <div class="verification-view" id="verification-view" hidden>
+            <div class="verify-illustration">✉</div>
+            <div class="section-kicker">ПОСЛЕДНИЙ ШАГ</div>
+            <h3>Подтверди почту</h3>
+            <p class="verify-copy" id="verification-description">Введи полный код из письма (сейчас 8 цифр).</p>
+            <form id="verify-form" autocomplete="off">
+              <label class="field-label" for="verification-code">Код подтверждения</label>
+              <div class="field-wrap"><span class="field-icon" aria-hidden="true">⌁</span><input id="verification-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" minlength="6" maxlength="10" placeholder="12345678" required></div>
+              <button class="primary-btn submit-btn verify-submit" type="submit">Подтвердить почту <span>→</span></button>
+            </form>
+            <button class="secondary-btn verify-resend" id="resend-code" type="button">Отправить код повторно</button>
+            <button class="text-btn verify-back" id="back-to-register" type="button">← Назад к регистрации</button>
+            <p class="auth-message" id="verification-message" role="status" aria-live="polite"></p>
+          </div>
+
+          <div class="profile-view" id="profile-view" hidden>
+            <div class="profile-avatar">✦</div>
+            <div class="section-kicker">ПРОФИЛЬ SKYREALM</div>
+            <h3 id="profile-name">Игрок</h3>
+            <p id="profile-email" class="verify-copy"></p>
+            <div class="verified-badge"><span>✓</span> Почта подтверждена</div>
+            <p class="profile-note">Твой аккаунт готов к будущим игровым приключениям.</p>
+            <button class="secondary-btn" id="logout" type="button">Выйти из аккаунта</button>
+          </div>
+          <div class="auth-foot" id="auth-foot"><span class="shield">⬡</span> Не передавай пароль и код подтверждения другим людям.</div>
+        </article>
+      </section>
+
+      <section class="steps-section" aria-labelledby="steps-title">
+        <div class="section-heading"><div><div class="section-kicker">ВСЁ ПРОСТО</div><h2 id="steps-title">Начни с трёх шагов</h2></div><span class="heading-note">Профиль создаётся бесплатно</span></div>
+        <div class="steps-grid">
+          <article class="step-card"><div class="step-number">01</div><div class="step-icon">♙</div><h3>Создай аккаунт</h3><p>Укажи имя игрока, электронную почту и придумай пароль.</p><button class="step-link" data-auth-mode="register" type="button">Создать профиль <span>→</span></button></article>
+          <article class="step-card"><div class="step-number">02</div><div class="step-icon">✉</div><h3>Подтверди почту</h3><p>Введи одноразовый код из письма, чтобы завершить регистрацию.</p><button class="step-link" data-auth-mode="register" type="button">К форме регистрации <span>→</span></button></article>
+          <article class="step-card"><div class="step-number">03</div><div class="step-icon">✦</div><h3>Следи за развитием</h3><p>Новости и новые возможности появятся по мере создания игры.</p><button class="step-link" data-page="news" type="button">Новости проекта <span>→</span></button></article>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="panel news-panel">
+          <div class="panel-head"><div><div class="section-kicker">ИЗ МИРА SKYREALM</div><h2>Свежие новости</h2></div><button class="link-btn" data-page="news" type="button">Все новости <span>↗</span></button></div>
+          <button class="news-item" data-news="preview" type="button"><span class="news-thumb thumb-one"><img src="realm.jpg" alt="" loading="lazy"></span><span class="news-text"><span class="news-meta">ДНЕВНИК РАЗРАБОТКИ <span>•</span> 01</span><b>Начало большого пути</b><span>Лаунчер — первая часть проекта SkyRealm.</span></span><span class="news-arrow">↗</span></button>
+          <button class="news-item" data-news="world" type="button"><span class="news-thumb thumb-two"><img src="realm.jpg" alt="" loading="lazy"></span><span class="news-text"><span class="news-meta">МИР ИГРЫ <span>•</span> 02</span><b>Земли за горизонтом</b><span>Леса, древние руины и новые открытия.</span></span><span class="news-arrow">↗</span></button>
+          <div class="news-footer"><span class="live-dot"></span> Новости демонстрационные — новые записи появятся позже.</div>
+        </article>
+        <article class="panel status-panel">
+          <div class="panel-head"><div><div class="section-kicker">СТАТУС ПРОЕКТА</div><h2>Состояние SkyRealm</h2></div><span class="panel-symbol">⌘</span></div>
+          <div class="service-row"><span class="status-dot status-checking" id="card-status-dot"></span><div><b id="card-status-title">Проверяем облачный сервер…</b><small id="card-status-copy">Это может занять пару секунд.</small></div></div>
+          <div class="sys-row"><span class="sys-icon">▥</span><span>Версия лаунчера</span><b>0.6.0</b></div>
+          <div class="sys-row"><span class="sys-icon">▶</span><span>Игровая сборка</span><b class="muted-value">В разработке</b></div>
+          <a class="outline-link" href="https://jaaguprbfrzrcwuusher.supabase.co/functions/v1/skyrealm-auth?route=%2Fhealth" target="_blank" rel="noreferrer">Открыть статус сервера <span>↗</span></a>
+        </article>
+      </section>
+
+      <footer class="main-footer"><div class="footer-brand"><div class="footer-logo">S</div><div><b>SkyRealm</b><span>Твоя история начинается здесь</span></div></div><div class="footer-center">© 2026 SKYREALM <span>•</span> ДЕМО-ПРОЕКТ</div><button class="footer-link" data-page="news" type="button">Помощь и новости <span>↗</span></button></footer>
+    </section>
+
+    <section class="page inner-page" id="page-news">
+      <div class="page-heading"><div class="section-kicker">ХРОНИКИ МИРА</div><h1>Новости <span>SkyRealm</span></h1><p>Истории, заметки и новости разработки.</p></div>
+      <div class="content-cards">
+        <article class="story-card"><div class="story-image story-a"><img src="realm.jpg" alt="Путешественник смотрит на замок на закате" loading="lazy"><span>01</span></div><div class="story-body"><div class="news-meta">ДНЕВНИК РАЗРАБОТКИ</div><h2>Начало большого пути</h2><p>SkyRealm задуман как атмосферный 2D-мир для исследования, открытий и маленьких историй. Этот лаунчер — первая часть проекта.</p><span class="story-tag">ДЕМО-ЗАПИСЬ</span></div></article>
+        <article class="story-card"><div class="story-image story-b"><img src="realm.jpg" alt="Фэнтезийная долина и замок" loading="lazy"><span>02</span></div><div class="story-body"><div class="news-meta">МИР ИГРЫ</div><h2>Земли за горизонтом</h2><p>Впереди — таинственные леса, забытые руины и персонажи, чьи истории ещё предстоит открыть.</p><span class="story-tag">В РАЗРАБОТКЕ</span></div></article>
+      </div>
+      <div class="faq-section"><div class="section-kicker">ПОМОЩЬ</div><h2>Частые вопросы</h2><details><summary>Как создать аккаунт?</summary><p>На главной странице нажми «Создать аккаунт», введи имя игрока, электронную почту и пароль. Затем введи одноразовый код из письма.</p></details><details><summary>Почему нужен код из почты?</summary><p>Код подтверждает, что у тебя есть доступ к указанному адресу. Никому не сообщай этот код.</p></details><details><summary>Как работает кнопка «Играть»?</summary><p>При первом запуске лаунчер устанавливает лёгкие локальные файлы 2D-игры и открывает игру в отдельном окне.</p></details><details><summary>Не пришло письмо с кодом</summary><p>Проверь папки «Спам» и «Промоакции». Доставка для новых адресов может быть ограничена настройками почтового сервиса; в таком случае владелец проекта должен завершить проверку отправителя.</p></details></div>
+      <button class="primary-btn news-register" data-auth-mode="register" type="button">Создать аккаунт <span>→</span></button>
+    </section>
+
+    <section class="page inner-page" id="page-shop"><div class="page-heading"><div class="section-kicker">ПОДДЕРЖИ ПРОЕКТ</div><h1>Магазин <span>приключений</span></h1><p>В будущем здесь появятся косметические предметы и наборы для игры.</p></div><div class="coming-card"><div class="coming-orb">✦</div><div class="section-kicker">СКОРО ОТКРЫТИЕ</div><h2>Что-то особенное уже в пути</h2><p>Магазин пока является макетом. Покупки и платежи не поддерживаются.</p><button class="secondary-btn" data-page="home" type="button">Вернуться на главную</button></div></section>
+
+    <section class="page inner-page" id="page-community"><div class="page-heading"><div class="section-kicker">МЫ СОЗДАЁМ ЭТО ВМЕСТЕ</div><h1>Сообщество <span>SkyRealm</span></h1><p>Место для искателей приключений — сообщество откроется позднее.</p></div><div class="community-grid"><article class="community-card"><div class="community-icon">✧</div><h2>Обсуждения</h2><p>Делись идеями и помогай формировать мир.</p><span class="muted-tag">СКОРО</span></article><article class="community-card"><div class="community-icon">⚑</div><h2>События</h2><p>Следи за новостями разработки и будущими событиями.</p><span class="muted-tag">СКОРО</span></article><article class="community-card"><div class="community-icon">♧</div><h2>Игроки</h2><p>Находи друзей для совместных приключений.</p><span class="muted-tag">СКОРО</span></article></div><button class="primary-btn news-register" data-auth-mode="register" type="button">Создать аккаунт <span>→</span></button></section>
+
+    <section class="page inner-page" id="page-settings"><div class="page-heading"><div class="section-kicker">ПОД ТЕБЯ</div><h1>Настройки <span>лаунчера</span></h1><p>Параметры интерфейса сохраняются на этом устройстве.</p></div><div class="settings-card"><div class="setting-row language-setting"><div><b id="language-title">Язык лаунчера</b><small id="language-subtitle">Выбери язык интерфейса. Доступны только два языка.</small></div><select id="language-select" aria-label="Язык лаунчера"><option value="ru">Русский</option><option value="en">English</option></select></div>
+<div class="settings-subheading"><span class="settings-subheading-icon">▣</span><div><b id="game-display-title">Настройки игры</b><small id="game-display-subtitle">Эти параметры применяются к окну игры SkyRealm.</small></div></div>
+<div class="setting-row"><div><b id="resolution-label">Разрешение экрана</b><small id="resolution-help">Формат и размер окна при запуске игры.</small></div><select id="screen-resolution-select" aria-label="Разрешение игры"><option value="1280x720">1280 × 720 · 16:9</option><option value="1600x900">1600 × 900 · 16:9</option><option value="1920x1080">1920 × 1080 · 16:9</option><option value="1280x960">1280 × 960 · 4:3</option><option value="1440x900">1440 × 900 · 16:10</option></select></div>
+<div class="setting-row"><div><b id="window-mode-label">Режим окна</b><small id="window-mode-help">Выбери оконный режим или полный экран.</small></div><select id="window-mode-select" aria-label="Режим окна"><option value="windowed">Оконный</option><option value="fullscreen">Полноэкранный</option></select></div>
+<div class="setting-row"><div><b id="quality-label">Качество графики</b><small id="quality-help">Меняет детализацию и нагрузку на компьютер.</small></div><select id="graphics-quality-select" aria-label="Качество графики"><option value="low">Низкое</option><option value="medium">Среднее</option><option value="high">Высокое</option></select></div>
+<div class="settings-subheading"><span class="settings-subheading-icon">✦</span><div><b id="launcher-interface-title">Интерфейс лаунчера</b><small id="launcher-interface-subtitle">Внешний вид самого лаунчера.</small></div></div>
+<div class="setting-row"><div><b id="effects-label">Эффекты интерфейса</b><small id="effects-help">Анимации и свечение панелей</small></div><label class="toggle"><input type="checkbox" id="effects-toggle" checked><span></span></label></div><div class="setting-row"><div><b id="compact-label">Компактный интерфейс</b><small id="compact-help">Уменьшить расстояния между элементами</small></div><label class="toggle"><input type="checkbox" id="compact-toggle"><span></span></label></div><div class="setting-row"><div><b id="greeting-label">Показывать приветствие</b><small id="greeting-help">Сообщение на главной странице</small></div><label class="toggle"><input type="checkbox" id="greeting-toggle" checked><span></span></label></div><div class="settings-subheading"><span class="settings-subheading-icon">♜</span><div><b id="admin-tools-heading">Дополнительные возможности</b><small id="admin-tools-subheading">Настройка доступности инструментов администратора в игре.</small></div></div><div class="setting-row"><div><b id="admin-tools-label">Режим администратора</b><small id="admin-tools-help">Показывать кнопку админ-панели в главном меню игры. Изменение применяется при следующем запуске.</small></div><label class="toggle"><input type="checkbox" id="admin-tools-toggle"><span></span></label></div><div class="setting-row"><div><b id="moderator-tools-label">Режим модератора</b><small id="moderator-tools-help">Включить инструменты модератора в игре. Локальные баны не действуют на сетевых игроков.</small></div><label class="toggle"><input type="checkbox" id="moderator-tools-toggle"><span></span></label></div><div class="settings-note" id="settings-note">Настройки игры применяются при следующем запуске. В самой игре их также можно изменить через Esc → Настройки.</div><button class="secondary-btn" id="open-data-folder" type="button">Открыть папку игры и сохранений ↗</button><button class="outline-btn settings-back" data-page="home" type="button">Вернуться на главную <span>→</span></button></div></section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <div class="install-overlay" id="install-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="install-title">
+    <div class="install-dialog">
+      <div class="install-topline"><span class="install-logo">✦</span><span class="install-kicker" id="install-kicker">SKYREALM GAME CLIENT</span><span class="install-version">v0.2.0</span></div>
+      <h2 id="install-title">Готовим твой мир к запуску</h2>
+      <p id="install-description">Проверяем установку и готовим файлы игры для первого запуска.</p>
+      <div class="install-progress-heading"><span id="install-stage">Загрузка: проверка файлов…</span><b id="install-percent">0%</b></div>
+      <div class="install-progress-track"><div class="install-progress-fill" id="install-progress-fill"></div><div class="install-progress-glow"></div></div>
+      <div class="install-progress-meta"><span class="install-dot"></span><span id="install-detail">Подготавливаем папку игры</span><span class="install-spinner" aria-hidden="true"></span></div>
+      <div class="install-file-list"><span id="install-file-1">✓ Проверка версии</span><span id="install-file-2">◌ Установка карты</span><span id="install-file-3">◌ Подготовка персонажа</span></div>
+      <p class="install-footnote" id="install-footnote">Первый запуск устанавливает лёгкий игровой пакет на этот компьютер. Интернет нужен только для аккаунта и будущих обновлений.</p>
+      <button class="install-cancel" id="install-cancel" type="button">Отмена</button>
+    </div>
+  </div>
+</div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
