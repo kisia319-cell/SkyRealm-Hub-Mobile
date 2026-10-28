@@ -1420,3 +1420,19 @@ if(Number.isInteger(d.playerLevel))playerLevel=Math.max(1,Math.min(999,d.playerL
   document.getElementById('difficulty-cancel').addEventListener('click',()=>{closeDifficultyPicker();renderWorldList();});
   setWorldDifficulty('medium');configureTreasureChests();setupWorld(); resetWorldState(); renderInventory(); syncSettingsControls(); applyVisualSettings(); syncAdminMenu(); renderWorldList(); updateClockDisplay(true); resize(); window.addEventListener('resize',()=>{resize();try{draw(0,performance.now());}catch(error){console.error('SkyRealm resize render error:',error);drawEmergencyWorld();}}); window.addEventListener('error',event=>{console.error('SkyRealm runtime error:',event.error||event.message);try{drawEmergencyWorld();}catch(_){}}); initHudDragging(); drawMinimap(); requestAnimationFrame(tick);
 })();
+
+  // Camera zoom affects only the game canvas, never the HUD.
+  (() => {
+    const canvas=document.getElementById('world'),out=document.getElementById('camera-zoom-out'),inc=document.getElementById('camera-zoom-in'),label=document.getElementById('camera-zoom-value');
+    if(!canvas||!out||!inc||!label)return;
+    let zoom=Number(localStorage.getItem('skyrealm_camera_zoom')||.82);
+    if(!Number.isFinite(zoom))zoom=.82;
+    const apply=()=>{zoom=Math.max(.65,Math.min(1.35,zoom));canvas.style.transform='scale('+zoom+')';canvas.style.transformOrigin='center center';label.textContent=Math.round(zoom*100)+'%';try{localStorage.setItem('skyrealm_camera_zoom',String(zoom));}catch(_){}};
+    out.addEventListener('click',()=>{zoom-=.1;apply()});inc.addEventListener('click',()=>{zoom+=.1;apply()});
+    let startDistance=0,startZoom=zoom;
+    canvas.addEventListener('touchstart',e=>{if(e.touches.length===2){startDistance=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);startZoom=zoom;}},{passive:true});
+    canvas.addEventListener('touchmove',e=>{if(e.touches.length===2&&startDistance>0){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);zoom=startZoom*(d/startDistance);apply();}},{passive:true});
+    canvas.addEventListener('touchend',()=>{startDistance=0;},{passive:true});
+    canvas.addEventListener('wheel',e=>{if(e.ctrlKey||e.shiftKey){e.preventDefault();zoom+=e.deltaY<0?.05:-.05;apply();}},{passive:false});
+    apply();
+  })();
