@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 permissions:
   contents: read
@@ -14,6 +16,28 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+      - name: Validate mobile Hub account flow
+        run: |
+          node --check app/src/main/assets/skyrealm/hub-auth.js
+          node --check hub-auth.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('app/src/main/assets/hub.html', 'utf8');
+          const preview = fs.readFileSync('hub.html', 'utf8');
+          const js = fs.readFileSync('app/src/main/assets/skyrealm/hub-auth.js', 'utf8');
+          const requiredHtml = [
+            'id="account-open"', 'id="account-nav"', 'id="account-form"',
+            'id="account-verify"', 'id="account-resend"', 'id="account-logout"',
+            'skyrealm/config.js', 'skyrealm/hub-auth.js', 'skyrealm/hub-auth.css'
+          ];
+          const requiredJs = [
+            '/api/auth/register', '/api/auth/verify', '/api/auth/resend',
+            '/api/auth/login', '/api/auth/refresh', '/api/auth/logout'
+          ];
+          const missing = [...requiredHtml.filter(x => !html.includes(x)), ...requiredJs.filter(x => !js.includes(x)), ...['id="account-open"','id="account-form"','hub-auth.js','hub-auth.css'].filter(x => !preview.includes(x))];
+          if (missing.length) throw new Error('Mobile account flow missing: ' + missing.join(', '));
+          console.log('Mobile Hub account registration, verification, login and session checks passed.');
+          NODE
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
