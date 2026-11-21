@@ -65,8 +65,8 @@ jobs:
       - name: Publish separate Windows Apocalypse release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apocalypse-pc-v1.0.1
-          name: SkyRealm Apocalypse for Windows 1.0.1 (mobile game port)
+          tag_name: apocalypse-pc-v1.0.2
+          name: SkyRealm Apocalypse for Windows 1.0.2 (mobile game port)
           target_commitish: main
           prerelease: true
           make_latest: false
