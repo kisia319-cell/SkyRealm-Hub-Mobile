@@ -5,15 +5,15 @@ const saved=read(STORE),avatar=read('skyrealm_character_v1');
 const colors={skin:avatar.skin||'#e8b88c',hair:avatar.hair||'#352d3d',shirt:avatar.armor||'#526fba',trim:avatar.accent||'#9cb9ff',eyes:avatar.eye||'#26334c'};
 const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0};
 const mark={x:610,y:400};
-const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false}];
+const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false},{x:1850,y:350,done:false},{x:2200,y:780,done:false},{x:2750,y:520,done:false},{x:3100,y:1250,done:false},{x:1900,y:1950,done:false}];
 wrecks.forEach((v,i)=>v.done=!!saved.wrecks?.[i]);
 let w=0,h=0,dpr=1,time=0,toastTimer=0,dialogMode='intro',moveX=0,moveY=0,joyPointer=null,wind=0,windName='тихий';
 const keys=new Set();
 let gameActive=false,lastNet=0;
 const prefs=(()=>{try{return {...{effects:'high',joy:100,motion:true,hints:true},...JSON.parse(localStorage.getItem('skyrealm_apocalypse_settings_v1')||'{}')}}catch(_){return {effects:'high',joy:100,motion:true,hints:true}}})();
 const trees=[];
-for(let row=0;row<15;row++)for(let col=0;col<18;col++){let seed=(row*97+col*53)%101;if(seed>72){trees.push({x:90+col*115+(seed%31),y:80+row*115+(seed%47),size:.75+(seed%45)/100,phase:(seed%20)/4});}}
-const buildings=[{x:90,y:460,w:155,h:120},{x:1040,y:170,w:170,h:125},{x:1270,y:1060,w:200,h:135},{x:400,y:1120,w:150,h:105}];
+for(let row=0;row<23;row++)for(let col=0;col<31;col++){let seed=(row*97+col*53)%101;if(seed>72){trees.push({x:90+col*115+(seed%31),y:80+row*115+(seed%47),size:.75+(seed%45)/100,phase:(seed%20)/4});}}
+const buildings=[{x:90,y:460,w:155,h:120},{x:1040,y:170,w:170,h:125},{x:1270,y:1060,w:200,h:135},{x:400,y:1120,w:150,h:105},{x:1750,y:180,w:185,h:135},{x:2180,y:1120,w:210,h:145},{x:2850,y:780,w:190,h:130},{x:3050,y:2050,w:220,h:150},{x:1200,y:2150,w:170,h:125}];
 function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done)}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
@@ -23,9 +23,9 @@ function ground(){rect(-w/2-700,-h/2-700,w+1400,h+1400,'#657452');
  // patches of dry grass, dirt and rubble generated in world coordinates
  for(let gy=Math.floor((state.y-h/2-600)/90)*90;gy<state.y+h/2+700;gy+=90)for(let gx=Math.floor((state.x-w/2-700)/90)*90;gx<state.x+w/2+700;gx+=90){let n=Math.abs(Math.sin(gx*12.989+gy*78.233)*43758.5453)%1;rect(gx+n*55,gy+((n*71)%60),12+n*35,5+n*10,n>.65?'#77785a55':n>.35?'#b1a37a26':'#34463235');}
  // main cracked asphalt route crossing the settlement
- rect(-500,515,3100,104,'#424741');rect(-500,519,3100,3,'#96917a66');rect(-500,613,3100,3,'#242b27');for(let x=-450;x<2700;x+=120){rect(x,564,55,4,'#b6a87b88')}
+ rect(-500,515,3100,104,'#424741');rect(-500,519,3100,3,'#96917a66');rect(-500,613,3100,3,'#242b27');for(let x=-450;x<4100;x+=120){rect(x,564,55,4,'#b6a87b88')}
  // side road
- rect(1090,-300,88,2400,'#484b43');for(let y=-250;y<2000;y+=115)rect(1132,y,4,48,'#c0b18a66');
+ rect(1090,-300,88,2400,'#484b43');for(let y=-250;y<3000;y+=115)rect(1132,y,4,48,'#c0b18a66');
  // debris and cracks
  for(let i=0;i<160;i++){let x=((i*173)%2500)-250,y=((i*97)%1800)-180;rect(x,y,3+i%5,2+i%3,i%4?'#303a31':'#c0ad8355')}
 }
@@ -59,9 +59,25 @@ function showPanel(title,body,items){document.getElementById('panelText').textCo
 function openMark(){if(state.quest>=3&&state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food++;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.6)v.done=false});save();showPanel('Марк · награда','Ты выполнил поручение. Забирай припасы — они пригодятся в дороге.',inventoryItems());return}let msg=state.dayReward===state.day?'Сегодня ты уже помог поселению. Отдохни, завтра будет новое поручение.':'Я Марк. Собери 3 детали с разбитых машин и возвращайся ко мне. За работу дам аптечки и еду. Сейчас собрано: '+state.quest+'/3.';showPanel('Марк · выживший',msg,[{icon:'⚙️',name:'Детали для задания',count:state.quest+'/3'},{icon:'🩹',name:'Награда: аптечки',count:'×2'},{icon:'🥫',name:'Награда: консервы',count:'×1'}])}
 function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);save();updateHud();inventory()}},{icon:'🪵',name:'Доски',count:saved.wood||0},{icon:'🔩',name:'Крепёж',count:saved.bolts||0},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0}]}
 function inventory(){showPanel('Рюкзак','Снаряжение и найденные припасы. Задание Марка также отображается здесь.',inventoryItems())}
-function move(dt){let dx=moveX,dy=moveY;if(keys.has('ArrowUp')||keys.has('w'))dy-=1;if(keys.has('ArrowDown')||keys.has('s'))dy+=1;if(keys.has('ArrowLeft')||keys.has('a'))dx-=1;if(keys.has('ArrowRight')||keys.has('d'))dx+=1;let len=Math.hypot(dx,dy);if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);let speed=160*(wind>=.65?.82:wind>=.3?.94:1);state.x=Math.max(35,Math.min(2350,state.x+dx*speed*dt));state.y=Math.max(45,Math.min(1700,state.y+dy*speed*dt));}}
+function blocked(x,y){
+  const r=12;
+  if(x<25+r||y<25+r||x>3650-r||y>2750-r)return true;
+  for(const b of buildings){const nx=Math.max(b.x,Math.min(x,b.x+b.w)),ny=Math.max(b.y,Math.min(y,b.y+b.h));if((x-nx)**2+(y-ny)**2<r*r)return true;}
+  for(const t of trees){const rr=10+t.size*8,dx=x-t.x,dy=y-(t.y+7);if(dx*dx+dy*dy<(r+rr)**2)return true;}
+  for(const v of wrecks){const dx=x-v.x,dy=y-v.y;if(dx*dx+dy*dy<58*58)return true;}
+  return false;
+}
+function move(dt){
+  let dx=moveX,dy=moveY;
+  if(keys.has('ArrowUp')||keys.has('w'))dy-=1;
+  if(keys.has('ArrowDown')||keys.has('s'))dy+=1;
+  if(keys.has('ArrowLeft')||keys.has('a'))dx-=1;
+  if(keys.has('ArrowRight')||keys.has('d'))dx+=1;
+  let len=Math.hypot(dx,dy);
+  if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}
+}
 function setupJoystick(){const joy=document.getElementById('joy'),stick=document.getElementById('stick');function set(e){let r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.32,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}moveX=dx/max;moveY=dy/max;stick.style.transform='translate('+dx+'px,'+dy+'px)'}function end(){joyPointer=null;moveX=moveY=0;stick.style.transform='translate(0,0)'}joy.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);set(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer){e.preventDefault();set(e)}});['pointerup','pointercancel','lostpointercapture'].forEach(t=>joy.addEventListener(t,end))}
-let prev=performance.now();function loop(now){let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive)move(dt);const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.send({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||'Выживший'});}draw();requestAnimationFrame(loop)}
+let prev=performance.now();function loop(now){let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive)move(dt);const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||JSON.parse(localStorage.getItem('skyrealm_hub_user')||'{}').username||'Выживший'});}draw();requestAnimationFrame(loop)}
 function daily(){let today=new Date().toDateString();if(state.lastDay!==today){state.day++;state.quest=0;state.dayReward=0;state.lastDay=today;wrecks.forEach(v=>v.done=false);save()}dayWind()}
 function enterSolo(){gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.remove('hidden');}
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;}
@@ -77,7 +93,7 @@ window.addEventListener('apocalypse-coop-event',e=>{const p=e.detail,coop=window
 applySettings();
 document.getElementById('action').onclick=interact;document.getElementById('inventory').onclick=inventory;document.getElementById('panelClose').onclick=()=>document.getElementById('panel').classList.add('hidden');
 document.getElementById('exit').onclick=()=>{save();if(history.length>1)history.back();else location.href='hub.html'};
-window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys.add(e.key);if(e.key.toLowerCase()==='e')interact();if(e.key.toLowerCase()==='i')inventory()});window.addEventListener('keyup',e=>keys.delete(e.key));window.addEventListener('blur',()=>keys.clear());
+window.addEventListener('keydown',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(k))e.preventDefault();keys.add(k);if(k.toLowerCase()==='e')interact();if(k.toLowerCase()==='i')inventory()});window.addEventListener('keyup',e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));window.addEventListener('blur',()=>keys.clear());
 window.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('selectstart',e=>e.preventDefault());window.addEventListener('resize',resize);
 window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day});setupJoystick();daily();resize();save();requestAnimationFrame(loop);
 })();
