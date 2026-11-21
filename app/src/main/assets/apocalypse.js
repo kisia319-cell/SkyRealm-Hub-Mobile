@@ -29,8 +29,8 @@ function buildForest(){
   trees.push({x,y,size:.78+rand()*.62,phase:rand()*Math.PI*2});
  }
 }
-buildForest();
 const buildings=[{x:90,y:460,w:155,h:120},{x:1040,y:170,w:170,h:125},{x:1270,y:1060,w:200,h:135},{x:400,y:1120,w:150,h:105},{x:1750,y:180,w:185,h:135},{x:2180,y:1120,w:210,h:145},{x:2850,y:780,w:190,h:130},{x:3050,y:2050,w:220,h:150},{x:1200,y:2150,w:170,h:125}];
+buildForest();
 function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done)}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
