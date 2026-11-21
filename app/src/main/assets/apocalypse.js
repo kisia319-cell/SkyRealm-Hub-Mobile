@@ -18,7 +18,7 @@ const buildings=[];
 for(let row=0;row<6;row++)for(let col=0;col<8;col++){let seed=(row*41+col*67+13)%97;if(seed>29)buildings.push({x:260+col*820+(seed%170),y:220+row*720+(seed%130),w:130+(seed%70),h:100+(seed%55)});}
 const cars=[];
 for(let row=0;row<7;row++)for(let col=0;col<9;col++){let seed=(row*29+col*43+17)%89;if(seed>55)cars.push({x:180+col*760+(seed%160),y:350+row*680+(seed%140),scale:.8+(seed%35)/100,angle:(seed%3-1)*.08});}
-const obstacles=()=>[{x:90,y:460,w:155,h:120},{x:1040,y:170,w:170,h:125},{x:1270,y:1060,w:200,h:135},{x:400,y:1120,w:150,h:105},...buildings];
+const obstacles=()=>buildings;
 function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done)}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
@@ -28,7 +28,8 @@ function ground(){rect(-w/2-700,-h/2-700,w+1400,h+1400,'#657452');
  // patches of dry grass, dirt and rubble generated in world coordinates
  for(let gy=Math.floor((state.y-h/2-600)/90)*90;gy<state.y+h/2+700;gy+=90)for(let gx=Math.floor((state.x-w/2-700)/90)*90;gx<state.x+w/2+700;gx+=90){let n=Math.abs(Math.sin(gx*12.989+gy*78.233)*43758.5453)%1;rect(gx+n*55,gy+((n*71)%60),12+n*35,5+n*10,n>.65?'#77785a55':n>.35?'#b1a37a26':'#34463235');}
  // main cracked asphalt route crossing the settlement
- for(let ry=515;ry<WORLD_H;ry+=1050){rect(0,ry,WORLD_W,104,'#424741');rect(0,ry+4,WORLD_W,3,'#96917a66');rect(0,ry+98,WORLD_W,3,'#242b27');for(let x=20;x<WORLD_W;x+=120)rect(x,ry+49,55,4,'#b6a87b88')}\n for(let rx=1090;rx<WORLD_W;rx+=1450){rect(rx,0,88,WORLD_H,'#484b43');for(let y=25;y<WORLD_H;y+=115)rect(rx+42,y,4,48,'#c0b18a66')};
+ for(let ry=515;ry<WORLD_H;ry+=1050){rect(0,ry,WORLD_W,104,'#424741');rect(0,ry+4,WORLD_W,3,'#96917a66');rect(0,ry+98,WORLD_W,3,'#242b27');for(let x=20;x<WORLD_W;x+=120)rect(x,ry+49,55,4,'#b6a87b88')}
+ for(let rx=1090;rx<WORLD_W;rx+=1450){rect(rx,0,88,WORLD_H,'#484b43');for(let y=25;y<WORLD_H;y+=115)rect(rx+42,y,4,48,'#c0b18a66')};
  // debris and cracks
  for(let i=0;i<160;i++){let x=((i*173)%2500)-250,y=((i*97)%1800)-180;rect(x,y,3+i%5,2+i%3,i%4?'#303a31':'#c0ad8355')}
 }
