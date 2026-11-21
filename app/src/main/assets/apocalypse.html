@@ -1,13 +1,48 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#101914"><title>SkyRealm: Apocalypse</title>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#111b16"><title>Apocalypse</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101914;color:#edf3e9;font-family:system-ui,Arial}canvas{width:100%;height:100%;display:block;touch-action:none}.hud{position:absolute;inset:12px 12px auto;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none}.panel{background:#101b17eF;border:1px solid #82908055;border-radius:12px;padding:10px 13px;box-shadow:0 5px 20px #0006;backdrop-filter:blur(7px)}.brand{font-size:11px;letter-spacing:2px;color:#d5a66a;font-weight:900}.stat{font-size:12px;margin-top:5px}.quest{width:min(260px,48vw)}.quest b{font-size:12px;color:#e9c58d}.quest p{font-size:11px;line-height:1.45;margin:5px 0;color:#c5d0c2}.bottom{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:7px;align-items:center}.btn{pointer-events:auto;background:#18251eeF;color:#edf3e9;border:1px solid #82908077;border-radius:10px;padding:10px 13px;font-weight:700;font-size:12px}.btn:active{background:#3a4c3d}.controls{position:absolute;left:12px;bottom:12px;display:grid;grid-template-columns:38px 38px 38px;grid-template-rows:38px 38px;gap:4px}.controls button{pointer-events:auto;background:#17231dcc;border:1px solid #b3c0a466;color:white;border-radius:9px;font-size:18px}.controls .up{grid-column:2}.controls .left{grid-column:1;grid-row:2}.controls .down{grid-column:2;grid-row:2}.controls .right{grid-column:3;grid-row:2}.overlay{position:absolute;inset:0;background:#050b08b8;display:grid;place-items:center;padding:16px}.dialog{width:min(430px,100%);background:#18241d;border:1px solid #9aa78a66;border-radius:16px;padding:20px;box-shadow:0 20px 60px #0009}.dialog h2{margin:0 0 8px;color:#e9c58d}.dialog p{font-size:13px;line-height:1.6;color:#d0d9cc}.items{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.item{padding:8px 10px;border-radius:8px;background:#26362a;border:1px solid #70836c;font-size:12px}.hidden{display:none!important}.back{position:absolute;right:12px;bottom:12px}.toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:#1b2b20;border:1px solid #a2ad8b;border-radius:10px;padding:10px 14px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.show{opacity:1}@media(min-width:800px){.controls{display:none}.bottom{left:auto;right:12px;transform:none}.back{right:12px;bottom:70px}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#172019;color:#f1f0df;font-family:system-ui,Arial;touch-action:none}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;top:max(12px,env(safe-area-inset-top));left:12px;pointer-events:none}
+.status{min-width:208px;padding:11px 15px 12px;border:1px solid #b9a77c88;border-radius:15px;background:linear-gradient(145deg,#29382bF2,#17231df5 58%,#101914f5);box-shadow:0 7px 25px #0008,inset 0 1px #ffffff20;position:relative;overflow:hidden}
+.status:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#d9bd82,#687c5a)}
+.status:after{content:"";position:absolute;right:-16px;top:-25px;width:90px;height:90px;border:1px solid #c6b27a22;border-radius:50%;box-shadow:0 0 0 9px #c6b27a0b,0 0 0 19px #c6b27a08}
+.statusline{display:flex;align-items:center;gap:8px;font-size:12px;color:#e5c58c;font-weight:850;letter-spacing:1.1px}
+.statusline .dot{width:7px;height:7px;border-radius:50%;background:#a4b77d;box-shadow:0 0 8px #b8d18b}
+.stats{display:flex;gap:13px;margin-top:7px;font-size:13px;font-weight:650}
+.day{margin-top:5px;color:#c1cbb8;font-size:12px}
+.bottom{position:absolute;right:14px;bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:9px;align-items:flex-end}
+.btn{border:1px solid #c3b58a88;border-radius:12px;padding:12px 15px;color:#f5efdc;background:linear-gradient(145deg,#354333f5,#1a281ef5);font-size:13px;font-weight:800;box-shadow:0 5px 15px #0008,inset 0 1px #ffffff20;touch-action:manipulation}
+.btn:active{filter:brightness(1.25);transform:translateY(1px)}
+.btn .ico{font-size:17px;margin-right:5px}
+.joy{position:absolute;left:18px;bottom:max(18px,env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;border:2px solid #b5b28c88;background:radial-gradient(circle at 35% 30%,#63735b99,#1b2b22eF 68%);box-shadow:0 8px 25px #0009,inset 0 2px 10px #ffffff18;touch-action:none}
+.joy:before{content:"";position:absolute;inset:12px;border:1px dashed #d7d0a044;border-radius:50%}
+.stick{position:absolute;width:52px;height:52px;left:35px;top:35px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#d8d1a8,#7d896b 55%,#3b4b39);border:2px solid #e1d5a2;box-shadow:0 5px 12px #0009;pointer-events:none}
+.overlay{position:absolute;inset:0;background:#080e0bd9;display:grid;place-items:center;padding:15px;backdrop-filter:blur(5px)}
+.dialog{width:min(460px,100%);max-height:min(86dvh,680px);overflow:auto;background:linear-gradient(145deg,#2b3a2d,#17231c 60%,#111a15);border:1px solid #c2b18488;border-radius:19px;padding:20px;box-shadow:0 20px 70px #000b,inset 0 1px #ffffff1c;position:relative}
+.dialog:before{content:"";position:absolute;left:15px;right:15px;top:0;height:3px;background:linear-gradient(90deg,transparent,#d8bc7f,transparent)}
+.dialog h2{margin:0 0 8px;color:#e9c991;font-size:21px}.dialog p{font-size:13px;line-height:1.55;color:#d1d8c9;margin:7px 0 15px}
+.close{float:right;border:1px solid #8c987b88;background:#202e24;color:#e9e1cb;border-radius:9px;padding:7px 10px;font-size:12px}
+.invhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;padding-bottom:12px;border-bottom:1px solid #b9ad8050}
+.invsub{font-size:11px;color:#aebba6;letter-spacing:.8px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.slot{min-height:105px;border:1px solid #9c9e7970;border-radius:12px;background:linear-gradient(145deg,#354333,#202c22);padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:inset 0 1px #ffffff16}
+.slot .art{font-size:29px;filter:drop-shadow(0 3px 2px #0008);line-height:1.2}
+.slot b{font-size:11px;margin-top:7px;text-align:center;color:#e6e2cf}
+.slot small{font-size:10px;color:#b7c2ad;margin-top:2px}
+.slot button{margin-top:7px;padding:5px 8px;border-radius:7px;border:1px solid #b9aa7c88;background:#49563b;color:#fff1d2;font-size:10px}
+.hidden{display:none!important}
+.toast{position:absolute;left:50%;top:18%;transform:translateX(-50%);background:#263729;border:1px solid #c2b184;border-radius:10px;padding:10px 14px;font-size:12px;box-shadow:0 6px 20px #0009;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+@media(max-width:420px){.joy{width:116px;height:116px}.stick{left:31px;top:31px}.bottom{right:9px;gap:6px}.btn{padding:10px 11px;font-size:12px}.status{min-width:185px;padding:9px 12px}.stats{font-size:12px}.grid{gap:7px}.slot{min-height:96px}}
+@media(min-width:850px){.joy{width:140px;height:140px;left:28px;bottom:25px}.stick{width:58px;height:58px;left:39px;top:39px}.bottom{right:25px;bottom:25px}}
 </style></head><body>
 <canvas id="world"></canvas>
-<div class="hud"><div class="panel"><div class="brand">SKYREALM · APOCALYPSE</div><div class="stat" id="health">❤ 100 / 100</div><div class="stat" id="day">День 1 · Поселение</div></div><div class="panel quest"><b>ЕЖЕДНЕВНОЕ ЗАДАНИЕ</b><p id="questText">Собери 3 детали с разбитых машин и вернись к Марку.</p><div class="stat" id="questProgress">Детали: 0 / 3</div></div></div>
-<div class="controls"><button class="up" data-key="ArrowUp">↑</button><button class="left" data-key="ArrowLeft">←</button><button class="down" data-key="ArrowDown">↓</button><button class="right" data-key="ArrowRight">→</button></div>
-<div class="bottom"><button class="btn" id="action">Действие · E</button><button class="btn" id="inventory">Рюкзак · I</button></div><button class="btn back" id="exit">В Hub</button>
+<div class="hud"><div class="status"><div class="statusline"><span class="dot"></span><span>ПОСЕЛЕНИЕ · СЕКТОР 01</span></div><div class="stats"><span id="health">♥ 100 / 100</span><span id="weather">Ветер · тихий</span></div><div class="day" id="day">День 1 · Утро</div></div></div>
+<div class="joy" id="joy"><div class="stick" id="stick"></div></div>
+<div class="bottom"><button class="btn" id="action"><span class="ico">⚒</span>Действие</button><button class="btn" id="inventory"><span class="ico">▣</span>Рюкзак</button><button class="btn" id="exit">↩</button></div>
 <div class="toast" id="toast"></div>
-<div class="overlay" id="dialogue"><div class="dialog"><h2>Апокалипсис</h2><p>Поселение на окраине разрушенного города. Найди выжившего Марка, собирай припасы и выполняй ежедневные поручения.</p><button class="btn" id="start">Начать выживание</button></div></div>
-<div class="overlay hidden" id="panel"><div class="dialog"><h2 id="panelTitle">Марк</h2><p id="panelText"></p><div class="items" id="items"></div><button class="btn" id="panelClose">Закрыть</button></div></div>
+<div class="overlay" id="dialogue"><div class="dialog"><h2>Поселение выживших</h2><p>Мир изменился. Исследуй окрестности, собирай полезные вещи и помогай тем, кто ещё остался в живых. Найди Марка — у него есть первое поручение.</p><button class="btn" id="start">Начать выживание</button></div></div>
+<div class="overlay hidden" id="panel"><div class="dialog"><button class="close" id="panelClose">Закрыть ✕</button><h2 id="panelTitle">Рюкзак</h2><p id="panelText"></p><div id="items" class="grid"></div></div></div>
 <script src="apocalypse.js"></script></body></html>
