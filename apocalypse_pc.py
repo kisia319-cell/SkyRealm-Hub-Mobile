@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.0.1"
+APP_VERSION = "apocalypse-pc-v1.0.2"
 PORT = 48732
 
 
