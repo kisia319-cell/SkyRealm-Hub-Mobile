@@ -17,6 +17,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private String currentScreen = "hub";
     private static final String HUB = "file:///android_asset/hub.html";
+    private static final String APOCALYPSE = "file:///android_asset/apocalypse.html";
     private static final String LAUNCHER = "file:///android_asset/skyrealm/index.html";
     private static final String GAME = "file:///android_asset/skyrealm/game/index.html";
     private static final String RELEASES = "https://github.com/kisia319-cell/SkyRealm-Hub-Mobile/releases/latest";
@@ -56,6 +57,7 @@ public class MainActivity extends Activity {
 
     private class Bridge {
         @JavascriptInterface public void openLauncher() { runOnUiThread(() -> { currentScreen = "launcher"; webView.loadUrl(LAUNCHER); }); }
+        @JavascriptInterface public void openApocalypse() { runOnUiThread(() -> { currentScreen = "apocalypse"; webView.loadUrl(APOCALYPSE); }); }
         @JavascriptInterface public void launchGame(String preferences) { runOnUiThread(() -> { currentScreen = "game"; webView.loadUrl(GAME); }); }
         @JavascriptInterface public void goHub() { runOnUiThread(() -> { currentScreen = "hub"; webView.loadUrl(HUB); }); }
         @JavascriptInterface public boolean isGameInstalled(String game) {
@@ -80,6 +82,7 @@ public class MainActivity extends Activity {
 
     @Override public void onBackPressed() {
         if ("game".equals(currentScreen)) { currentScreen = "launcher"; webView.loadUrl(LAUNCHER); }
+        else if ("apocalypse".equals(currentScreen)) { currentScreen = "hub"; webView.loadUrl(HUB); }
         else if ("launcher".equals(currentScreen)) { currentScreen = "hub"; webView.loadUrl(HUB); }
         else { super.onBackPressed(); }
     }
