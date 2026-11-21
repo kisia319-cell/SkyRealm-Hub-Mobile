@@ -68,7 +68,7 @@
     localStorage.setItem('skyrealm_hub_access', state.accessToken);
     localStorage.setItem('skyrealm_hub_refresh', state.refreshToken);
     localStorage.setItem('skyrealm_hub_expires', String(state.expiresAt));
-    if (state.user) localStorage.setItem('skyrealm_hub_user', JSON.stringify(state.user));
+    if (state.user) { localStorage.setItem('skyrealm_hub_user', JSON.stringify(state.user)); if(state.user.username) localStorage.setItem('skyrealm_username', state.user.username); }
     updateGuest();
   }
   function clearSession() {
@@ -135,7 +135,7 @@
   }
   async function restore() {
     let saved = null; try { saved = JSON.parse(localStorage.getItem('skyrealm_hub_user') || 'null'); } catch (_) {}
-    if (saved) { state.user = saved; updateGuest(); }
+    if (saved) { state.user = saved; if(saved.username) localStorage.setItem('skyrealm_username', saved.username); updateGuest(); }
     if (!state.refreshToken && !state.accessToken) return;
     try {
       if (state.refreshToken && state.expiresAt < Date.now() + 30000) {
