@@ -52,7 +52,8 @@ jobs:
       - name: Build standalone Apocalypse executable
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --noupx --name SkyRealmApocalypse --icon SkyRealm.ico --distpath dist --workpath build-apocalypse/work --specpath build-apocalypse --add-data "app/src/main/assets/apocalypse.html;apocalypse" --add-data "app/src/main/assets/apocalypse.js;apocalypse" --add-data "app/src/main/assets/apocalypse-coop.js;apocalypse" --add-data "apocalypse-pc.js;apocalypse" apocalypse_pc.py
+          $repo = (Get-Location).Path
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --noupx --name SkyRealmApocalypse --icon "$repo/SkyRealm.ico" --distpath "$repo/dist" --workpath "$repo/build-apocalypse/work" --specpath "$repo/build-apocalypse/spec" --add-data "$repo/app/src/main/assets/apocalypse.html;apocalypse" --add-data "$repo/app/src/main/assets/apocalypse.js;apocalypse" --add-data "$repo/app/src/main/assets/apocalypse-coop.js;apocalypse" --add-data "$repo/apocalypse-pc.js;apocalypse" "$repo/apocalypse_pc.py"
           if (-not (Test-Path "dist/SkyRealmApocalypse.exe")) { throw "SkyRealmApocalypse.exe was not built" }
           $bytes = [System.IO.File]::ReadAllBytes("dist/SkyRealmApocalypse.exe")
           if ($bytes.Length -lt 1000000 -or $bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "Output is not a valid Windows executable" }
