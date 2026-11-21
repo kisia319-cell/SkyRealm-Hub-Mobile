@@ -28,6 +28,12 @@ jobs:
           const html = fs.readFileSync('app/src/main/assets/hub.html', 'utf8');
           const preview = fs.readFileSync('hub.html', 'utf8');
           const js = fs.readFileSync('app/src/main/assets/skyrealm/hub-auth.js', 'utf8');
+          const java = fs.readFileSync('MainActivity.java', 'utf8');
+          const manifest = fs.readFileSync('app/src/main/AndroidManifest.xml', 'utf8');
+          const requiredBridge = [
+            'openUpdate()', 'getAppVersion()', 'isGameInstalled(String id)',
+            'DownloadManager', 'ACTION_DOWNLOAD_COMPLETE', 'ACTION_MANAGE_UNKNOWN_APP_SOURCES'
+          ];
           const requiredHtml = [
             'id="account-open"', 'id="account-nav"', 'id="account-form"',
             'id="account-verify"', 'id="account-resend"', 'id="account-logout"',
@@ -40,6 +46,8 @@ jobs:
           const missing = [
             ...requiredHtml.filter(x => !html.includes(x)),
             ...requiredJs.filter(x => !js.includes(x)),
+            ...requiredBridge.filter(x => !java.includes(x)),
+            ...['REQUEST_INSTALL_PACKAGES'].filter(x => !manifest.includes(x)),
             ...['id="account-open"', 'id="account-form"', 'hub-auth.js', 'hub-auth.css'].filter(x => !preview.includes(x))
           ];
           if (missing.length) throw new Error('Mobile account flow missing: ' + missing.join(', '));
