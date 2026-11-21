@@ -79,5 +79,5 @@ document.getElementById('action').onclick=interact;document.getElementById('inve
 document.getElementById('exit').onclick=()=>{save();if(history.length>1)history.back();else location.href='hub.html'};
 window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys.add(e.key);if(e.key.toLowerCase()==='e')interact();if(e.key.toLowerCase()==='i')inventory()});window.addEventListener('keyup',e=>keys.delete(e.key));window.addEventListener('blur',()=>keys.clear());
 window.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('selectstart',e=>e.preventDefault());window.addEventListener('resize',resize);
-setupJoystick();daily();resize();save();requestAnimationFrame(loop);
+window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day});setupJoystick();daily();resize();save();requestAnimationFrame(loop);
 })();
