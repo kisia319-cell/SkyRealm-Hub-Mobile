@@ -11,8 +11,25 @@ let w=0,h=0,dpr=1,time=0,toastTimer=0,dialogMode='intro',moveX=0,moveY=0,joyPoin
 const keys=new Set();
 let gameActive=false,lastNet=0;
 const prefs=(()=>{try{return {...{effects:'high',joy:100,motion:true,hints:true},...JSON.parse(localStorage.getItem('skyrealm_apocalypse_settings_v1')||'{}')}}catch(_){return {effects:'high',joy:100,motion:true,hints:true}}})();
+// Deterministic, irregular forest placement. One tree per roughly 8 game blocks (256 world units).
 const trees=[];
-for(let row=0;row<23;row++)for(let col=0;col<31;col++){let seed=(row*97+col*53)%101;if(seed>72){trees.push({x:90+col*115+(seed%31),y:80+row*115+(seed%47),size:.75+(seed%45)/100,phase:(seed%20)/4});}}
+function buildForest(){
+ let seed=0x51a7e;
+ const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ const minGap=256,minGap2=minGap*minGap,limit=78;
+ const blockedZones=buildings.map(b=>({x:b.x+b.w/2,y:b.y+b.h/2,r:Math.max(b.w,b.h)*.72+70}))
+   .concat([{x:mark.x,y:mark.y,r:135},{x:440,y:390,r:175}],wrecks.map(v=>({x:v.x,y:v.y,r:100})));
+ for(let attempt=0;attempt<3200&&trees.length<limit;attempt++){
+  const x=65+rand()*3520,y=65+rand()*2620;
+  // Keep roads, buildings, important locations and spawn areas clear.
+  if(y>475&&y<660)continue;
+  if(x>1045&&x<1225)continue;
+  if(blockedZones.some(z=>(x-z.x)**2+(y-z.y)**2<z.r*z.r))continue;
+  if(trees.some(t=>(x-t.x)**2+(y-t.y)**2<minGap2))continue;
+  trees.push({x,y,size:.78+rand()*.62,phase:rand()*Math.PI*2});
+ }
+}
+buildForest();
 const buildings=[{x:90,y:460,w:155,h:120},{x:1040,y:170,w:170,h:125},{x:1270,y:1060,w:200,h:135},{x:400,y:1120,w:150,h:105},{x:1750,y:180,w:185,h:135},{x:2180,y:1120,w:210,h:145},{x:2850,y:780,w:190,h:130},{x:3050,y:2050,w:220,h:150},{x:1200,y:2150,w:170,h:125}];
 function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done)}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
@@ -36,21 +53,43 @@ function building(b){ctx.fillStyle='#1c211c88';ctx.fillRect(b.x-5,b.y+b.h-3,b.w+
 function wreck(v){car(v.x,v.y,1.05,.06);if(!v.done){ctx.strokeStyle='#e6c783';ctx.lineWidth=2;ctx.beginPath();ctx.arc(v.x,v.y,21+Math.sin(time*.004)*3,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#e6c783';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('ДЕТАЛИ',v.x,v.y-31)}}
 function smoke(x,y){if(prefs.effects==='low')return;for(let i=0;i<5;i++){let yy=(time*.00015+i*.21)%1;ctx.globalAlpha=(1-yy)*.2;ctx.fillStyle='#c5c5b8';ctx.beginPath();ctx.arc(x+Math.sin(time*.0006+i)*11,y-yy*52,5+yy*11,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
 function drawMark(){ctx.fillStyle='#151d18';ctx.beginPath();ctx.ellipse(mark.x,mark.y+16,14,5,0,0,7);ctx.fill();rect(mark.x-9,mark.y-1,18,20,'#6d7950');rect(mark.x-7,mark.y+17,6,12,'#363e31');rect(mark.x+2,mark.y+17,6,12,'#363e31');rect(mark.x-12,mark.y+1,5,15,'#cba17b');rect(mark.x+7,mark.y+1,5,15,'#cba17b');ctx.fillStyle='#d4a77d';ctx.beginPath();ctx.arc(mark.x,mark.y-13,9,0,7);ctx.fill();rect(mark.x-10,mark.y-21,20,7,'#45463a');rect(mark.x-4,mark.y-13,2,2,'#222');rect(mark.x+3,mark.y-13,2,2,'#222');ctx.fillStyle='#f0d7a5';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('МАРК',mark.x,mark.y-34)}
-function drawRemotePlayers(){const coop=window.ApocalypseCoop;if(!coop)return;for(const p of coop.getPlayers()){if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle='#0a100dcc';ctx.beginPath();ctx.ellipse(0,16,12,4,0,0,7);ctx.fill();ctx.fillStyle='#86a9a0';ctx.fillRect(-7,-9,14,22);ctx.fillStyle='#c8a37b';ctx.beginPath();ctx.arc(0,-17,8,0,7);ctx.fill();ctx.fillStyle='#d8e4ce';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(String(p.name||'Игрок').slice(0,16),0,-31);ctx.restore();}}
-function drawPlayer(){ctx.save();ctx.translate(w/2,h/2+Math.sin(time*.008)*2);ctx.scale(.65,.65);ctx.lineJoin='round';ctx.shadowColor='#d8d9bd';ctx.shadowBlur=5;ctx.fillStyle='#111b16aa';ctx.beginPath();ctx.ellipse(0,18,13,5,0,0,7);ctx.fill();
- // boots and articulated legs
- rect(-8,7,7,15,'#27323a');rect(2,7,7,15,'#27323a');rect(-9,19,9,4,'#171d20');rect(1,19,9,4,'#171d20');
- // backpack
- rect(8,-12,7,17,'#4b4b35');rect(9,-9,5,9,'#7b7650');
- // torso, collar, belt and seams
- rect(-8,-10,16,19,colors.shirt);rect(-8,-10,16,4,colors.trim);rect(-8,6,16,3,'#343a35');rect(-2,-7,4,12,'#ffffff22');rect(-6,9,12,2,'#b5a77a');
- // arms and hands
- rect(-13,-8,5,13,colors.shirt);rect(8,-8,5,13,colors.shirt);rect(-13,3,5,7,colors.skin);rect(8,3,5,7,colors.skin);
- // neck, head, hair silhouette and face
- rect(-3,-14,6,5,colors.skin);ctx.fillStyle=colors.skin;ctx.beginPath();ctx.arc(0,-22,9,0,Math.PI*2);ctx.fill();
- ctx.fillStyle=colors.hair;ctx.beginPath();ctx.moveTo(-9,-23);ctx.lineTo(-8,-31);ctx.lineTo(-3,-34);ctx.lineTo(5,-33);ctx.lineTo(10,-27);ctx.lineTo(9,-18);ctx.lineTo(6,-20);ctx.lineTo(6,-27);ctx.lineTo(-5,-27);ctx.lineTo(-6,-19);ctx.lineTo(-9,-18);ctx.closePath();ctx.fill();
- rect(-5,-23,2,2,colors.eyes);rect(3,-23,2,2,colors.eyes);rect(-2,-17,4,1,'#a96e61');rect(-6,-13,12,2,colors.trim);
- ctx.restore()}
+function drawSurvivor(x,y,palette,phase=0,moving=false,remote=false,name=''){
+ const skin=palette?.skin||'#e8b88c',hair=palette?.hair||'#352d3d',shirt=palette?.shirt||'#526fba',trim=palette?.trim||'#9cb9ff',eyes=palette?.eyes||'#26334c';
+ const swing=moving?Math.sin(time*.012+phase)*3.2:0;
+ ctx.save();ctx.translate(x,y);ctx.scale(.65,.65);ctx.lineJoin='round';ctx.lineCap='round';
+ // ground shadow and feet
+ ctx.fillStyle='#101810aa';ctx.beginPath();ctx.ellipse(0,19,14,5,0,0,Math.PI*2);ctx.fill();
+ // legs, knees and boots
+ ctx.strokeStyle='#303a3b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-4,5);ctx.lineTo(-5+swing,16);ctx.moveTo(4,5);ctx.lineTo(5-swing,16);ctx.stroke();
+ ctx.fillStyle='#20292b';ctx.fillRect(-10+swing,15,9,5);ctx.fillRect(1-swing,15,9,5);
+ // backpack and straps
+ ctx.fillStyle='#4b4b35';ctx.fillRect(7,-12,8,18);ctx.fillStyle='#81794e';ctx.fillRect(9,-9,5,10);ctx.fillStyle='#262d25';ctx.fillRect(7,-13,8,2);
+ // torso with jacket, collar, seams, belt and zipper
+ ctx.fillStyle=shirt;ctx.beginPath();ctx.moveTo(-8,-11);ctx.lineTo(8,-11);ctx.lineTo(9,8);ctx.lineTo(-9,8);ctx.closePath();ctx.fill();
+ ctx.fillStyle=trim;ctx.fillRect(-8,-11,16,4);ctx.fillRect(-2,-7,4,14);ctx.fillStyle='#29332d';ctx.fillRect(-8,6,16,3);ctx.fillStyle='#c4b17e';ctx.fillRect(-6,8,12,2);
+ // articulated arms, sleeves and hands
+ ctx.strokeStyle=shirt;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-8,-7);ctx.lineTo(-12,-1+swing*.45);ctx.lineTo(-12,5+swing*.65);ctx.moveTo(8,-7);ctx.lineTo(12,-1-swing*.45);ctx.lineTo(12,5-swing*.65);ctx.stroke();
+ ctx.strokeStyle=skin;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-12,4+swing*.65);ctx.lineTo(-12,10+swing*.65);ctx.moveTo(12,4-swing*.65);ctx.lineTo(12,10-swing*.65);ctx.stroke();
+ // neck and head
+ ctx.fillStyle=skin;ctx.fillRect(-3,-15,6,6);ctx.beginPath();ctx.arc(0,-23,9,0,Math.PI*2);ctx.fill();
+ // ears
+ ctx.beginPath();ctx.arc(-9,-23,2.1,0,Math.PI*2);ctx.arc(9,-23,2.1,0,Math.PI*2);ctx.fill();
+ // hair cap and side locks
+ ctx.fillStyle=hair;ctx.beginPath();ctx.moveTo(-9,-23);ctx.lineTo(-8,-31);ctx.lineTo(-3,-35);ctx.lineTo(5,-34);ctx.lineTo(10,-28);ctx.lineTo(9,-19);ctx.lineTo(6,-20);ctx.lineTo(6,-28);ctx.lineTo(-5,-28);ctx.lineTo(-6,-19);ctx.closePath();ctx.fill();
+ // visible eyes, eyebrows, nose and mouth
+ ctx.fillStyle=eyes;ctx.fillRect(-5,-24,2.5,3);ctx.fillRect(2.5,-24,2.5,3);
+ ctx.fillStyle=hair;ctx.fillRect(-6,-27,4,1.4);ctx.fillRect(2,-27,4,1.4);
+ ctx.fillStyle='#9d705d';ctx.fillRect(-1,-20,2,2);ctx.fillStyle='#754b48';ctx.fillRect(-2,-17,4,1);
+ // small shoulder details and outline
+ ctx.strokeStyle='#18231d';ctx.lineWidth=1;ctx.strokeRect(-8,-11,16,19);
+ if(remote){
+  ctx.fillStyle='#e7e9d8';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.shadowColor='#10170f';ctx.shadowBlur=4;ctx.fillText(String(name||'Игрок').slice(0,16),0,-40);
+  ctx.shadowBlur=0;ctx.strokeStyle='#e7d6a0aa';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,-23,12,0,Math.PI*2);ctx.stroke();
+ }
+ ctx.restore();
+}
+function drawRemotePlayers(){const coop=window.ApocalypseCoop;if(!coop)return;for(const p of coop.getPlayers()){if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;drawSurvivor(p.x,p.y,p.avatar,p.phase||0,!!p.moving,true,p.name);}}
+function drawPlayer(){drawSurvivor(w/2,h/2+Math.sin(time*.008)*2,colors,0,Math.hypot(moveX,moveY)>.08,false);}
 function updateHud(){document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(state.day%3===0?'Вечер':'Утро')}
 function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();trees.forEach(t=>{if(t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);for(let x=150;x<1700;x+=330)pole(x,500);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawMark();drawRemotePlayers();ctx.restore();drawPlayer();updateHud();drawWind()}
 function drawWind(){if(prefs.effects==='low'||wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
@@ -77,7 +116,7 @@ function move(dt){
   if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}
 }
 function setupJoystick(){const joy=document.getElementById('joy'),stick=document.getElementById('stick');function set(e){let r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.32,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}moveX=dx/max;moveY=dy/max;stick.style.transform='translate('+dx+'px,'+dy+'px)'}function end(){joyPointer=null;moveX=moveY=0;stick.style.transform='translate(0,0)'}joy.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);set(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer){e.preventDefault();set(e)}});['pointerup','pointercancel','lostpointercapture'].forEach(t=>joy.addEventListener(t,end))}
-let prev=performance.now();function loop(now){let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive)move(dt);const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||JSON.parse(localStorage.getItem('skyrealm_hub_user')||'{}').username||'Выживший'});}draw();requestAnimationFrame(loop)}
+let prev=performance.now();function loop(now){let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive)move(dt);const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||JSON.parse(localStorage.getItem('skyrealm_hub_user')||'{}').username||'Выживший',avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
 function daily(){let today=new Date().toDateString();if(state.lastDay!==today){state.day++;state.quest=0;state.dayReward=0;state.lastDay=today;wrecks.forEach(v=>v.done=false);save()}dayWind()}
 function enterSolo(){gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.remove('hidden');}
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;}
