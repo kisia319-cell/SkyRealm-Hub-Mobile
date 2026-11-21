@@ -66,6 +66,10 @@ public class MainActivity extends Activity {
                 return true;
             } catch (Exception ignored) { return false; }
         }
+        @JavascriptInterface public String getAppVersion() {
+            try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; }
+            catch (Exception ignored) { return "0.0.0"; }
+        }
         @JavascriptInterface public void openUpdate() {
             runOnUiThread(() -> {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES))); }
