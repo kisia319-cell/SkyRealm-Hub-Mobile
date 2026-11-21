@@ -10,7 +10,7 @@ wrecks.forEach((v,i)=>v.done=!!saved.wrecks?.[i]);
 let w=0,h=0,dpr=1,time=0,toastTimer=0,dialogMode='intro',moveX=0,moveY=0,joyPointer=null,wind=0,windName='тихий';
 const keys=new Set();
 const trees=[];
-for(let row=0;row<15;row++)for(let col=0;col<18;col++){let seed=(row*97+col*53)%101;if(seed>30){trees.push({x:90+col*115+(seed%31),y:80+row*115+(seed%47),size:.75+(seed%45)/100,phase:(seed%20)/4});}}
+for(let row=0;row<15;row++)for(let col=0;col<18;col++){let seed=(row*97+col*53)%101;if(seed>72){trees.push({x:90+col*115+(seed%31),y:80+row*115+(seed%47),size:.75+(seed%45)/100,phase:(seed%20)/4});}}
 const buildings=[{x:90,y:460,w:155,h:120},{x:1040,y:170,w:170,h:125},{x:1270,y:1060,w:200,h:135},{x:400,y:1120,w:150,h:105}];
 function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done)}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
@@ -34,7 +34,7 @@ function building(b){ctx.fillStyle='#1c211c88';ctx.fillRect(b.x-5,b.y+b.h-3,b.w+
 function wreck(v){car(v.x,v.y,1.05,.06);if(!v.done){ctx.strokeStyle='#e6c783';ctx.lineWidth=2;ctx.beginPath();ctx.arc(v.x,v.y,21+Math.sin(time*.004)*3,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#e6c783';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('ДЕТАЛИ',v.x,v.y-31)}}
 function smoke(x,y){for(let i=0;i<5;i++){let yy=(time*.00015+i*.21)%1;ctx.globalAlpha=(1-yy)*.2;ctx.fillStyle='#c5c5b8';ctx.beginPath();ctx.arc(x+Math.sin(time*.0006+i)*11,y-yy*52,5+yy*11,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
 function drawMark(){ctx.fillStyle='#151d18';ctx.beginPath();ctx.ellipse(mark.x,mark.y+16,14,5,0,0,7);ctx.fill();rect(mark.x-9,mark.y-1,18,20,'#6d7950');rect(mark.x-7,mark.y+17,6,12,'#363e31');rect(mark.x+2,mark.y+17,6,12,'#363e31');rect(mark.x-12,mark.y+1,5,15,'#cba17b');rect(mark.x+7,mark.y+1,5,15,'#cba17b');ctx.fillStyle='#d4a77d';ctx.beginPath();ctx.arc(mark.x,mark.y-13,9,0,7);ctx.fill();rect(mark.x-10,mark.y-21,20,7,'#45463a');rect(mark.x-4,mark.y-13,2,2,'#222');rect(mark.x+3,mark.y-13,2,2,'#222');ctx.fillStyle='#f0d7a5';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('МАРК',mark.x,mark.y-34)}
-function drawPlayer(){ctx.save();ctx.translate(w/2,h/2+Math.sin(time*.008)*2);ctx.scale(1,1);ctx.lineJoin='round';ctx.shadowColor='#d8d9bd';ctx.shadowBlur=5;ctx.fillStyle='#111b16aa';ctx.beginPath();ctx.ellipse(0,18,13,5,0,0,7);ctx.fill();
+function drawPlayer(){ctx.save();ctx.translate(w/2,h/2+Math.sin(time*.008)*2);ctx.scale(.65,.65);ctx.lineJoin='round';ctx.shadowColor='#d8d9bd';ctx.shadowBlur=5;ctx.fillStyle='#111b16aa';ctx.beginPath();ctx.ellipse(0,18,13,5,0,0,7);ctx.fill();
  // boots and articulated legs
  rect(-8,7,7,15,'#27323a');rect(2,7,7,15,'#27323a');rect(-9,19,9,4,'#171d20');rect(1,19,9,4,'#171d20');
  // backpack
