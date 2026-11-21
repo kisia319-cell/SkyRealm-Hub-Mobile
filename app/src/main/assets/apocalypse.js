@@ -1,49 +1,69 @@
-(()=>{
-'use strict';
-const canvas=document.getElementById('world'),ctx=canvas.getContext('2d');
-const STORE='skyrealm_apocalypse_mobile_v1';
-const saved=(()=>{try{return JSON.parse(localStorage.getItem(STORE)||'{}')}catch(_){return {}}})();
-const appearance=(()=>{try{return JSON.parse(localStorage.getItem('skyrealm_character_v1')||'{}')}catch(_){return {}}})();
-const colors={skin:appearance.skin||'#e8b88c',hair:appearance.hair||'#352d3d',armor:appearance.armor||'#526fba',accent:appearance.accent||'#9cb9ff',eye:appearance.eye||'#26334c'};
-const state={x:saved.x||440,y:saved.y||380,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),talked:false};
-const keys=new Set();let w=0,h=0,dpr=1,time=0,toastTimer=0,dialogMode='intro';
-const mark={x:590,y:390,phase:0};
-const wrecks=[{x:290,y:260,done:false},{x:760,y:250,done:false},{x:850,y:560,done:false},{x:300,y:600,done:false},{x:620,y:650,done:false}];
-wrecks.forEach((v,i)=>{if(saved.wrecks?.[i])v.done=true});
-function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done)}));}
-function resize(){dpr=Math.min(devicePixelRatio||1,1.5);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
-function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),1900)}
+(()=>{'use strict';
+const canvas=document.getElementById('world'),ctx=canvas.getContext('2d'),STORE='skyrealm_apocalypse_mobile_v1';
+const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(_){return {}}};
+const saved=read(STORE),avatar=read('skyrealm_character_v1');
+const colors={skin:avatar.skin||'#e8b88c',hair:avatar.hair||'#352d3d',shirt:avatar.armor||'#526fba',trim:avatar.accent||'#9cb9ff',eyes:avatar.eye||'#26334c'};
+const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0};
+const mark={x:610,y:400};
+const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false}];
+wrecks.forEach((v,i)=>v.done=!!saved.wrecks?.[i]);
+let w=0,h=0,dpr=1,time=0,toastTimer=0,dialogMode='intro',moveX=0,moveY=0,joyPointer=null,wind=0,windName='тихий';
+const keys=new Set();
+const trees=[];
+for(let row=0;row<15;row++)for(let col=0;col<18;col++){let seed=(row*97+col*53)%101;if(seed>30){trees.push({x:90+col*115+(seed%31),y:80+row*115+(seed%47),size:.75+(seed%45)/100,phase:(seed%20)/4});}}
+const buildings=[{x:90,y:460,w:155,h:120},{x:1040,y:170,w:170,h:125},{x:1270,y:1060,w:200,h:135},{x:400,y:1120,w:150,h:105}];
+function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done)}))}
+function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
-function ground(){rect(0,0,w,h,'#526448');for(let y=0;y<h;y+=32)for(let x=0;x<w;x+=32){const n=((x*17+y*31)%23);rect(x+n%19,y+(n*3)%23,2,2,'#82906a66')}
- // broken asphalt road
- rect(0,h*.43,w,72,'#454944');rect(0,h*.43+4,w,2,'#77796b');for(let x=0;x<w;x+=85){rect(x,h*.43+34,34,3,'#b8aa7c88')}
- // gravel patches and ash
- for(let i=0;i<90;i++){const x=(i*137)%w,y=(i*83)%h;rect(x,y,2+(i%4),1+(i%2),i%3?'#393d35':'#aaa28a55')}
+function toast(t){let e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),1800)}
+function dayWind(){const cycle=(state.day*37)%100;wind=cycle<30?.12:cycle<65?.42:.78;windName=wind<.25?'тихий':wind<.6?'умеренный':'сильный';document.getElementById('weather').textContent='Ветер · '+windName;}
+function ground(){rect(-w/2-700,-h/2-700,w+1400,h+1400,'#657452');
+ // patches of dry grass, dirt and rubble generated in world coordinates
+ for(let gy=Math.floor((state.y-h/2-600)/90)*90;gy<state.y+h/2+700;gy+=90)for(let gx=Math.floor((state.x-w/2-700)/90)*90;gx<state.x+w/2+700;gx+=90){let n=Math.abs(Math.sin(gx*12.989+gy*78.233)*43758.5453)%1;rect(gx+n*55,gy+((n*71)%60),12+n*35,5+n*10,n>.65?'#77785a55':n>.35?'#b1a37a26':'#34463235');}
+ // main cracked asphalt route crossing the settlement
+ rect(-500,515,3100,104,'#424741');rect(-500,519,3100,3,'#96917a66');rect(-500,613,3100,3,'#242b27');for(let x=-450;x<2700;x+=120){rect(x,564,55,4,'#b6a87b88')}
+ // side road
+ rect(1090,-300,88,2400,'#484b43');for(let y=-250;y<2000;y+=115)rect(1132,y,4,48,'#c0b18a66');
+ // debris and cracks
+ for(let i=0;i<160;i++){let x=((i*173)%2500)-250,y=((i*97)%1800)-180;rect(x,y,3+i%5,2+i%3,i%4?'#303a31':'#c0ad8355')}
 }
-function pole(x,y){rect(x-3,y-55,6,65,'#51483a');rect(x-19,y-53,38,4,'#655a48');ctx.strokeStyle='#252c28';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-19,y-53);ctx.quadraticCurveTo(x,y-28,x+22,y-53);ctx.stroke();ctx.fillStyle='#d1b989';ctx.fillRect(x-3,y-57,6,5)}
-function car(x,y,scale=1,angle=0){ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(scale,scale);ctx.fillStyle='#171c1b88';ctx.fillRect(-42,16,92,12);ctx.fillStyle='#555b55';ctx.fillRect(-44,-7,88,27);ctx.fillStyle='#343b38';ctx.fillRect(-25,-21,48,18);ctx.fillStyle='#7b8076';ctx.fillRect(-22,-19,18,14);ctx.fillStyle='#272e2b';ctx.fillRect(1,-19,17,14);ctx.fillStyle='#202522';ctx.fillRect(-32,13,16,10);ctx.fillRect(22,13,16,10);ctx.fillStyle='#9c7651';ctx.fillRect(-48,-12,22,7);ctx.fillStyle='#aeb7ad';ctx.fillRect(-12,-27,26,5);ctx.strokeStyle='#242a27';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-42,-7);ctx.lineTo(-22,-20);ctx.lineTo(-8,-7);ctx.stroke();ctx.fillStyle='#c2d2c8aa';ctx.beginPath();ctx.moveTo(-22,-18);ctx.lineTo(-8,-8);ctx.lineTo(-19,-8);ctx.closePath();ctx.fill();ctx.restore()}
-function smoke(x,y){for(let i=0;i<4;i++){const yy=(time*.018+i*.24)%1;ctx.globalAlpha=(1-yy)*.22;ctx.fillStyle='#c5c5b8';ctx.beginPath();ctx.arc(x+Math.sin(time*.0007+i)*9,y-yy*42,5+yy*10,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
-function tree(x,y){rect(x-5,y-27,10,34,'#554331');ctx.fillStyle='#354c38';ctx.beginPath();ctx.arc(x,y-31,19,0,7);ctx.fill();ctx.fillStyle='#526746';ctx.beginPath();ctx.arc(x-8,y-38,11,0,7);ctx.fill()}
-function player(){const bob=Math.sin(time*.012)*2,walk=(Math.abs(state.x-state.px||0)+Math.abs(state.y-state.py||0))>.1;ctx.save();ctx.translate(w/2,h/2+bob); // same palette values as saved SkyRealm avatar
-ctx.fillStyle='#18251d66';ctx.beginPath();ctx.ellipse(0,15,12,5,0,0,7);ctx.fill();
-rect(-8,-3,16,18,colors.armor);rect(-7,13,6,12,'#344253');rect(2,13,6,12,'#344253');
-const swing=walk?Math.sin(time*.018)*4:Math.sin(time*.003)*1.5;ctx.save();ctx.translate(-8,1);ctx.rotate(swing*.04);rect(-3,0,5,14,colors.skin);ctx.restore();ctx.save();ctx.translate(8,1);ctx.rotate(-swing*.04);rect(-2,0,5,14,colors.skin);ctx.restore();
-ctx.fillStyle=colors.skin;ctx.beginPath();ctx.arc(0,-12,9,0,7);ctx.fill();rect(-9,-18,18,7,colors.hair);rect(-9,-13,4,7,colors.hair);rect(5,-13,4,7,colors.hair);rect(-5,-12,2,2,colors.eye);rect(3,-12,2,2,colors.eye);rect(-6,-2,12,3,colors.accent);ctx.restore()}
-function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();for(let i=0;i<11;i++){const x=i*125+40,y=85+(i%3)*75;tree(x,y)}pole(150,360);pole(430,360);pole(720,360);pole(990,360);car(290,260,1.2,-.08);car(760,250,.92,.04);car(850,560,1.15,.12);car(300,600,.8,-.15);car(620,650,1,.02);wrecks.forEach(v=>{if(!v.done){ctx.strokeStyle='#c8a46c';ctx.lineWidth=2;ctx.beginPath();ctx.arc(v.x,v.y,16+Math.sin(time*.004)*2,0,7);ctx.stroke()} });smoke(760,238);smoke(296,244);
- // Mark survivor with olive jacket and cap
-ctx.fillStyle='#161e19';ctx.beginPath();ctx.ellipse(mark.x,mark.y+15,13,5,0,0,7);ctx.fill();rect(mark.x-8,mark.y-1,16,19,'#69714c');rect(mark.x-7,mark.y+16,5,11,'#343b31');rect(mark.x+2,mark.y+16,5,11,'#343b31');ctx.fillStyle='#d4a77d';ctx.beginPath();ctx.arc(mark.x,mark.y-12,8,0,7);ctx.fill();rect(mark.x-9,mark.y-19,18,6,'#45463a');rect(mark.x-4,mark.y-12,2,2,'#222');rect(mark.x+3,mark.y-12,2,2,'#222');ctx.fillStyle='#e9d0a0';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('Марк',mark.x,mark.y-31);
-wrecks.forEach(v=>{if(!v.done){ctx.fillStyle='#e2c78b';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText('E · детали',v.x,v.y-23)}});ctx.restore();player();updateHud()}
-function updateHud(){document.getElementById('health').textContent='❤ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · Поселение';document.getElementById('questProgress').textContent='Детали: '+state.quest+' / 3'}
-function interact(){let wx=state.x,wy=state.y;if(Math.hypot(wx-mark.x,wy-mark.y)<62){openMark();return}let near=wrecks.find(v=>!v.done&&Math.hypot(wx-v.x,wy-v.y)<58);if(near){near.done=true;state.quest++;state.scrap++;toast('Найдены детали: '+state.quest+'/3');save();return}toast('Рядом нечего использовать.')}
-function openPanel(title,body,items=[]){document.getElementById('panelTitle').textContent=title;document.getElementById('panelText').textContent=body;const box=document.getElementById('items');box.innerHTML='';items.forEach(s=>{const e=document.createElement('span');e.className='item';e.textContent=s;box.appendChild(e)});document.getElementById('panel').classList.remove('hidden')}
-function openMark(){if(state.quest>=3){if(state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food+=1;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.65)v.done=false});save();openPanel('Марк', 'Отличная работа. Забирай припасы: две аптечки и консервы. Завтра будет новое поручение.', ['Аптечка ×2','Консервы ×1']);}else openPanel('Марк','На сегодня поручение выполнено. Отдохни, завтра будут новые задачи.',[]);return}
-openPanel('Марк',state.talked?'Нужно собрать три детали с разбитых машин. Ищи жёлтые метки возле обломков.':'Ты живой? Хорошо. Я Марк. Мы держимся здесь, но припасы заканчиваются. Собери 3 детали с машин — я обменяю их на аптечки и еду.', ['Задание: детали '+state.quest+'/3','Награда: аптечки ×2 + еда']);state.talked=true;save()}
-function inventory(){openPanel('Рюкзак','Предметы сохраняются отдельно от обычного SkyRealm.', ['Металлолом ×'+state.scrap,'Аптечки ×'+state.bandage,'Консервы ×'+state.food])}
-function move(dt){const speed=145;let dx=0,dy=0;if(keys.has('ArrowUp')||keys.has('w'))dy--;if(keys.has('ArrowDown')||keys.has('s'))dy++;if(keys.has('ArrowLeft')||keys.has('a'))dx--;if(keys.has('ArrowRight')||keys.has('d'))dx++;if(dx||dy){const l=Math.hypot(dx,dy);state.x+=dx/l*speed*dt;state.y+=dy/l*speed*dt;state.x=Math.max(35,Math.min(1100,state.x));state.y=Math.max(55,Math.min(760,state.y));}}
-let prev=performance.now();function loop(now){const dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;move(dt);draw();requestAnimationFrame(loop)}
-function daily(){const today=new Date().toDateString();if(state.lastDay!==today){state.day++;state.quest=0;state.dayReward=null;state.lastDay=today;wrecks.forEach(v=>v.done=false);save()}}
-document.getElementById('start').onclick=()=>{document.getElementById('dialogue').classList.add('hidden');canvas.focus()};
-document.getElementById('action').onclick=interact;document.getElementById('inventory').onclick=inventory;document.getElementById('panelClose').onclick=()=>document.getElementById('panel').classList.add('hidden');document.getElementById('exit').onclick=()=>{save();if(history.length>1)history.back();else location.href='hub.html'};
-window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys.add(e.key);if(e.key.toLowerCase()==='e')interact();if(e.key.toLowerCase()==='i')inventory()});window.addEventListener('keyup',e=>keys.delete(e.key));document.querySelectorAll('[data-key]').forEach(b=>{const k=b.dataset.key;b.addEventListener('pointerdown',e=>{e.preventDefault();keys.add(k)});['pointerup','pointercancel','pointerleave'].forEach(t=>b.addEventListener(t,()=>keys.delete(k)))});
-window.addEventListener('resize',resize);daily();resize();save();requestAnimationFrame(loop);
+function tree(t){let sway=Math.sin(time*.0011* (1+wind)+t.phase)*wind*.13;ctx.save();ctx.translate(t.x,t.y);ctx.scale(t.size,t.size);ctx.fillStyle='#282c25';ctx.beginPath();ctx.ellipse(0,10,13,5,0,0,7);ctx.fill();rect(-5,-37,10,48,'#574936');ctx.translate(0,-30);ctx.rotate(sway);for(let j=0;j<3;j++){ctx.fillStyle=['#344b36','#405a3b','#536b43'][j];ctx.beginPath();ctx.moveTo(0,-42+j*8);ctx.lineTo(-27+j*5,7+j*7);ctx.quadraticCurveTo(0,15+j*4,27-j*5,7+j*7);ctx.closePath();ctx.fill();ctx.strokeStyle='#75845b66';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,-32+j*8);ctx.lineTo(0,8+j*7);ctx.stroke()}ctx.restore()}
+function pole(x,y){rect(x-4,y-58,8,66,'#51483a');rect(x-24,y-57,48,5,'#655a48');ctx.strokeStyle='#252c28';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-24,y-55);ctx.quadraticCurveTo(x,y-24,x+24,y-55);ctx.stroke();ctx.fillStyle='#d1b989';ctx.fillRect(x-3,y-60,6,5)}
+function car(x,y,scale=1,angle=0){ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(scale,scale);ctx.fillStyle='#171c1b88';ctx.fillRect(-47,17,100,13);ctx.fillStyle='#535b54';ctx.fillRect(-47,-7,94,27);ctx.fillStyle='#343b38';ctx.fillRect(-27,-23,55,20);ctx.fillStyle='#7b8076';ctx.fillRect(-24,-20,19,15);ctx.fillStyle='#303833';ctx.fillRect(1,-20,20,15);ctx.fillStyle='#202522';ctx.fillRect(-34,13,18,11);ctx.fillRect(24,13,18,11);ctx.fillStyle='#98714f';ctx.fillRect(-51,-12,23,8);ctx.strokeStyle='#222a26';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-44,-7);ctx.lineTo(-23,-23);ctx.lineTo(-8,-7);ctx.stroke();ctx.fillStyle='#b5c1b5aa';ctx.fillRect(-11,-28,28,5);ctx.fillStyle='#a7a18a';ctx.fillRect(31,-8,14,4);ctx.restore()}
+function building(b){ctx.fillStyle='#1c211c88';ctx.fillRect(b.x-5,b.y+b.h-3,b.w+15,16);rect(b.x,b.y,b.w,b.h,'#625e4e');rect(b.x+7,b.y+7,b.w-14,b.h-14,'#77715b');rect(b.x+18,b.y-17,b.w-36,22,'#3c4439');rect(b.x+20,b.y+27,36,42,'#27342f');rect(b.x+b.w-57,b.y+27,36,42,'#29332e');rect(b.x+b.w/2-12,b.y+b.h-42,25,42,'#34382f');ctx.strokeStyle='#b2a17a66';ctx.strokeRect(b.x+7,b.y+7,b.w-14,b.h-14)}
+function wreck(v){car(v.x,v.y,1.05,.06);if(!v.done){ctx.strokeStyle='#e6c783';ctx.lineWidth=2;ctx.beginPath();ctx.arc(v.x,v.y,21+Math.sin(time*.004)*3,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#e6c783';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('ДЕТАЛИ',v.x,v.y-31)}}
+function smoke(x,y){for(let i=0;i<5;i++){let yy=(time*.00015+i*.21)%1;ctx.globalAlpha=(1-yy)*.2;ctx.fillStyle='#c5c5b8';ctx.beginPath();ctx.arc(x+Math.sin(time*.0006+i)*11,y-yy*52,5+yy*11,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
+function drawMark(){ctx.fillStyle='#151d18';ctx.beginPath();ctx.ellipse(mark.x,mark.y+16,14,5,0,0,7);ctx.fill();rect(mark.x-9,mark.y-1,18,20,'#6d7950');rect(mark.x-7,mark.y+17,6,12,'#363e31');rect(mark.x+2,mark.y+17,6,12,'#363e31');rect(mark.x-12,mark.y+1,5,15,'#cba17b');rect(mark.x+7,mark.y+1,5,15,'#cba17b');ctx.fillStyle='#d4a77d';ctx.beginPath();ctx.arc(mark.x,mark.y-13,9,0,7);ctx.fill();rect(mark.x-10,mark.y-21,20,7,'#45463a');rect(mark.x-4,mark.y-13,2,2,'#222');rect(mark.x+3,mark.y-13,2,2,'#222');ctx.fillStyle='#f0d7a5';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('МАРК',mark.x,mark.y-34)}
+function drawPlayer(){ctx.save();ctx.translate(0,Math.sin(time*.008)*1.2);ctx.fillStyle='#111b16aa';ctx.beginPath();ctx.ellipse(0,18,13,5,0,0,7);ctx.fill();
+ // boots and articulated legs
+ rect(-8,7,7,15,'#27323a');rect(2,7,7,15,'#27323a');rect(-9,19,9,4,'#171d20');rect(1,19,9,4,'#171d20');
+ // backpack
+ rect(8,-12,7,17,'#4b4b35');rect(9,-9,5,9,'#7b7650');
+ // torso, collar, belt and seams
+ rect(-8,-10,16,19,colors.shirt);rect(-8,-10,16,4,colors.trim);rect(-8,6,16,3,'#343a35');rect(-2,-7,4,12,'#ffffff22');rect(-6,9,12,2,'#b5a77a');
+ // arms and hands
+ rect(-13,-8,5,13,colors.shirt);rect(8,-8,5,13,colors.shirt);rect(-13,3,5,7,colors.skin);rect(8,3,5,7,colors.skin);
+ // neck, head, hair silhouette and face
+ rect(-3,-14,6,5,colors.skin);ctx.fillStyle=colors.skin;ctx.beginPath();ctx.arc(0,-22,9,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=colors.hair;ctx.beginPath();ctx.moveTo(-9,-23);ctx.lineTo(-8,-31);ctx.lineTo(-3,-34);ctx.lineTo(5,-33);ctx.lineTo(10,-27);ctx.lineTo(9,-18);ctx.lineTo(6,-20);ctx.lineTo(6,-27);ctx.lineTo(-5,-27);ctx.lineTo(-6,-19);ctx.lineTo(-9,-18);ctx.closePath();ctx.fill();
+ rect(-5,-23,2,2,colors.eyes);rect(3,-23,2,2,colors.eyes);rect(-2,-17,4,1,'#a96e61');rect(-6,-13,12,2,colors.trim);
+ ctx.restore()}
+function updateHud(){document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(state.day%3===0?'Вечер':'Утро')}
+function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();trees.forEach(t=>{if(t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);for(let x=150;x<1700;x+=330)pole(x,500);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawMark();ctx.restore();drawPlayer();updateHud();drawWind()}
+function drawWind(){if(wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
+function interact(){if(Math.hypot(state.x-mark.x,state.y-mark.y)<75){openMark();return}let near=wrecks.find(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65);if(near){near.done=true;state.quest++;state.scrap++;toast('Деталь найдена · '+state.quest+'/3');save();return}toast('Подойди ближе к объекту')}
+function showPanel(title,body,items){document.getElementById('panelTitle').textContent=title;document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot';let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent='Количество: '+item.count;slot.append(art,name,count);if(item.use){let b=document.createElement('button');b.textContent='Использовать';b.onclick=item.use;slot.append(b)}box.append(slot)});document.getElementById('panel').classList.remove('hidden')}
+function openMark(){if(state.quest>=3&&state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food++;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.6)v.done=false});save();showPanel('Марк · награда','Ты выполнил поручение. Забирай припасы — они пригодятся в дороге.',inventoryItems());return}let msg=state.dayReward===state.day?'Сегодня ты уже помог поселению. Отдохни, завтра будет новое поручение.':'Я Марк. Собери 3 детали с разбитых машин и возвращайся ко мне. За работу дам аптечки и еду. Сейчас собрано: '+state.quest+'/3.';showPanel('Марк · выживший',msg,[{icon:'⚙️',name:'Детали для задания',count:state.quest+'/3'},{icon:'🩹',name:'Награда: аптечки',count:'×2'},{icon:'🥫',name:'Награда: консервы',count:'×1'}])}
+function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);save();updateHud();inventory()}},{icon:'🪵',name:'Доски',count:saved.wood||0},{icon:'🔩',name:'Крепёж',count:saved.bolts||0},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0}]}
+function inventory(){showPanel('Рюкзак','Снаряжение и найденные припасы. Задание Марка также отображается здесь.',inventoryItems())}
+function move(dt){let dx=moveX,dy=moveY;if(keys.has('ArrowUp')||keys.has('w'))dy-=1;if(keys.has('ArrowDown')||keys.has('s'))dy+=1;if(keys.has('ArrowLeft')||keys.has('a'))dx-=1;if(keys.has('ArrowRight')||keys.has('d'))dx+=1;let len=Math.hypot(dx,dy);if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);let speed=160*(wind>=.65?.82:wind>=.3?.94:1);state.x=Math.max(35,Math.min(2350,state.x+dx*speed*dt));state.y=Math.max(45,Math.min(1700,state.y+dy*speed*dt));}}
+function setupJoystick(){const joy=document.getElementById('joy'),stick=document.getElementById('stick');function set(e){let r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.32,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}moveX=dx/max;moveY=dy/max;stick.style.transform='translate('+dx+'px,'+dy+'px)'}function end(){joyPointer=null;moveX=moveY=0;stick.style.transform='translate(0,0)'}joy.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);set(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer){e.preventDefault();set(e)}});['pointerup','pointercancel','lostpointercapture'].forEach(t=>joy.addEventListener(t,end))}
+let prev=performance.now();function loop(now){let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;move(dt);draw();requestAnimationFrame(loop)}
+function daily(){let today=new Date().toDateString();if(state.lastDay!==today){state.day++;state.quest=0;state.dayReward=0;state.lastDay=today;wrecks.forEach(v=>v.done=false);save()}dayWind()}
+document.getElementById('start').onclick=()=>document.getElementById('dialogue').classList.add('hidden');
+document.getElementById('action').onclick=interact;document.getElementById('inventory').onclick=inventory;document.getElementById('panelClose').onclick=()=>document.getElementById('panel').classList.add('hidden');
+document.getElementById('exit').onclick=()=>{save();if(history.length>1)history.back();else location.href='hub.html'};
+window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys.add(e.key);if(e.key.toLowerCase()==='e')interact();if(e.key.toLowerCase()==='i')inventory()});window.addEventListener('keyup',e=>keys.delete(e.key));window.addEventListener('blur',()=>keys.clear());
+window.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('selectstart',e=>e.preventDefault());window.addEventListener('resize',resize);
+setupJoystick();daily();resize();save();requestAnimationFrame(loop);
 })();
