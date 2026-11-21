@@ -23,7 +23,7 @@ function ground(){rect(-w/2-700,-h/2-700,w+1400,h+1400,'#657452');
  // patches of dry grass, dirt and rubble generated in world coordinates
  for(let gy=Math.floor((state.y-h/2-600)/90)*90;gy<state.y+h/2+700;gy+=90)for(let gx=Math.floor((state.x-w/2-700)/90)*90;gx<state.x+w/2+700;gx+=90){let n=Math.abs(Math.sin(gx*12.989+gy*78.233)*43758.5453)%1;rect(gx+n*55,gy+((n*71)%60),12+n*35,5+n*10,n>.65?'#77785a55':n>.35?'#b1a37a26':'#34463235');}
  // main cracked asphalt route crossing the settlement
- rect(-500,515,3100,104,'#424741');rect(-500,519,3100,3,'#96917a66');rect(-500,613,3100,3,'#242b27');for(let x=-450;x<4100;x+=120){rect(x,564,55,4,'#b6a87b88')}
+ rect(-500,515,5100,104,'#424741');rect(-500,519,5100,3,'#96917a66');rect(-500,613,5100,3,'#242b27');for(let x=-450;x<4100;x+=120){rect(x,564,55,4,'#b6a87b88')}
  // side road
  rect(1090,-300,88,2400,'#484b43');for(let y=-250;y<3000;y+=115)rect(1132,y,4,48,'#c0b18a66');
  // debris and cracks
