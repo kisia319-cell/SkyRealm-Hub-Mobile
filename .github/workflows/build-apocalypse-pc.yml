@@ -75,8 +75,8 @@ jobs:
       - name: Publish separate Windows Apocalypse release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apocalypse-pc-v1.0.3
-          name: SkyRealm Apocalypse for Windows 1.0.3 (WebView2 loader fix)
+          tag_name: apocalypse-pc-v1.0.4
+          name: SkyRealm Apocalypse for Windows 1.0.4 (co-op survival update)
           target_commitish: main
           prerelease: true
           make_latest: false
