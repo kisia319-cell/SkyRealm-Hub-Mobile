@@ -25,6 +25,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private String currentScreen = "hub";
     private long updateDownloadId = -1L;
+    private boolean waitingForInstallPermission = false;
     private static final String HUB = "file:///android_asset/hub.html";
     private static final String LAUNCHER = "file:///android_asset/skyrealm/index.html";
     private static final String GAME = "file:///android_asset/skyrealm/game/index.html";
@@ -121,13 +122,15 @@ public class MainActivity extends Activity {
         String pending = getUpdatePrefs().getString(PENDING_INSTALL, "");
         if (pending.isEmpty()) return;
         if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            if (waitingForInstallPermission) return;
+            waitingForInstallPermission = true;
             Intent permission = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                     Uri.parse("package:" + getPackageName()));
-            permission.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(permission);
             showToast("Разреши установку APK для SkyRealm Hub, затем вернись в приложение.");
             return;
         }
+        waitingForInstallPermission = false;
         getUpdatePrefs().edit().remove(PENDING_INSTALL).apply();
         try {
             Intent install = new Intent(Intent.ACTION_VIEW);
@@ -174,7 +177,14 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
-        installPendingUpdate();
+        if (waitingForInstallPermission) {
+            waitingForInstallPermission = false;
+            if (Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls()) {
+                installPendingUpdate();
+            } else {
+                showToast("Разрешение не выдано. APK уже загружен — разреши установку и нажми обновить ещё раз.");
+            }
+        }
     }
 
     @Override protected void onDestroy() {
