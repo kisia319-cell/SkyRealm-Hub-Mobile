@@ -1,6 +1,8 @@
 package com.skyrealm.hub;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -17,6 +19,7 @@ public class MainActivity extends Activity {
     private static final String HUB = "file:///android_asset/hub.html";
     private static final String LAUNCHER = "file:///android_asset/skyrealm/index.html";
     private static final String GAME = "file:///android_asset/skyrealm/game/index.html";
+    private static final String RELEASES = "https://github.com/kisia319-cell/SkyRealm-Hub-Mobile/releases/latest";
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -55,6 +58,20 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void openLauncher() { runOnUiThread(() -> { currentScreen = "launcher"; webView.loadUrl(LAUNCHER); }); }
         @JavascriptInterface public void launchGame(String preferences) { runOnUiThread(() -> { currentScreen = "game"; webView.loadUrl(GAME); }); }
         @JavascriptInterface public void goHub() { runOnUiThread(() -> { currentScreen = "hub"; webView.loadUrl(HUB); }); }
+        @JavascriptInterface public boolean isGameInstalled(String game) {
+            try {
+                String asset = "skyrealm".equals(game) ? "skyrealm/index.html" : ("apocalypse".equals(game) ? "apocalypse.html" : "");
+                if (asset.isEmpty()) return false;
+                getAssets().open(asset).close();
+                return true;
+            } catch (Exception ignored) { return false; }
+        }
+        @JavascriptInterface public void openUpdate() {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES))); }
+                catch (Exception ignored) { }
+            });
+        }
     }
 
     @Override public void onBackPressed() {
