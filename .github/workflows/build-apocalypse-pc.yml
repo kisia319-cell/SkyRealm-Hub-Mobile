@@ -49,24 +49,34 @@ jobs:
       - name: Install Windows WebView and packaging dependencies
         run: python -m pip install --upgrade pywebview pyinstaller
 
+      - name: Locate and validate 64-bit WebView2 loader
+        shell: pwsh
+        run: |
+          $loader = python -c "from pathlib import Path; import webview; p=Path(webview.__file__).parent/'lib'; matches=list(p.rglob('WebView2Loader.dll')); print(next((str(x) for x in matches if 'win-x64' in str(x).lower()), ''))"
+          if ([string]::IsNullOrWhiteSpace($loader) -or -not (Test-Path $loader)) { throw "The x64 WebView2Loader.dll was not found inside the installed pywebview package." }
+          "WEBVIEW2_LOADER=$loader" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Using WebView2 loader: $loader"
+
       - name: Build standalone Apocalypse executable
         shell: pwsh
         run: |
           $repo = (Get-Location).Path
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --noupx --name SkyRealmApocalypse --icon "$repo/SkyRealm.ico" --distpath "$repo/dist" --workpath "$repo/build-apocalypse/work" --specpath "$repo/build-apocalypse/spec" --add-data "$repo/app/src/main/assets/apocalypse.html;apocalypse" --add-data "$repo/app/src/main/assets/apocalypse.js;apocalypse" --add-data "$repo/app/src/main/assets/apocalypse-coop.js;apocalypse" --add-data "$repo/apocalypse-pc.js;apocalypse" "$repo/apocalypse_pc.py"
+          # Collect pywebview's complete package and place the x64 native loader beside
+          # the frozen app root as well as in its original package location.
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --noupx --collect-all webview --add-binary "$env:WEBVIEW2_LOADER;." --name SkyRealmApocalypse --icon "$repo/SkyRealm.ico" --distpath "$repo/dist" --workpath "$repo/build-apocalypse/work" --specpath "$repo/build-apocalypse/spec" --add-data "$repo/app/src/main/assets/apocalypse.html;apocalypse" --add-data "$repo/app/src/main/assets/apocalypse.js;apocalypse" --add-data "$repo/app/src/main/assets/apocalypse-coop.js;apocalypse" --add-data "$repo/apocalypse-pc.js;apocalypse" "$repo/apocalypse_pc.py"
           if (-not (Test-Path "dist/SkyRealmApocalypse.exe")) { throw "SkyRealmApocalypse.exe was not built" }
           $bytes = [System.IO.File]::ReadAllBytes("dist/SkyRealmApocalypse.exe")
           if ($bytes.Length -lt 1000000 -or $bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "Output is not a valid Windows executable" }
           $listing = python -m PyInstaller.utils.cliutils.archive_viewer -l -b "dist/SkyRealmApocalypse.exe" 2>&1 | Out-String
-          foreach ($asset in @("apocalypse.html", "apocalypse.js", "apocalypse-coop.js", "apocalypse-pc.js")) {
+          foreach ($asset in @("apocalypse.html", "apocalypse.js", "apocalypse-coop.js", "apocalypse-pc.js", "WebView2Loader.dll")) {
             if (-not $listing.Contains($asset)) { throw "EXE is missing bundled mobile asset: $asset" }
           }
 
       - name: Publish separate Windows Apocalypse release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apocalypse-pc-v1.0.2
-          name: SkyRealm Apocalypse for Windows 1.0.2 (mobile game port)
+          tag_name: apocalypse-pc-v1.0.3
+          name: SkyRealm Apocalypse for Windows 1.0.3 (WebView2 loader fix)
           target_commitish: main
           prerelease: true
           make_latest: false
