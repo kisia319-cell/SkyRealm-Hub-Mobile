@@ -137,7 +137,7 @@ function makeHarness(seed = {}, failWrites = false) {
 }
 
 const harness = makeHarness({
-  skyrealm_apocalypse_mobile_v1: JSON.stringify({ x: 999999, y: -500, hp: 'bad', scrap: -5, day: 0, quest: 99, wrecks: [] }),
+  skyrealm_apocalypse_mobile_v1: JSON.stringify({ x: 999999, y: -500, hp: null, scrap: -5, day: 0, quest: 99, wrecks: ['yes'], worldClock: 99 }),
   skyrealm_character_v1: 'null',
   skyrealm_hub_user: '{broken-json'
 });
@@ -148,6 +148,8 @@ assert.equal(saved.hp, 100, 'invalid saved health must be normalized');
 assert.equal(saved.scrap, 0, 'negative inventory values must be normalized');
 assert.equal(saved.day, 1, 'invalid day counter must be normalized');
 assert.equal(saved.quest, 3, 'quest progress must be bounded');
+assert.equal(saved.wrecks[0], false, 'malformed wreck flags must not mark scavenging complete');
+assert.ok(saved.worldClock >= 0 && saved.worldClock < 1, 'saved day/night phase must be normalized');
 harness.runFrame();
 harness.elements.get('menuPlay').click();
 harness.elements.get('start').click();
