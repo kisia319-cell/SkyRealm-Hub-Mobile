@@ -107,6 +107,7 @@ jobs:
           if-no-files-found: error
 
       - name: Publish installable update
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: hub-v${{ steps.app_version.outputs.version }}
