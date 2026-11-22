@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.1.0"
+APP_VERSION = "apocalypse-pc-v1.1.1"
 PORT = 48732
 
 
@@ -34,12 +34,12 @@ class ApocalypseApi:
     def toggle_fullscreen(self):
         try:
             windows = webview.windows
-            if windows:
-                windows[0].toggle_fullscreen()
-                return True
-            return False
-        except Exception:
-            return False
+            if not windows:
+                return {"ok": False, "message": "Окно Apocalypse ещё не готово."}
+            windows[0].toggle_fullscreen()
+            return {"ok": True}
+        except Exception as exc:
+            return {"ok": False, "message": str(exc)[:180]}
 
 
 class ApocalypseFileHandler(http.server.SimpleHTTPRequestHandler):
