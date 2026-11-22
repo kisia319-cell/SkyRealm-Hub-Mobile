@@ -53,7 +53,7 @@ jobs:
           node scripts/validate-apocalypse-changelog.cjs
           python -m py_compile apocalypse_pc.py
           $html = Get-Content app/src/main/assets/apocalypse.html -Raw
-          foreach ($required in @('id="mainMenu"', 'id="menuPlay"', 'id="menuSettings"', 'id="menuCoop"', 'id="world"', 'id="joy"', 'id="inventory"')) {
+          foreach ($required in @('id="mainMenu"', 'id="menuPlay"', 'id="menuSettings"', 'id="menuCoop"', 'id="world"', 'id="joy"', 'id="inventory"', 'id="craft"', 'id="attackTouch"')) {
             if (-not $html.Contains($required)) { throw "Mobile Apocalypse HTML is missing: $required" }
           }
           foreach ($asset in @('apocalypse.js', 'apocalypse-coop.js')) {
@@ -89,8 +89,8 @@ jobs:
       - name: Publish separate Windows Apocalypse release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apocalypse-pc-v1.1.3
-          name: SkyRealm Apocalypse for Windows 1.1.3 (Survival expansion)
+          tag_name: apocalypse-pc-v1.1.4
+          name: SkyRealm Apocalypse for Windows 1.1.4 (Spawn safety and co-op expansion)
           target_commitish: feature/apocalypse-survival-expansion
           prerelease: true
           make_latest: false
