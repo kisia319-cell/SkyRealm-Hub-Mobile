@@ -18,7 +18,6 @@
   if (hint) hint.textContent = 'WASD / СТРЕЛКИ — движение  ·  E — действие  ·  I — рюкзак  ·  F11 — полный экран  ·  ESC — меню';
   const save = () => { try { window.ApocalypseGame?.save?.(); } catch (_) {} };
   window.addEventListener('beforeunload', save);
-  window.setInterval(save, 5000);
   window.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || event.repeat) return;
     const menu = document.getElementById('mainMenu');
