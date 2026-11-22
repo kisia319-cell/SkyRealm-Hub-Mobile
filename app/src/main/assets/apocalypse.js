@@ -926,12 +926,12 @@ function executeAdminCommand(command,args,remote=false){
 function submitChatMessage(raw){
  const value=String(raw||'').trim();if(!value)return;
  if(value.startsWith('/')){
-  const parts=value.slice(1).split(/\\s+/),command=(parts.shift()||'').toLowerCase();
+  const parts=value.slice(1).split(/\s+/),command=(parts.shift()||'').toLowerCase();
   if(!['kill','tp','heal','healb','help'].includes(command)){appendChat('Система','Неизвестная команда. Напиши /help.',true);return;}
   if(!adminAllowed()){appendChat('Система','Команды доступны только владельцу мира.',true);return;}
   const cmd=command==='healb'?'healB':command;
   executeAdminCommand(cmd,parts);
-  if(window.ApocalypseCoop?.room?.status==='running'&&cmd!=='help'&&cmd!=='tp'&&cmd!=='kill'&&cmd!=='healB')window.ApocalypseCoop.send({kind:'admin-command',action:cmd,target_user_id:window.ApocalypseCoop.userId});
+  
   return;
  }
  appendChat(playerName,value);
