@@ -22,6 +22,8 @@ const state={
  ammo:whole(saved.ammo,0,0,999999)
 };
 const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[];
+const mapMarkers=Array.isArray(saved.mapMarkers)?saved.mapMarkers.filter(v=>v&&typeof v.name==='string'&&Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,100).map(v=>({name:v.name.slice(0,36),x:bounded(v.x,0,WORLD_MIN,WORLD_MAX),y:bounded(v.y,0,WORLD_MIN,WORLD_MAX)})):[];
+let bonusLives=whole(saved.bonusLives,0,0,3);
 const savedWorldClock=bounded(saved.worldClock,1/3,0,.999999);
 const playerName=(()=>{try{const direct=localStorage.getItem('skyrealm_username');if(typeof direct==='string'&&direct.trim())return direct.trim().slice(0,24);const user=read('skyrealm_hub_user');const name=String(user.username||'Выживший').trim();return name.slice(0,24)||'Выживший'}catch(_){return 'Выживший'}})();
 const mark={x:610,y:400};
@@ -123,7 +125,7 @@ function treeGridKey(x,y){return Math.floor(x/TREE_GRID_SIZE)+','+Math.floor(y/T
 for(const t of trees){const key=treeGridKey(t.x,t.y);if(!treeGrid.has(key))treeGrid.set(key,[]);treeGrid.get(key).push(t);}
 function nearbyTrees(x,y,range=100){const out=[],minX=Math.floor((x-range)/TREE_GRID_SIZE),maxX=Math.floor((x+range)/TREE_GRID_SIZE),minY=Math.floor((y-range)/TREE_GRID_SIZE),maxY=Math.floor((y+range)/TREE_GRID_SIZE);for(let gy=minY;gy<=maxY;gy++)for(let gx=minX;gx<=maxX;gx++){const cell=treeGrid.get(gx+','+gy);if(cell)for(const t of cell)if(Math.abs(t.x-x)<=range&&Math.abs(t.y-y)<=range)out.push(t);}return out;}
 const harvestedTrees=new Set(Array.isArray(saved.harvestedTrees)?saved.harvestedTrees:[]);trees.forEach((t,i)=>t.harvested=harvestedTrees.has(i));
-function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,worldClock,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],supplyDrop}));return true;}catch(_){return false;}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,worldClock,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],supplyDrop,mapMarkers,bonusLives}));return true;}catch(_){return false;}}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
 
@@ -395,7 +397,7 @@ function spawnZombie(x,y,kind='night'){if(zombies.length>=18)return;const stats=
 function updateZombies(dt,now){
  if(!gameActive)return;
  const coop=window.ApocalypseCoop;
- if(!coop?.room||coop.isOwner()){const previousClock=worldClock;worldClock=(worldClock+dt/480)%1;if(worldClock<previousClock)advanceGameDay();}
+ if(!coop?.room||coop.isOwner()){const clockDt=Math.max(0,Math.min(.05,Number(dt)||0));const previousClock=worldClock;worldClock=(worldClock+clockDt/480)%1;if(worldClock<previousClock)advanceGameDay();}
  applyInfectionDamage(now);
  const night=worldClock>.62||worldClock<.08;
  const canSpawn=!coop?.room||coop.isOwner();
@@ -828,8 +830,10 @@ function drawPlayerMap(){
  for(const item of [{x:camp.bench.x,y:camp.bench.y,label:'Лавка'},{x:camp.trader.x,y:camp.trader.y,label:'Торговец'}]){const x=px(item.x),y=py(item.y);if(x<0||x>mw||y<0||y>mh)continue;m.fillStyle='#e5bd70';m.beginPath();m.arc(x,y,8,0,Math.PI*2);m.fill();m.fillStyle='#f1dfb6';m.font='12px system-ui';m.textAlign='center';m.fillText(item.label,x,y-13);}
  const others=window.ApocalypseCoop?.getPlayers?.()||[];
  for(const p of others){if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;const x=px(p.x),y=py(p.y);if(x<0||x>mw||y<0||y>mh)continue;m.fillStyle='#f4f5f2';m.strokeStyle='#17211b';m.lineWidth=3;m.beginPath();m.arc(x,y,8,0,Math.PI*2);m.fill();m.stroke();m.fillStyle='#ffffff';m.font='12px system-ui';m.fillText(String(p.name||'Игрок').slice(0,14),x,y-13);}
+ for(const marker of mapMarkers){const x=px(marker.x),y=py(marker.y);if(x<-20||x>mw+20||y<-20||y>mh+20)continue;m.fillStyle='#f0c96f';m.strokeStyle='#332819';m.lineWidth=2;m.beginPath();m.arc(x,y,7,0,Math.PI*2);m.fill();m.stroke();m.fillStyle='#f7e8c3';m.font='bold 11px system-ui';m.textAlign='center';m.fillText(marker.name.slice(0,20),x,y-12);}
  m.fillStyle='#39a7ff';m.strokeStyle='#d9f0ff';m.lineWidth=4;m.beginPath();m.arc(mw/2,mh/2,11,0,Math.PI*2);m.fill();m.stroke();m.fillStyle='#d9f0ff';m.font='bold 13px system-ui';m.fillText('ТЫ',mw/2,mh/2+30);
 }
+document.getElementById('playerMap').addEventListener('click',e=>{const canvas=e.currentTarget,rect=canvas.getBoundingClientRect(),mw=canvas.width,mh=canvas.height,range=2600,scale=Math.min(mw,mh)/(range*2),x=state.x+(e.clientX-rect.left-rect.width/2)*(mw/rect.width)/scale,y=state.y+(e.clientY-rect.top-rect.height/2)*(mh/rect.height)/scale;const existing=mapMarkers.findIndex(v=>Math.hypot(v.x-x,v.y-y)<Math.max(70,1/scale*18));if(existing>=0){if(confirm('Удалить метку «'+mapMarkers[existing].name+'»?')){mapMarkers.splice(existing,1);save();drawPlayerMap();}return;}const name=prompt('Название метки:','Метка '+(mapMarkers.length+1));if(name&&name.trim()){if(mapMarkers.length>=100){toast('Достигнут лимит 100 меток');return;}mapMarkers.push({name:name.trim().slice(0,36),x:Math.max(WORLD_MIN,Math.min(WORLD_MAX,x)),y:Math.max(WORLD_MIN,Math.min(WORLD_MAX,y))});save();drawPlayerMap();}});
 function openPlayerMap(){mapResumeGame=gameActive;gameActive=false;keys.clear();sprintHeld=false;moveX=moveY=0;joyPointer=null;const stick=document.getElementById('stick');if(stick)stick.style.transform='translate(0,0)';document.getElementById('playerMapOverlay').classList.remove('hidden');drawPlayerMap();}
 function closePlayerMap(){document.getElementById('playerMapOverlay').classList.add('hidden');const resume=mapResumeGame;mapResumeGame=false;if(resume){gameActive=true;focusGame();}}
 function openSettings(resumeGame=gameActive){settingsResumeGame=!!resumeGame;gameActive=false;applySettings();document.getElementById('settingsOverlay').classList.remove('hidden');}
