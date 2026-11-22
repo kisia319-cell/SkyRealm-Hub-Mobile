@@ -265,7 +265,7 @@ function drawBuildingInterior(b){
  }else if(b.role==='loot'){
   const floor=buildingFloors[b.id]||1,entry=buildingLoot[b.id]?.[floor-1],lootX=cx-b.w*.22,lootY=roomY+78,stairX=cx+b.w*.29,stairY=roomY+78;
   ctx.fillStyle=b.kind==='water'?'#354d4d':b.kind==='school'?'#554a3b':b.kind==='bank'?'#4c504d':b.kind==='garage'?'#414b43':b.kind==='lab'?'#495552':'#514633';ctx.fillRect(b.x+30,roomY+18,b.w-60,112);
-  for(let row=0;row<2;row++){ctx.fillStyle=row?'#77745f':'#393f38';ctx.fillRect(b.x+45,roomY+30+row*48,b.w-90,12);for(let x=b.x+54;x<b.x+b.w-55;x+=38){ctx.fillStyle=['#8a8062','#586b5d','#a18d68'][Math.floor((x+b.x+row)%3)];ctx.fillRect(x,roomY+22+row*48,22,8);}}
+  for(let row=0;row<2;row++){ctx.fillStyle=row?'#77745f':'#393f38';ctx.fillRect(b.x+45,roomY+30+row*48,b.w-90,12);for(let x=b.x+54;x<b.x+b.w-55;x+=38){ctx.fillStyle=['#8a8062','#586b5d','#a18d68'][Math.abs(Math.floor((x+b.x+row)%3))];ctx.fillRect(x,roomY+22+row*48,22,8);}}
   ctx.fillStyle='#252b26';ctx.fillRect(lootX-24,lootY-17,48,35);ctx.fillStyle='#9a8056';ctx.fillRect(lootX-21,lootY-14,42,28);ctx.fillStyle='#d1b47b';ctx.fillRect(lootX-24,lootY-5,48,7);ctx.strokeStyle='#302d24';ctx.lineWidth=2;ctx.strokeRect(lootX-24,lootY-17,48,35);
   ctx.fillStyle=entry&&!entry.picked?'#f0d49a':'#9b9b87';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(entry&&!entry.picked?'E · ОБЫСКАТЬ':'ЯЩИК ПУСТ',lootX,lootY-26);
   ctx.fillStyle='#4c493d';ctx.fillRect(stairX-18,stairY-28,36,56);for(let i=0;i<5;i++){ctx.fillStyle=i%2?'#a08a60':'#6f654c';ctx.fillRect(stairX-17+i*7,stairY-25+i*10,34-i*4,5);}ctx.fillStyle='#e4d19b';ctx.font='bold 10px system-ui';ctx.fillText('ЛЕСТНИЦА · '+floor+'/'+b.floors,stairX,stairY+42);
