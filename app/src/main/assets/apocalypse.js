@@ -20,7 +20,7 @@ function buildForest(){
  let seed=0x51a7e;
  const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
  const minGap=256,minGap2=minGap*minGap,limit=260;
- const blockedZones=buildings.map(b=>({x:b.x+b.w/2,y:b.y+b.h/2,r:Math.max(b.w,b.h)*.72+70}))
+ const blockedZones=buildings.map(b=>({x:b.x+b.w/2,y:b.y-b.floors*17+b.h/2,r:Math.max(b.w,b.h+b.floors*34)*.72+70}))
    .concat([{x:mark.x,y:mark.y,r:135},{x:440,y:390,r:175}],wrecks.map(v=>({x:v.x,y:v.y,r:100})));
  for(let attempt=0;attempt<18000&&trees.length<260;attempt++){
   const x=65+rand()*9870,y=65+rand()*9870;
