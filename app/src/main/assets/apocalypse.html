@@ -103,9 +103,75 @@ body.menu-open .hud,body.menu-open .joy,body.menu-open .bottom,body.menu-open .a
 .journal-section-title:first-child{padding-top:5px}
 @media(max-width:600px){.control-hint{font-size:9px;max-width:calc(100vw - 170px);white-space:normal}}
 .build-controls{position:absolute;z-index:12;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(540px,calc(100vw - 24px));padding:9px 11px;border:1px solid #d8c58b99;border-radius:14px;background:#101a14eF;box-shadow:0 8px 28px #000b;display:grid;gap:7px;pointer-events:auto}.build-status{text-align:center;font-size:11px;font-weight:950;letter-spacing:1px;color:#a7f0bd}.build-actions{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}.build-actions .btn{flex:1;min-width:105px;padding:10px 9px;font-size:11px}.build-actions .build-confirm{background:linear-gradient(120deg,#e3d09c,#9eae82);color:#172016;border-color:#f0dda9}.build-status:empty{display:none}@media(max-width:560px){.build-controls{top:86px;bottom:auto;width:calc(100vw - 18px);padding:7px}.build-actions{gap:5px}.build-actions .btn{min-width:0;padding:12px 7px;font-size:10px}.attack-touch{bottom:185px}}
+
+/* Focused touch-first HUD: only contextual actions stay visible while playing. */
+#action.context-hidden{display:none!important}
+.mobile-label{display:none}
+.mobile-quick-menu{position:absolute;inset:0;z-index:28;display:flex;align-items:flex-end;justify-content:center;padding:0;touch-action:manipulation}
+.mobile-more-backdrop{position:absolute;inset:0;background:#050a08b8;backdrop-filter:blur(4px)}
+.mobile-more-sheet{position:relative;width:100%;max-width:560px;padding:9px 16px calc(16px + env(safe-area-inset-bottom));border:1px solid #bca97966;border-bottom:0;border-radius:22px 22px 0 0;background:linear-gradient(155deg,#263629,#111b15 75%);box-shadow:0 -14px 45px #0009;animation:moreSheetIn .2s ease both}
+.mobile-more-grip{width:38px;height:4px;border-radius:9px;background:#c9c6a477;margin:0 auto 12px}
+.mobile-more-heading{display:flex;align-items:center;justify-content:space-between;color:#ead7ad;font-size:15px;padding:0 2px 12px}
+.mobile-more-heading button{width:40px;height:40px;border-radius:12px;border:1px solid #77856e;background:#1a281e;color:#f0ead8;font-size:17px}
+.mobile-more-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.mobile-more-grid button{min-height:58px;border:1px solid #7b896f88;border-radius:13px;background:linear-gradient(145deg,#2b3b2d,#17231b);color:#eee8d5;font-weight:800;font-size:13px;display:flex;align-items:center;gap:12px;padding:10px 14px;text-align:left;touch-action:manipulation}
+.mobile-more-grid button span{font-size:21px;color:#e5cd94;width:27px;text-align:center}
+.mobile-quick-open .joy,.mobile-quick-open .bottom,.mobile-quick-open .attack-touch{visibility:hidden;pointer-events:none}
+@keyframes moreSheetIn{from{opacity:.5;transform:translateY(24px)}to{opacity:1;transform:none}}
+@media(max-width:700px),(pointer:coarse){
+ .hud{top:max(7px,env(safe-area-inset-top));left:8px}
+ .status{min-width:0;width:max-content;max-width:calc(100vw - 145px);padding:7px 10px;border-radius:11px}
+ .statusline{font-size:9px;letter-spacing:.65px;gap:5px}
+ .dot{width:6px;height:6px}
+ .stats{gap:0;margin-top:4px;font-size:11px}
+ #weather{display:none}
+ .day{font-size:10px;margin-top:3px}
+ .bottom{right:9px;left:auto;bottom:max(9px,env(safe-area-inset-bottom));display:flex;align-items:flex-end;gap:7px;max-width:calc(100vw - 145px);flex-wrap:nowrap}
+ .bottom .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:53px;height:53px;min-width:53px;padding:4px;border-radius:16px;font-size:9px;line-height:1.1;white-space:nowrap}
+ .bottom .btn .ico{font-size:18px;margin:0;line-height:1.1}
+ #pauseMenu .desktop-label{display:none}
+ #pauseMenu .mobile-label{display:block}
+ #craft,#exit{display:none!important}
+ #action:not(.context-hidden){width:auto;min-width:90px;max-width:112px;padding:5px 9px;border-radius:15px;font-size:10px;flex-direction:row;gap:4px}
+ #action .ico{font-size:16px}
+ #inventory{font-size:9px}
+ .attack-touch{right:13px;bottom:max(91px,calc(env(safe-area-inset-bottom) + 91px));width:58px;height:58px;font-size:10px}
+ .control-hint{display:none}
+ .storage{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;max-height:100dvh;height:100dvh;border-radius:0}
+ .storage-top{grid-column:1;grid-row:1;padding:12px 45px 9px;text-align:left;font-size:13px;letter-spacing:1px}
+ .storage-top small{font-size:8px;letter-spacing:1px}
+ .storage-main{grid-column:1;grid-row:2;padding:9px 10px;min-height:0}
+ .storage-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .slot{border-radius:9px;min-height:92px}
+ .slot .art{font-size:29px}
+ .slot b{font-size:10px;padding:0 3px}
+ .slot small{font-size:10px}
+ .storage-side{grid-column:1;grid-row:3;border-left:0;border-top:1px solid #41495b;padding:7px 10px;display:flex;flex-direction:row;align-items:center;gap:8px}
+ .side-title,.portrait{display:none}
+ .stats-card{flex:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px 8px;padding:6px 9px;font-size:9px;line-height:1.55}
+ .weight{margin:0;min-width:82px;padding:8px 6px;font-size:12px}
+ .hotbar{grid-column:1;grid-row:4;grid-template-columns:repeat(6,minmax(0,1fr));padding:7px 10px calc(7px + env(safe-area-inset-bottom));gap:6px}
+ .hot{height:43px;border-radius:8px}
+ .apoc-modal{align-items:flex-end;padding:8px 8px 0}
+ .apoc-dialog{width:100%;max-height:88dvh;border-radius:20px 20px 0 0;padding:19px 14px calc(16px + env(safe-area-inset-bottom))}
+ .apoc-dialog h2{font-size:19px;padding-right:34px}
+ .apoc-dialog p{font-size:12px;line-height:1.5}
+ .apoc-row{gap:8px;padding:10px 0;font-size:12px}
+ .apoc-row small{font-size:9px}
+ .apoc-select,.apoc-input{min-height:46px;font-size:14px}
+ .apoc-actions{gap:7px}
+ .apoc-actions .btn,.apoc-primary,.apoc-secondary{min-height:46px}
+ .apoc-close{min-width:40px;min-height:40px}
+ .build-controls{top:auto;bottom:max(9px,env(safe-area-inset-bottom));width:min(430px,calc(100vw - 18px));padding:8px;border-radius:14px}
+ .build-status{font-size:10px}
+ .build-actions .btn{min-height:43px;font-size:10px}
+ .mobile-more-sheet{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+}
+@media(max-width:380px){.bottom{gap:5px;right:6px}.bottom .btn{width:48px;height:50px;min-width:48px}#action:not(.context-hidden){min-width:82px;max-width:96px;font-size:9px}.attack-touch{width:54px;height:54px}}
+@media(prefers-reduced-motion:reduce){.mobile-more-sheet{animation:none!important}}
 </style></head><body class="menu-open">
 <canvas id="world" tabindex="0" aria-label="Игровой мир"></canvas><div class="hud"><div class="status"><div class="statusline"><span class="dot"></span><span>ПОСЕЛЕНИЕ · СЕКТОР 01</span></div><div class="stats"><span id="health">♥ 100 / 100</span><span id="weather">Ветер · тихий</span></div><div class="day" id="day">День 1 · Утро</div></div></div>
-<div class="control-hint">WASD / СТРЕЛКИ · E — ДЕЙСТВИЕ · F / ПРОБЕЛ — УДАР</div><div class="joy" id="joy"><div class="stick" id="stick"></div></div><div class="bottom"><button class="btn" id="pauseMenu"><span class="ico">☰</span>Меню</button><button class="btn" id="action"><span class="ico">⚒</span>Действие</button><button class="btn" id="inventory"><span class="ico">▣</span>Рюкзак</button><button class="btn" id="craft"><span class="ico">⚒</span>Мастерская</button><button class="btn" id="exit">↩</button></div><button class="btn attack-touch" id="attackTouch" aria-label="Удар">УДАР</button><div id="buildControls" class="build-controls hidden"><div id="buildStatus" class="build-status">МЕСТО СВОБОДНО</div><div class="build-actions"><button class="btn" id="rotateBuild" type="button">↻ ПОВОРОТ · R</button><button class="btn build-confirm" id="placeBuild" type="button">ПОСТАВИТЬ · ENTER</button><button class="btn" id="cancelBuild" type="button">ОТМЕНА</button></div></div><div class="toast" id="toast"></div>
+<div class="control-hint">WASD / СТРЕЛКИ · E — ДЕЙСТВИЕ · F / ПРОБЕЛ — УДАР</div><div class="joy" id="joy"><div class="stick" id="stick"></div></div><div class="bottom"><button class="btn" id="pauseMenu"><span class="ico">☰</span><span class="desktop-label">Меню</span><span class="mobile-label">Ещё</span></button><button class="btn" id="action"><span class="ico">⚒</span>Действие</button><button class="btn" id="inventory"><span class="ico">▣</span>Рюкзак</button><button class="btn" id="craft"><span class="ico">⚒</span>Мастерская</button><button class="btn" id="exit">↩</button></div><button class="btn attack-touch" id="attackTouch" aria-label="Удар">УДАР</button><div id="buildControls" class="build-controls hidden"><div id="buildStatus" class="build-status">МЕСТО СВОБОДНО</div><div class="build-actions"><button class="btn" id="rotateBuild" type="button">↻ ПОВОРОТ · R</button><button class="btn build-confirm" id="placeBuild" type="button">ПОСТАВИТЬ · ENTER</button><button class="btn" id="cancelBuild" type="button">ОТМЕНА</button></div></div><section id="mobileQuickMenu" class="mobile-quick-menu hidden" aria-label="Дополнительные действия"><div class="mobile-more-backdrop" id="mobileMoreBackdrop"></div><div class="mobile-more-sheet"><div class="mobile-more-grip"></div><div class="mobile-more-heading"><strong>Быстрые действия</strong><button id="mobileMoreClose" aria-label="Закрыть">✕</button></div><div class="mobile-more-grid"><button id="mobileMoreInventory"><span>▣</span>Рюкзак</button><button id="mobileMoreWorkshop"><span>⚒</span>Мастерская</button><button id="mobileMoreSettings"><span>⚙</span>Настройки</button><button id="mobileMoreMenu"><span>☰</span>Главное меню</button></div></div></section><div class="toast" id="toast"></div>
 <div class="overlay hidden" id="dialogue"><div class="dialog"><h2>Поселение выживших</h2><p>Мир изменился. Исследуй окрестности, собирай полезные вещи и помогай тем, кто ещё остался в живых. Найди Марка — у него есть первое поручение.</p><button class="btn" id="start">Начать выживание</button></div></div>
 <div class="overlay hidden death-overlay" id="deathOverlay"><div class="dialog death-dialog"><div class="death-mark">✕</div><div class="death-kicker">СВЯЗЬ С ВЫЖИВШИМ ПОТЕРЯНА</div><h2>ТЫ ПОГИБ</h2><p id="deathDay">Ты продержался до 1 дня</p><div class="death-divider"></div><button class="menu-action primary" id="deathRespawn">↻　ВОЗРОДИТЬСЯ</button><button class="menu-action" id="deathMenu">☰　В ГЛАВНОЕ МЕНЮ</button></div></div>
 <div class="overlay hidden storage-overlay" id="panel"><div class="storage"><button class="close storage-close" id="panelClose">✕</button><div class="storage-top">РЮКЗАК / ХРАНИЛИЩЕ<small>ЛИЧНЫЕ ВЕЩИ · СНАРЯЖЕНИЕ</small></div><div class="storage-main"><div id="panelText" style="font-size:11px;color:#9ba8bc;margin:0 0 9px"></div><div id="items" class="storage-grid"></div></div><aside class="storage-side"><div class="side-title">ВЫЖИВШИЙ</div><div class="portrait"><div class="portrait-art">🧑🏻‍🚀</div></div><div class="stats-card"><div>ЗДОРОВЬЕ <strong id="invHealth">100</strong></div><div>ЗАЩИТА <strong>+0</strong></div><div>СКОРОСТЬ <strong id="invSpeed">100%</strong></div><div>ДЕНЬ <strong id="invDay">1</strong></div></div><div class="weight" id="weight">0 / 40 кг</div></aside><div class="hotbar" id="hotbar"><div class="hot">🗡️</div><div class="hot">🪓</div><div class="hot">🔦</div><div class="hot">🩹</div><div class="hot">🥫</div><div class="hot">⚙️</div></div></div></div>
