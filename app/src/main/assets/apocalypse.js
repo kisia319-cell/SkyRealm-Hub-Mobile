@@ -1,18 +1,35 @@
 (()=>{'use strict';
 const WORLD_MIN=-12000,WORLD_MAX=24000;
 const canvas=document.getElementById('world'),ctx=canvas.getContext('2d'),STORE='skyrealm_apocalypse_mobile_v1';
-const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(_){return {}}};
+const read=k=>{try{const value=JSON.parse(localStorage.getItem(k)||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{}}catch(_){return {}}};
+const bounded=(value,fallback,min,max)=>{if(value===null||value===undefined||value==='')return fallback;const n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback};
+const whole=(value,fallback,min,max)=>Math.round(bounded(value,fallback,min,max));
 const saved=read(STORE),avatar=read('skyrealm_character_v1');
 const colors={skin:avatar.skin||'#e8b88c',hair:avatar.hair||'#352d3d',shirt:avatar.armor||'#526fba',trim:avatar.accent||'#9cb9ff',eyes:avatar.eye||'#26334c'};
-const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,wood:saved.wood||0,bolts:saved.bolts||0,weaponLevel:saved.weaponLevel||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0,radioFinds:saved.radioFinds||0,survivorTrust:saved.survivorTrust||0,armorLevel:saved.armorLevel||0,firearm:saved.firearm||'',ammo:Math.max(0,Number(saved.ammo)||0)};
-if(!Number.isFinite(state.x)||!Number.isFinite(state.y)){state.x=440;state.y=390;}else{state.x=Math.max(WORLD_MIN+25,Math.min(WORLD_MAX-25,state.x));state.y=Math.max(WORLD_MIN+25,Math.min(WORLD_MAX-25,state.y));}
+const state={
+ x:bounded(saved.x,440,WORLD_MIN+37,WORLD_MAX-37),
+ y:bounded(saved.y,390,WORLD_MIN+37,WORLD_MAX-37),
+ hp:bounded(saved.hp,100,0,100),
+ scrap:whole(saved.scrap,0,0,999999),bandage:whole(saved.bandage,0,0,999999),
+ food:whole(saved.food,0,0,999999),wood:whole(saved.wood,0,0,999999),
+ bolts:whole(saved.bolts,0,0,999999),weaponLevel:whole(saved.weaponLevel,0,0,5),
+ day:whole(saved.day,1,1,999999),quest:whole(saved.quest,0,0,3),
+ lastDay:typeof saved.lastDay==='string'&&saved.lastDay.length<40?saved.lastDay:new Date().toDateString(),
+ dayReward:whole(saved.dayReward,0,0,999999),radioFinds:whole(saved.radioFinds,0,0,999999),
+ survivorTrust:whole(saved.survivorTrust,0,0,999999),armorLevel:whole(saved.armorLevel,0,0,5),
+ firearm:['','pistol','shotgun','rifle'].includes(saved.firearm)?saved.firearm:'',
+ ammo:whole(saved.ammo,0,0,999999)
+};
+const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[];
+const savedWorldClock=bounded(saved.worldClock,1/3,0,.999999);
+const playerName=(()=>{try{const direct=localStorage.getItem('skyrealm_username');if(typeof direct==='string'&&direct.trim())return direct.trim().slice(0,24);const user=read('skyrealm_hub_user');const name=String(user.username||'Выживший').trim();return name.slice(0,24)||'Выживший'}catch(_){return 'Выживший'}})();
 const mark={x:610,y:400};
 const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false},{x:1850,y:350,done:false},{x:2200,y:780,done:false},{x:2750,y:520,done:false},{x:3100,y:1250,done:false},{x:1900,y:1950,done:false},{x:-9300,y:-9300,done:false},{x:-6100,y:-4200,done:false},{x:-2200,y:-10100,done:false},{x:4100,y:-8500,done:false},{x:9100,y:-9000,done:false},{x:15100,y:-9200,done:false},{x:20700,y:-5200,done:false},{x:22400,y:1800,done:false},{x:19400,y:7600,done:false},{x:22600,y:14600,done:false},{x:17200,y:21200,done:false},{x:11200,y:22600,done:false},{x:4200,y:21900,done:false},{x:-3200,y:21500,done:false},{x:-9600,y:17700,done:false},{x:-10500,y:10500,done:false},{x:-8200,y:2500,done:false},{x:13500,y:12800,done:false},{x:7200,y:15300,done:false},{x:1800,y:11200,done:false}];
-wrecks.forEach((v,i)=>v.done=!!saved.wrecks?.[i]);
+wrecks.forEach((v,i)=>v.done=savedWrecks[i]===true);
 // Keep a saved player spawn clear of parked/wrecked vehicles.
 for(const v of wrecks){if(Math.hypot(state.x-v.x,state.y-v.y)<62){state.x=v.x+92;state.y=v.y+72;break;}}
 let w=0,h=0,dpr=1,time=0,toastTimer=0,dialogMode='intro',moveX=0,moveY=0,joyPointer=null,wind=0,windName='тихий';
-const zombies=[];const barricades=Array.isArray(saved.barricades)?saved.barricades.filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,24):[];const infectionZones=[{x:3250,y:3280,r:185},{x:6500,y:6450,r:220},{x:10100,y:8500,r:175},{x:8350,y:2100,r:155}];let lastZombieSpawn=0,worldClock=(saved.worldClock===undefined?1/3:((Number(saved.worldClock)||0)%1+1)%1),zombieId=0,lastAttackAt=0,lastInfectionDamageAt=0,lastHudUpdate=0;const ZOMBIE_INTERVAL=38000;
+const zombies=[];const barricades=Array.isArray(saved.barricades)?saved.barricades.filter(v=>v&&typeof v==='object'&&Number.isFinite(v.x)&&Number.isFinite(v.y)&&v.x>=WORLD_MIN+40&&v.x<=WORLD_MAX-40&&v.y>=WORLD_MIN+40&&v.y<=WORLD_MAX-40).slice(0,24).map(v=>({x:v.x,y:v.y,angle:bounded(v.angle,0,-Math.PI*2,Math.PI*2)})):[];const infectionZones=[{x:3250,y:3280,r:185},{x:6500,y:6450,r:220},{x:10100,y:8500,r:175},{x:8350,y:2100,r:155}];let lastZombieSpawn=0,worldClock=savedWorldClock,zombieId=0,lastAttackAt=0,lastInfectionDamageAt=0,lastHudUpdate=0;const ZOMBIE_INTERVAL=38000;
 const keys=new Set();
 let buildMode=false,buildAngle=0;
 function buildCandidate(){return{x:Math.max(WORLD_MIN+40,Math.min(WORLD_MAX-40,state.x+Math.cos(buildAngle)*76)),y:Math.max(WORLD_MIN+40,Math.min(WORLD_MAX-40,state.y+Math.sin(buildAngle)*76)),angle:buildAngle};}
@@ -22,7 +39,7 @@ function rotateBuild(){if(!buildMode)return;buildAngle=(buildAngle+Math.PI/4)%(M
 function placeBarricade(){if(!buildMode)return;const p=buildCandidate();if(!canPlaceBarricade(p)){toast('Здесь нельзя строить: место занято');return;}if(state.scrap<2||state.wood<3){toast('Не хватает ресурсов: нужно 2 металла и 3 дерева');setBuildMode(false);return;}if(barricades.length>=24){toast('Лимит укреплений достигнут');setBuildMode(false);return;}state.scrap-=2;state.wood-=3;const placed={x:p.x,y:p.y,angle:p.angle};barricades.push(placed);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'barricade-built',barricade:placed});save();setBuildMode(false);toast('Баррикада установлена');}
 let gameActive=false,lastNet=0,deathHandled=false,respawnUntil=0;
 let radioSignal=null,radioSignalNextAt=performance.now()+30000;
-const prefs=(()=>{try{return {...{effects:'high',joy:100,motion:true,hints:true},...JSON.parse(localStorage.getItem('skyrealm_apocalypse_settings_v1')||'{}')}}catch(_){return {effects:'high',joy:100,motion:true,hints:true}}})();
+const prefs=(()=>{const raw=read('skyrealm_apocalypse_settings_v1');return{effects:['low','medium','high'].includes(raw.effects)?raw.effects:'high',joy:bounded(raw.joy,100,60,140),motion:raw.motion!==false,hints:raw.hints!==false}})();
 // Deterministic, irregular forest placement. One tree per roughly 8 game blocks (256 world units).
 const trees=[];
 const worldProps=[
@@ -104,7 +121,7 @@ function treeGridKey(x,y){return Math.floor(x/TREE_GRID_SIZE)+','+Math.floor(y/T
 for(const t of trees){const key=treeGridKey(t.x,t.y);if(!treeGrid.has(key))treeGrid.set(key,[]);treeGrid.get(key).push(t);}
 function nearbyTrees(x,y,range=100){const out=[],minX=Math.floor((x-range)/TREE_GRID_SIZE),maxX=Math.floor((x+range)/TREE_GRID_SIZE),minY=Math.floor((y-range)/TREE_GRID_SIZE),maxY=Math.floor((y+range)/TREE_GRID_SIZE);for(let gy=minY;gy<=maxY;gy++)for(let gx=minX;gx<=maxX;gx++){const cell=treeGrid.get(gx+','+gy);if(cell)for(const t of cell)if(Math.abs(t.x-x)<=range&&Math.abs(t.y-y)<=range)out.push(t);}return out;}
 const harvestedTrees=new Set(Array.isArray(saved.harvestedTrees)?saved.harvestedTrees:[]);trees.forEach((t,i)=>t.harvested=harvestedTrees.has(i));
-function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,worldClock,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],supplyDrop}))}catch(_){}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,worldClock,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],supplyDrop}));return true;}catch(_){return false;}}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
 
@@ -328,43 +345,41 @@ function completeRadioSignal(){
  save();updateHud();
 }
 function drawMark(){ctx.fillStyle='#151d18';ctx.beginPath();ctx.ellipse(mark.x,mark.y+16,14,5,0,0,7);ctx.fill();rect(mark.x-9,mark.y-1,18,20,'#6d7950');rect(mark.x-7,mark.y+17,6,12,'#363e31');rect(mark.x+2,mark.y+17,6,12,'#363e31');rect(mark.x-12,mark.y+1,5,15,'#cba17b');rect(mark.x+7,mark.y+1,5,15,'#cba17b');ctx.fillStyle='#d4a77d';ctx.beginPath();ctx.arc(mark.x,mark.y-13,9,0,7);ctx.fill();rect(mark.x-10,mark.y-21,20,7,'#45463a');rect(mark.x-4,mark.y-13,2,2,'#222');rect(mark.x+3,mark.y-13,2,2,'#222');ctx.fillStyle='#f0d7a5';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('МАРК',mark.x,mark.y-34)}
-function drawSurvivor(x,y,palette,phase=0,moving=false,remote=false,name=''){
+let playerAction={type:'',until:0,started:0};
+function triggerPlayerAction(type,duration=420){const now=performance.now();playerAction={type,started:now,until:now+duration};}
+function drawSurvivor(x,y,palette,phase=0,moving=false,remote=false,name='',action=null){
  const skin=palette?.skin||'#e8b88c',hair=palette?.hair||'#352d3d',shirt=palette?.shirt||'#526fba',trim=palette?.trim||'#9cb9ff',eyes=palette?.eyes||'#26334c';
- const swing=moving?Math.sin(time*.012+phase)*3.2:0;
- ctx.save();ctx.translate(x,y);ctx.scale(1.1,1.1);ctx.lineJoin='round';ctx.lineCap='round';
- // ground shadow and feet
- ctx.fillStyle='#101810aa';ctx.beginPath();ctx.ellipse(0,19,14,5,0,0,Math.PI*2);ctx.fill();
- // legs, knees and boots
- ctx.strokeStyle='#303a3b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-4,5);ctx.lineTo(-5+swing,16);ctx.moveTo(4,5);ctx.lineTo(5-swing,16);ctx.stroke();
- ctx.fillStyle='#20292b';ctx.fillRect(-10+swing,15,9,5);ctx.fillRect(1-swing,15,9,5);
- // backpack and straps
+ const now=performance.now(),walk=moving?Math.sin(time*.014+phase):0;
+ const progress=action?Math.max(0,Math.min(1,(now-action.started)/(action.until-action.started))):1;
+ const pulse=action?Math.sin(progress*Math.PI):0;
+ const attack=action?.type==='attack'?pulse:0,interact=action?.type==='interact'?pulse:0,heal=action?.type==='heal'?pulse:0,hurt=action?.type==='hurt'?pulse:0;
+ const bob=moving?Math.abs(walk)*1.15:0,lean=attack*.16-interact*.08-hurt*.12;
+ ctx.save();ctx.translate(x,y+bob);ctx.rotate(lean);ctx.scale(1.1,1.1);ctx.lineJoin='round';ctx.lineCap='round';
+ ctx.fillStyle='#101810aa';ctx.beginPath();ctx.ellipse(0,19,14+attack*2,5,0,0,Math.PI*2);ctx.fill();
+ const ls=moving?walk*4:0,rs=moving?-walk*4:0;
+ ctx.strokeStyle='#303a3b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-4,5);ctx.lineTo(-5+ls,16);ctx.moveTo(4,5);ctx.lineTo(5+rs,16);ctx.stroke();
+ ctx.fillStyle='#20292b';ctx.fillRect(-10+ls,15,9,5);ctx.fillRect(1+rs,15,9,5);
  ctx.fillStyle='#4b4b35';ctx.fillRect(7,-12,8,18);ctx.fillStyle='#81794e';ctx.fillRect(9,-9,5,10);ctx.fillStyle='#262d25';ctx.fillRect(7,-13,8,2);
- // torso with jacket, collar, seams, belt and zipper
+ ctx.save();ctx.translate(0,-attack*1.4+heal*1.2);
  ctx.fillStyle=shirt;ctx.beginPath();ctx.moveTo(-8,-11);ctx.lineTo(8,-11);ctx.lineTo(9,8);ctx.lineTo(-9,8);ctx.closePath();ctx.fill();
  ctx.fillStyle=trim;ctx.fillRect(-8,-11,16,4);ctx.fillRect(-2,-7,4,14);ctx.fillStyle='#29332d';ctx.fillRect(-8,6,16,3);ctx.fillStyle='#c4b17e';ctx.fillRect(-6,8,12,2);
- // articulated arms, sleeves and hands
- ctx.strokeStyle=shirt;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-8,-7);ctx.lineTo(-12,-1+swing*.45);ctx.lineTo(-12,5+swing*.65);ctx.moveTo(8,-7);ctx.lineTo(12,-1-swing*.45);ctx.lineTo(12,5-swing*.65);ctx.stroke();
- ctx.strokeStyle=skin;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-12,4+swing*.65);ctx.lineTo(-12,10+swing*.65);ctx.moveTo(12,4-swing*.65);ctx.lineTo(12,10-swing*.65);ctx.stroke();
- // neck and head
- ctx.fillStyle=skin;ctx.fillRect(-3,-15,6,6);ctx.beginPath();ctx.arc(0,-23,9,0,Math.PI*2);ctx.fill();
- // ears
+ const la=-walk*.48+interact*.9+heal*1.1+hurt*.45,ra=walk*.48-attack*1.35+interact*.65+heal*.35-hurt*.45;
+ for(const side of [-1,1]){const angle=side<0?la:ra;ctx.save();ctx.translate(side*8,-7);ctx.rotate(angle*side);
+  ctx.strokeStyle=shirt;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*4,7);ctx.lineTo(side*(5+attack*5+interact*3),13);ctx.stroke();
+  ctx.strokeStyle=skin;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(side*(5+attack*5+interact*3),12);ctx.lineTo(side*(6+attack*7+interact*4),18);ctx.stroke();
+  ctx.fillStyle=skin;ctx.beginPath();ctx.arc(side*(6+attack*7+interact*4),18,2.2,0,Math.PI*2);ctx.fill();ctx.restore();}
+ ctx.restore();
+ ctx.save();ctx.translate(0,hurt*2);ctx.fillStyle=skin;ctx.fillRect(-3,-15,6,6);ctx.beginPath();ctx.arc(0,-23,9,0,Math.PI*2);ctx.fill();
  ctx.beginPath();ctx.arc(-9,-23,2.1,0,Math.PI*2);ctx.arc(9,-23,2.1,0,Math.PI*2);ctx.fill();
- // hair cap and side locks
  ctx.fillStyle=hair;ctx.beginPath();ctx.moveTo(-9,-23);ctx.lineTo(-8,-31);ctx.lineTo(-3,-35);ctx.lineTo(5,-34);ctx.lineTo(10,-28);ctx.lineTo(9,-19);ctx.lineTo(6,-20);ctx.lineTo(6,-28);ctx.lineTo(-5,-28);ctx.lineTo(-6,-19);ctx.closePath();ctx.fill();
- // visible eyes, eyebrows, nose and mouth
- ctx.fillStyle=eyes;ctx.fillRect(-5,-24,2.5,3);ctx.fillRect(2.5,-24,2.5,3);
- ctx.fillStyle=hair;ctx.fillRect(-6,-27,4,1.4);ctx.fillRect(2,-27,4,1.4);
- ctx.fillStyle='#9d705d';ctx.fillRect(-1,-20,2,2);ctx.fillStyle='#754b48';ctx.fillRect(-2,-17,4,1);
- // small shoulder details and outline
- ctx.strokeStyle='#18231d';ctx.lineWidth=1;ctx.strokeRect(-8,-11,16,19);
- if(remote){
-  ctx.fillStyle='#e7e9d8';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.shadowColor='#10170f';ctx.shadowBlur=4;ctx.fillText(String(name||'Игрок').slice(0,16),0,-40);
-  ctx.shadowBlur=0;ctx.strokeStyle='#e7d6a0aa';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,-23,12,0,Math.PI*2);ctx.stroke();
- }
+ ctx.fillStyle=eyes;ctx.fillRect(-5,-24,2.5,3);ctx.fillRect(2.5,-24,2.5,3);ctx.fillStyle=hair;ctx.fillRect(-6,-27,4,1.4);ctx.fillRect(2,-27,4,1.4);
+ ctx.fillStyle='#9d705d';ctx.fillRect(-1,-20,2,2);ctx.fillStyle='#754b48';ctx.fillRect(-2,-17,4,1);ctx.strokeStyle='#18231d';ctx.lineWidth=1;ctx.strokeRect(-8,-11,16,19);ctx.restore();
+ if(heal>0){ctx.save();ctx.globalAlpha=heal*.8;ctx.strokeStyle='#8ee6a1';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-39);ctx.lineTo(0,-48);ctx.moveTo(-4,-43);ctx.lineTo(4,-43);ctx.stroke();ctx.restore();}
+ if(remote){ctx.fillStyle='#e7e9d8';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.shadowColor='#10170f';ctx.shadowBlur=4;ctx.fillText(String(name||'Игрок').slice(0,16),0,-40);ctx.shadowBlur=0;ctx.strokeStyle='#e7d6a0aa';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,-23,12,0,Math.PI*2);ctx.stroke();}
  ctx.restore();
 }
 function drawRemotePlayers(){const coop=window.ApocalypseCoop;if(!coop)return;for(const p of coop.getPlayers()){if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;drawSurvivor(p.x,p.y,p.avatar,p.phase||0,!!p.moving,true,p.name);}}
-function drawPlayer(){drawSurvivor(w/2,h/2+Math.sin(time*.008)*2,colors,0,Math.hypot(moveX,moveY)>.08,false);}
+function drawPlayer(){const moving=Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k));const action=playerAction.until>performance.now()?playerAction:null;drawSurvivor(w/2,h/2,colors,0,moving,false,'',action);}
 function drawFlashlight(){
  if(!saved.flashlight||!(worldClock>.62||worldClock<.08)||prefs.effects==='low')return;
  ctx.save();ctx.globalCompositeOperation='screen';
@@ -385,7 +400,7 @@ function updateZombies(dt,now){
  if(canSpawn&&now-lastZombieSpawn>=ZOMBIE_INTERVAL){
   lastZombieSpawn=now;
   if(Math.random()<.42){
-   const b=buildings[Math.floor(Math.random()*buildings.length)],byBuilding=Math.random()<.42;
+   const nearbyBuildings=buildings.filter(b=>Math.hypot(b.x+b.w/2-state.x,b.y-b.floors*17+b.h/2-state.y)<1100);const byBuilding=nearbyBuildings.length>0&&Math.random()<.42,b=byBuilding?nearbyBuildings[Math.floor(Math.random()*nearbyBuildings.length)]:null;
    let cx=state.x+(Math.random()-.5)*300,cy=state.y+(Math.random()-.5)*260;
    const count=byBuilding?1+Math.floor(Math.random()*2):1;
    if(byBuilding){
@@ -411,7 +426,7 @@ function updateZombies(dt,now){
    const dx=(state.x-z.x)/(d||1),dy=(state.y-z.y)/(d||1),nx=z.x+dx*z.speed*dt,ny=z.y+dy*z.speed*dt;
    if(!blocked(nx,z.y))z.x=nx;
    if(!blocked(z.x,ny))z.y=ny;
-   if(d<26&&now>z.attackAt&&now>respawnUntil){z.attackAt=now+950;state.hp=Math.max(0,state.hp-Math.max(1,Math.round(z.damage*(state.armorLevel?0.68:1))));if(state.hp<=0)showDeath();}
+   if(d<26&&now>z.attackAt&&now>respawnUntil){z.attackAt=now+950;z.attackAnim=1;triggerPlayerAction('hurt',360);state.hp=Math.max(0,state.hp-Math.max(1,Math.round(z.damage*(state.armorLevel?0.68:1))));if(state.hp<=0)showDeath();}
   }
   if(d>900)zombies.splice(i,1);
  }
@@ -421,38 +436,63 @@ function drawZombies(){
  for(const z of zombies){
   const age=now-z.born,p=Math.max(0,Math.min(1,age/z.emerge)),rise=1-Math.pow(1-p,2),buried=1-rise;
   const active=z.kind==='day'||z.kind==='horde'||worldClock>.62||worldClock<.08;
-  const walk=age>z.emerge?Math.sin(time*.009+z.phase):Math.sin(age*.012+z.phase)*.35;
-  ctx.save();ctx.translate(z.x,z.y+buried*25);ctx.globalAlpha=(active?1:.35)*Math.min(1,p*2.5);
-  // Ground shadow and flying soil while the zombie climbs out.
-  ctx.fillStyle='#11160f99';ctx.beginPath();ctx.ellipse(0,15,13+buried*7,4+buried*2,0,0,Math.PI*2);ctx.fill();
+  const moving=age>z.emerge,walk=moving?Math.sin(time*.0085+z.phase):Math.sin(age*.012+z.phase)*.25;
+  const attack=Math.max(0,(z.attackAnim||0)-(now-(z.attackAnimAt||now))/230);
+  if(z.attackAnim){z.attackAnimAt=now;z.attackAnim=Math.max(0,z.attackAnim-.075);}
+  const brute=z.kind==='brute',runner=z.kind==='runner',stalker=z.kind==='stalker';
+  const alpha=(active?1:.72)*Math.min(1,p*2.5);
+  ctx.save();ctx.translate(z.x,z.y);
+  // Strong contact shadow and a subtle ground rim keep the silhouette readable on grass, roads and debris.
+  ctx.fillStyle='#090d0bdc';ctx.beginPath();ctx.ellipse(0,13,brute?19:14,5,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#c5b98a55';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(0,13,brute?20:15,5.8,0,0,Math.PI*2);ctx.stroke();
   if(p<1){
-   for(let i=0;i<9;i++){const a=i*2.399+z.phase,dist=(1-p)*9+(i%3)*3,px=Math.cos(a)*dist,py=8+Math.sin(a)*dist*.45-(1-p)*12;
-    ctx.fillStyle=i%2?'#554a32':'#796744';ctx.beginPath();ctx.arc(px,py,1.3+(i%3)*.5,0,Math.PI*2);ctx.fill();}
+   for(let i=0;i<12;i++){const a=i*2.399+z.phase,dist=(1-p)*13+(i%4)*3,px=Math.cos(a)*dist,py=8+Math.sin(a)*dist*.5-(1-p)*15;
+    ctx.fillStyle=i%2?'#554a32':'#a08a5c';ctx.globalAlpha=alpha*.8;ctx.beginPath();ctx.arc(px,py,1.4+(i%3)*.55,0,Math.PI*2);ctx.fill();}
   }
-  ctx.translate(0,buried*22);ctx.scale(1,Math.max(.08,rise));
-  // Legs with separate torn trouser panels and animated gait.
-  ctx.strokeStyle='#30372e';ctx.lineWidth=5;ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(-5+walk*4,15);ctx.moveTo(3,5);ctx.lineTo(5-walk*4,15);ctx.stroke();
-  ctx.strokeStyle='#4b4a3b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-5+walk*4,14);ctx.lineTo(-8+walk*5,17);ctx.moveTo(5-walk*4,14);ctx.lineTo(8-walk*5,17);ctx.stroke();
-  // Torso, layered ragged clothing and fabric wear.
-  ctx.fillStyle=z.kind==='brute'?'#55433b':z.kind==='runner'?'#596b4a':z.kind==='stalker'?'#4c465b':'#53604c';ctx.beginPath();ctx.moveTo(-7,-10);ctx.lineTo(6,-10);ctx.lineTo(8,5);ctx.lineTo(4,9);ctx.lineTo(-7,7);ctx.closePath();ctx.fill();
-  ctx.fillStyle=z.kind==='stalker'?'#292336':'#303b31';ctx.fillRect(-6,-7,12,3);ctx.fillStyle='#83765a';ctx.fillRect(-5,-2,3,7);ctx.fillStyle='#a18d6d';ctx.fillRect(2,-6,2,3);
-  ctx.strokeStyle='#9a9273';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-5,1);ctx.lineTo(-2,4);ctx.moveTo(4,-5);ctx.lineTo(6,-1);ctx.stroke();
-  // Animated dangling arms with exposed forearms.
-  for(const side of [-1,1]){ctx.save();ctx.translate(side*6,-7);ctx.rotate(side*(.24+walk*.28));ctx.strokeStyle='#555c48';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*4,8);ctx.stroke();ctx.strokeStyle='#9a8b70';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(side*4,8);ctx.lineTo(side*3+walk*2,13);ctx.stroke();ctx.fillStyle='#b1a080';ctx.beginPath();ctx.arc(side*3+walk*2,14,2.2,0,Math.PI*2);ctx.fill();ctx.restore();}
-  // Neck, decayed face, scars, eye sockets and glowing eyes.
-  ctx.fillStyle=z.kind==='stalker'?'#a6a17a':'#8b8a6b';ctx.fillRect(-3,-13,6,5);ctx.fillStyle='#a09a78';ctx.beginPath();ctx.ellipse(0,-18,7.5,8.5,-.08,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#696b55';ctx.beginPath();ctx.ellipse(-5,-19,2.4,4,-.4,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#2a2119';ctx.fillRect(-4,-20,3,3);ctx.fillRect(2,-20,3,3);
-  ctx.fillStyle=z.kind==='stalker'?'#bd8cff':z.kind==='brute'?'#ed654e':z.kind==='runner'?'#d8d26a':active?'#d7a75b':'#756b4d';ctx.fillRect(-3,-20,2,2);ctx.fillRect(3,-20,2,2);
-  ctx.strokeStyle='#514334';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-2,-13);ctx.lineTo(3,-12);ctx.moveTo(4,-23);ctx.lineTo(6,-21);ctx.stroke();
-  // Texture: pores, dried dirt and scratches.
-  for(let i=0;i<7;i++){const tx=Math.sin(i*17+z.id)*5,ty=-8+Math.cos(i*11+z.phase)*13;ctx.fillStyle=i%2?'#242d24':'#b0a17a';ctx.globalAlpha=(active?1:.35)*Math.min(1,p*2.5)*.55;ctx.fillRect(tx,ty,1.2,1.2);}
-  ctx.restore();
+  ctx.globalAlpha=alpha;
+  const bodyScale=brute?1.24:runner?.92:1;
+  ctx.translate(0,-buried*18+Math.sin(time*.006+z.phase)*.8);
+  ctx.scale(bodyScale,bodyScale);
+  // Silhouette outline is deliberately brighter than the ground palette.
+  ctx.save();ctx.translate(0,buried*16);ctx.scale(1,Math.max(.12,rise));
+  ctx.strokeStyle='#171d18';ctx.lineWidth=8;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-3,4);ctx.lineTo(-5+walk*5,15);ctx.moveTo(3,4);ctx.lineTo(5-walk*5,15);ctx.stroke();
+  ctx.strokeStyle=brute?'#776b59':'#8a8065';ctx.lineWidth=4.5;
+  ctx.beginPath();ctx.moveTo(-3,4);ctx.lineTo(-5+walk*5,15);ctx.moveTo(3,4);ctx.lineTo(5-walk*5,15);ctx.stroke();
+  // Torn trousers and moving feet.
+  ctx.fillStyle='#353c31';ctx.beginPath();ctx.moveTo(-7,1);ctx.lineTo(-1,1);ctx.lineTo(-3+walk*3,13);ctx.lineTo(-10+walk*4,15);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(1,1);ctx.lineTo(7,1);ctx.lineTo(10-walk*4,15);ctx.lineTo(4-walk*3,13);ctx.closePath();ctx.fill();
+  // Chest and ragged clothing, with high-contrast seams and torn edges.
+  const shirt=brute?'#765044':runner?'#718653':stalker?'#655779':'#71805c';
+  ctx.fillStyle='#171d18';ctx.beginPath();ctx.moveTo(-10,-12);ctx.lineTo(9,-12);ctx.lineTo(11,7);ctx.lineTo(5,12);ctx.lineTo(-9,9);ctx.closePath();ctx.fill();
+  ctx.fillStyle=shirt;ctx.beginPath();ctx.moveTo(-8,-12);ctx.lineTo(7,-12);ctx.lineTo(9,5);ctx.lineTo(4,9);ctx.lineTo(-7,7);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#30392e';ctx.fillRect(-7,-7,14,3);ctx.fillStyle='#b29b70';ctx.fillRect(-6,-1,3,7);ctx.fillStyle='#c1a77a';ctx.fillRect(3,-8,2,5);
+  ctx.strokeStyle='#d0bd91';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-7,2);ctx.lineTo(-3,6);ctx.moveTo(4,-5);ctx.lineTo(7,0);ctx.stroke();
+  // Shoulder joints, swinging forearms and visible clawed hands.
+  for(const side of [-1,1]){
+   ctx.save();ctx.translate(side*8,-8);ctx.rotate(side*(.22+walk*.32+(attack>.25?-.65*attack:0)));
+   ctx.strokeStyle='#202820';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*5,9);ctx.stroke();
+   ctx.strokeStyle=brute?'#8e6a57':'#8c9270';ctx.lineWidth=4.5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*5,9);ctx.lineTo(side*4+walk*2,15);ctx.stroke();
+   ctx.fillStyle='#c0a17b';ctx.beginPath();ctx.arc(side*4+walk*2,16,2.8,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle='#e0c69a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(side*4,17);ctx.lineTo(side*6,20);ctx.stroke();ctx.restore();
+  }
+  // Neck, face planes, jaw and scars.
+  ctx.fillStyle='#b1a17b';ctx.fillRect(-3,-16,6,7);
+  ctx.fillStyle=brute?'#a18a68':stalker?'#b2a887':'#aaa17d';ctx.beginPath();ctx.ellipse(0,-22,8.5,9.5,-.08,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#77745c';ctx.beginPath();ctx.ellipse(-6,-22,2.6,4,-.4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#30271e';ctx.fillRect(-5,-24,4,4);ctx.fillRect(2,-24,4,4);
+  const eye=stalker?'#d4a4ff':brute?'#ff765c':runner?'#f2e47a':active?'#f2c56b':'#b2a47a';
+  ctx.shadowColor=eye;ctx.shadowBlur=active?9:3;ctx.fillStyle=eye;ctx.fillRect(-4,-23,2.8,2.8);ctx.fillRect(3,-23,2.8,2.8);ctx.shadowBlur=0;
+  ctx.fillStyle='#29251e';ctx.fillRect(-2,-16,5,2);ctx.strokeStyle='#554333';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-3,-15);ctx.lineTo(1,-12);ctx.lineTo(5,-15);ctx.moveTo(4,-27);ctx.lineTo(7,-24);ctx.stroke();
+  // Permanent light rim and animated infected veins make the body separate from the terrain.
+  ctx.globalAlpha=alpha*.8;ctx.strokeStyle=stalker?'#c5a1e8':'#c2b38a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-8,-9);ctx.lineTo(-10,-2);ctx.moveTo(8,-8);ctx.lineTo(10,0);ctx.stroke();
+  for(let i=0;i<8;i++){const tx=Math.sin(i*17+z.id)*6,ty=-8+Math.cos(i*11+z.phase)*14;ctx.fillStyle=i%2?'#252d24':'#d0b78c';ctx.globalAlpha=alpha*.75;ctx.fillRect(tx,ty,1.5,1.5);}
+  ctx.restore();ctx.restore();
  }
 }
+
 function showDeath(){if(deathHandled)return;deathHandled=true;gameActive=false;keys.clear();moveX=moveY=0;save();document.getElementById('deathDay').textContent='Ты продержался до '+state.day+' дня';document.getElementById('deathOverlay').classList.remove('hidden');}
-function respawn(){state.hp=100;state.x=Math.max(100,Math.min(11900,state.x+150));state.y=Math.max(100,Math.min(11900,state.y+110));ensureSafeSpawn();deathHandled=false;respawnUntil=performance.now()+4000;document.getElementById('deathOverlay').classList.add('hidden');gameActive=true;save();toast('Ты вернулся. 4 секунды защиты.');}
+function respawn(){state.hp=100;const safe=findSafeSpawn(state.x+150,state.y+110);state.x=safe.x;state.y=safe.y;deathHandled=false;respawnUntil=performance.now()+4000;document.getElementById('deathOverlay').classList.add('hidden');gameActive=true;save();toast('Ты вернулся. 4 секунды защиты.');}
 let lastActionUiUpdate=-Infinity;
 function updateActionButton(){if(time-lastActionUiUpdate<120)return;lastActionUiUpdate=time;const button=document.getElementById('action');if(!button)return;const touch=window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;if(!touch){if(button.dataset.actionLabel!=='desktop'){button.classList.remove('context-hidden');button.innerHTML='<span class="ico">⚒</span>Действие';button.dataset.actionLabel='desktop';}return;}let label='';if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98)label='Радиосигнал';else if(Math.hypot(state.x-mark.x,state.y-mark.y)<75)label='Поговорить';else if(wrecks.some(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65))label='Обыскать';else if(nearbyTrees(state.x,state.y,55).some(t=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48))label='Собрать';if(button.dataset.actionLabel!==label){button.classList.toggle('context-hidden',!label);if(label)button.innerHTML='<span class="ico">⚒</span>'+label;button.dataset.actionLabel=label;}}
 function updateHud(){const now=performance.now();if(now-lastHudUpdate<125)return;lastHudUpdate=now;document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');const minutes=Math.floor(worldClock*1440),clock=document.getElementById('worldTime');if(clock)clock.textContent=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');updateActionButton();}
@@ -505,6 +545,26 @@ function drawSupplyDrop(){
  ctx.strokeStyle='#e5d39c';ctx.lineWidth=2;ctx.globalAlpha=pulse;ctx.beginPath();ctx.arc(0,-25,13+Math.sin(time*.006)*3,0,Math.PI*2);ctx.stroke();
  ctx.restore();
 }
+function drawWorldAnimation(){
+ if(prefs.effects==='low')return;
+ // Moving motes, spores and distant ash give the whole scene subtle life without heavy particle systems.
+ const night=worldClock>.62||worldClock<.08;
+ ctx.save();
+ for(let i=0;i<22;i++){
+  const seed=i*97.31,drift=(time*(night?.009:.018)+seed*13)%(w+80)-40;
+  const x=drift,y=(seed*7+Math.sin(time*.0015+i*2)*24)%(h+30)-15;
+  const glow=.25+.25*Math.sin(time*.003+i);
+  ctx.globalAlpha=night?glow*.65:glow*.3;
+  ctx.fillStyle=night?(i%3===0?'#b7d18a':'#d2c7a1'):'#d7d0a8';
+  ctx.beginPath();ctx.arc(x,y,i%5===0?1.8:1,0,Math.PI*2);ctx.fill();
+ }
+ if(night){
+  const vignette=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.18,w/2,h/2,Math.max(w,h)*.72);
+  vignette.addColorStop(0,'#07100b00');vignette.addColorStop(1,'#02080555');
+  ctx.fillStyle=vignette;ctx.fillRect(0,0,w,h);
+ }
+ ctx.restore();
+}
 function drawWeatherEffects(){
  if(prefs.effects==='low')return;
  const phase=(Math.floor(time/52000)%4),storm=phase===2;
@@ -552,10 +612,11 @@ function updateExpansion(now){
  if(Math.floor(now/52000)%4===2&&now-lastLightningAt>15000&&Math.random()<.002){lastLightningAt=now;lightningUntil=now+150;}
 }
 
-function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();nearbyTrees(state.x,state.y,Math.max(w,h)+160).forEach(t=>{if(!t.harvested)tree(t)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)building(b)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)drawBuildingInterior(b)});worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});if(Math.abs(600-state.y)<h+100){const poleStart=Math.max(WORLD_MIN,Math.floor((state.x-w-100)/330)*330),poleEnd=Math.min(WORLD_MAX,state.x+w+100);for(let x=poleStart+180;x<poleEnd;x+=330)pole(x,600);}wrecks.forEach(v=>{if(Math.abs(v.x-state.x)<w+100&&Math.abs(v.y-state.y)<h+100)wreck(v)});smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects()}
+function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();nearbyTrees(state.x,state.y,Math.max(w,h)+160).forEach(t=>{if(!t.harvested)tree(t)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)building(b)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)drawBuildingInterior(b)});worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});if(Math.abs(600-state.y)<h+100){const poleStart=Math.max(WORLD_MIN,Math.floor((state.x-w-100)/330)*330),poleEnd=Math.min(WORLD_MAX,state.x+w+100);for(let x=poleStart+180;x<poleEnd;x+=330)pole(x,600);}wrecks.forEach(v=>{if(Math.abs(v.x-state.x)<w+100&&Math.abs(v.y-state.y)<h+100)wreck(v)});smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects();drawWorldAnimation()}
 function drawWind(){if(prefs.effects==='low'||wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
 function applyInfectionDamage(now){if(infectionZones.some(z=>Math.hypot(state.x-z.x,state.y-z.y)<z.r*.72)&&now-lastInfectionDamageAt>2200){lastInfectionDamageAt=now;state.hp=Math.max(0,state.hp-2);toast('Заражённый воздух: -2 здоровья');if(state.hp<=0)showDeath();save();}}
 function interact(){
+ if(!gameActive)return;triggerPlayerAction('interact',460);
  const indoor=buildings.find(b=>b.role&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18);
  if(indoor?.role==='store'){
   const loot=storeLoot[indoor.id];
@@ -572,7 +633,7 @@ function drawOneBarricade(b,ghost=false,valid=true){ctx.save();ctx.translate(b.x
 function drawBarricades(){for(const b of barricades)drawOneBarricade(b,false,true);}
 function drawBuildPreview(){if(!buildMode)return;const p=buildCandidate(),valid=canPlaceBarricade(p);drawOneBarricade(p,true,valid);const status=document.getElementById('buildStatus');if(status)status.textContent=valid?'МЕСТО СВОБОДНО':'МЕСТО ЗАНЯТО';}
 function drawInfectionZones(){for(const z of infectionZones){const pulse=1+Math.sin(time*.0017+z.x)*.035;ctx.save();ctx.globalAlpha=.17;const g=ctx.createRadialGradient(z.x,z.y,8,z.x,z.y,z.r*pulse);g.addColorStop(0,'#7da34a88');g.addColorStop(.65,'#587c3b44');g.addColorStop(1,'#334b3000');ctx.fillStyle=g;ctx.beginPath();ctx.arc(z.x,z.y,z.r*pulse,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.55;ctx.strokeStyle='#a3c16a';ctx.setLineDash([7,10]);ctx.beginPath();ctx.arc(z.x,z.y,z.r*.72,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();}}
-function attack(){const now=performance.now();if(!gameActive||now-lastAttackAt<650)return;lastAttackAt=now;let target=null,best=state.firearm&&state.ammo>0?330:78;for(const z of zombies){const d=Math.hypot(state.x-z.x,state.y-z.y);if(d<best){best=d;target=z;}}if(!target){toast('Рядом нет заражённых');return;}const ranged=!!state.firearm&&state.ammo>0;const range=ranged?330:78;if(best>range){toast(ranged?'Цель слишком далеко':'Рядом нет заражённых');return;}const damage=ranged?(state.firearm==='shotgun'?78:state.firearm==='rifle'?68:48):(state.weaponLevel>=2?46:state.weaponLevel?34:13);if(ranged)state.ammo--;target.hp-=damage;if(target.hp<=0){const i=zombies.indexOf(target);if(i>=0)zombies.splice(i,1);state.scrap+=target.kind==='brute'?3:target.kind==='stalker'?2:1;if(Math.random()<.45)state.food++;if(Math.random()<.25)state.bandage++;const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-killed',x:target.x,y:target.y});toast('Заражённый уничтожен · добыча собрана');}else{const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-hit',x:target.x,y:target.y,damage});toast('Попадание · '+damage+' урона');}save();}
+function attack(){const now=performance.now();if(!gameActive||now-lastAttackAt<650)return;lastAttackAt=now;let target=null,best=state.firearm&&state.ammo>0?330:78;for(const z of zombies){const d=Math.hypot(state.x-z.x,state.y-z.y);if(d<best){best=d;target=z;}}if(!target){toast('Рядом нет заражённых');return;}const ranged=!!state.firearm&&state.ammo>0;const range=ranged?330:78;if(best>range){toast(ranged?'Цель слишком далеко':'Рядом нет заражённых');return;}const damage=ranged?(state.firearm==='shotgun'?78:state.firearm==='rifle'?68:48):(state.weaponLevel>=2?46:state.weaponLevel?34:13);triggerPlayerAction('attack',ranged?320:430);if(ranged)state.ammo--;target.hp-=damage;if(target.hp<=0){const i=zombies.indexOf(target);if(i>=0)zombies.splice(i,1);state.scrap+=target.kind==='brute'?3:target.kind==='stalker'?2:1;if(Math.random()<.45)state.food++;if(Math.random()<.25)state.bandage++;const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-killed',x:target.x,y:target.y});toast('Заражённый уничтожен · добыча собрана');}else{const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-hit',x:target.x,y:target.y,damage});toast('Попадание · '+damage+' урона');}save();}
 function craft(cost,action){if(state.scrap<cost.scrap||state.wood<cost.wood||state.bolts<cost.bolts){toast('Не хватает ресурсов для изготовления');return false;}state.scrap-=cost.scrap;state.wood-=cost.wood;state.bolts-=cost.bolts;action();save();return true;}
 function openWorkshop(){showPanel('Мастерская','Собирай древесину с деревьев и детали с машин. Здесь можно изготовить снаряжение и укрепить позицию.',[
  {icon:'🩹',name:'Аптечка · 2 металла + 1 дерево',count:state.bandage,use:()=>{if(craft({scrap:2,wood:1,bolts:0},()=>state.bandage++)){toast('Аптечка изготовлена');openWorkshop();}}},
@@ -585,7 +646,7 @@ function openWorkshop(){showPanel('Мастерская','Собирай дре�
 ]);}
 function showPanel(title,body,items){document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot filled';let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent='×'+item.count;slot.append(art,name,count);if(item.use){slot.addEventListener('click',item.use)}box.append(slot)});document.getElementById('invHealth').textContent=state.hp;document.getElementById('invDay').textContent=state.day;document.getElementById('invSpeed').textContent=(wind>=.65?'82%':wind>=.3?'94%':'100%');document.getElementById('weight').textContent=(state.scrap*1.2+state.bandage*.2+state.food*.4).toFixed(1)+' / 40 кг';document.getElementById('panel').classList.remove('hidden')}
 function openMark(){if(state.quest>=3&&state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food++;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.6)v.done=false});save();showPanel('Марк · награда','Ты выполнил поручение. Забирай припасы — они пригодятся в дороге.',inventoryItems());return}let msg=state.dayReward===state.day?'Сегодня ты уже помог поселению. Отдохни, завтра будет новое поручение.':'Я Марк. Собери 3 детали с разбитых машин и возвращайся ко мне. За работу дам аптечки и еду. Сейчас собрано: '+state.quest+'/3.';showPanel('Марк · выживший',msg,[{icon:'⚙️',name:'Детали для задания',count:state.quest+'/3'},{icon:'🩹',name:'Награда: аптечки',count:'×2'},{icon:'🥫',name:'Награда: консервы',count:'×1'}])}
-function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🔫',name:'Огнестрельное оружие',count:state.firearm||'нет'},{icon:'▣',name:'Патроны',count:state.ammo},{icon:'🪵',name:'Древесина',count:state.wood},{icon:'🔩',name:'Крепёж',count:state.bolts},{icon:'🗡️',name:'Самодельное копьё',count:state.weaponLevel?'ур. '+state.weaponLevel:0},{icon:'🛡️',name:'Усиленная броня',count:state.armorLevel?'надета':'нет'}, {icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);save();updateHud();inventory()}},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0},{icon:'📡',name:'Найдено сигналов',count:state.radioFinds},{icon:'🤝',name:'Доверие выживших',count:state.survivorTrust}]}
+function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🔫',name:'Огнестрельное оружие',count:state.firearm||'нет'},{icon:'▣',name:'Патроны',count:state.ammo},{icon:'🪵',name:'Древесина',count:state.wood},{icon:'🔩',name:'Крепёж',count:state.bolts},{icon:'🗡️',name:'Самодельное копьё',count:state.weaponLevel?'ур. '+state.weaponLevel:0},{icon:'🛡️',name:'Усиленная броня',count:state.armorLevel?'надета':'нет'}, {icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);triggerPlayerAction('heal',760);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);triggerPlayerAction('heal',620);save();updateHud();inventory()}},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0},{icon:'📡',name:'Найдено сигналов',count:state.radioFinds},{icon:'🤝',name:'Доверие выживших',count:state.survivorTrust}]}
 function inventory(){showPanel('Рюкзак','Снаряжение и найденные припасы. Задание Марка также отображается здесь.',inventoryItems())}
 function nearSegment(px,py,x1,y1,x2,y2,limit){
  const dx=x2-x1,dy=y2-y1,len=dx*dx+dy*dy;
@@ -610,6 +671,7 @@ function blocked(x,y){
  for(const p of worldProps){if(Math.abs(x-p.x)<p.w/2+r+5&&Math.abs(y-p.y)<p.h/2+r+5)return true;}
  for(const v of wrecks){const dx=x-v.x,dy=y-v.y;if(dx*dx+dy*dy<58*58)return true;}
  for(const b of barricades){const dx=x-b.x,dy=y-b.y,a=-(Number(b.angle)||0),lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(lx)<35&&Math.abs(ly)<23)return true;}
+ if(radioSignal&&Math.abs(x-radioSignal.x)<31&&Math.abs(y-radioSignal.y)<25)return true;
  return false;
 }
 function insideBuilding(x,y){return buildings.some(b=>x>b.x-20&&x<b.x+b.w+20&&y>b.y-b.floors*34-20&&y<b.y+b.h+20);}
@@ -626,12 +688,12 @@ function move(dt){
   if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}
 }
 function setupJoystick(){const joy=document.getElementById('joy'),stick=document.getElementById('stick');function set(e){let r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.32,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}moveX=dx/max;moveY=dy/max;stick.style.transform='translate('+dx+'px,'+dy+'px)'}function end(){joyPointer=null;moveX=moveY=0;stick.style.transform='translate(0,0)'}joy.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);set(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer){e.preventDefault();set(e)}});['pointerup','pointercancel','lostpointercapture'].forEach(t=>joy.addEventListener(t,end))}
-let prev=performance.now(),lastAutoSave=0;function loop(now){updateExpansion(now);let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){move(dt);updateZombies(dt,now);updateRadioSignal(now);if(now-lastAutoSave>=5000){lastAutoSave=now;save();}}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||JSON.parse(localStorage.getItem('skyrealm_hub_user')||'{}').username||'Выживший',worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
+let prev=performance.now(),lastAutoSave=0;function loop(now){updateExpansion(now);let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){move(dt);updateZombies(dt,now);updateRadioSignal(now);if(now-lastAutoSave>=5000){lastAutoSave=now;save();}}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:playerName,worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
 function daily(){dayWind()}
 function focusGame(){try{canvas.focus({preventScroll:true});}catch(_){canvas.focus();}}
 function closeMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(menu)menu.classList.add('hidden');document.body.classList.remove('quick-menu-open');}
 function openMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(!menu)return;keys.clear();moveX=moveY=0;joyPointer=null;const stick=document.getElementById('stick');if(stick)stick.style.transform='translate(0,0)';menu.classList.remove('hidden');document.body.classList.add('quick-menu-open');}
-function leaveToMenu(){closeMobileQuickMenu();save();gameActive=false;keys.clear();moveX=moveY=0;document.getElementById('deathOverlay').classList.add('hidden');document.body.classList.add('menu-open');document.getElementById('mainMenu').classList.remove('menu-out');}
+function leaveToMenu(){save();gameActive=false;deathHandled=false;closeMobileQuickMenu();keys.clear();moveX=moveY=0;document.getElementById('deathOverlay').classList.add('hidden');document.body.classList.add('menu-open');document.getElementById('mainMenu').classList.remove('menu-out');}
 function exitGame(){save();const api=window.pywebview?.api;if(api?.close_app){api.close_app();return;}if(window.Android?.exitGame){window.Android.exitGame();return;}if(history.length>1){history.back();return;}location.href='hub.html';}
 const JOURNAL_DATA=window.APOCALYPSE_CHANGELOG||null;
 const JOURNAL_VERSION=JOURNAL_DATA?.version||'unknown';
@@ -693,7 +755,7 @@ function showJournalOnWorldEntry(resumeGame=true){
  let seen=false;try{seen=localStorage.getItem(JOURNAL_SEEN_KEY)==='1'}catch(_){}
  if(!seen)openUpdateJournal(resumeGame);
 }
-function enterSolo(){gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.remove('hidden');focusGame();}
+function enterSolo(){gameActive=false;keys.clear();moveX=moveY=0;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.remove('hidden');focusGame();}
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;}
 document.getElementById('menuPlay').onclick=enterSolo;
 document.getElementById('menuJournal').onclick=()=>openUpdateJournal(false);
@@ -704,8 +766,8 @@ document.getElementById('menuExit').onclick=exitGame;
 document.getElementById('deathRespawn').onclick=respawn;
 document.getElementById('deathMenu').onclick=leaveToMenu;
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.dataset.close).classList.add('hidden')));
-document.getElementById('settingsSave').onclick=()=>{prefs.effects=document.getElementById('settingEffects').value;prefs.joy=Number(document.getElementById('settingJoy').value);prefs.motion=document.getElementById('settingMotion').checked;prefs.hints=document.getElementById('settingHints').checked;localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs));applySettings();document.getElementById('settingsOverlay').classList.add('hidden');toast('Настройки сохранены')};
-document.getElementById('settingsReset').onclick=()=>{if(confirm('Удалить сохранение Apocalypse на этом устройстве? Это нельзя отменить.')){localStorage.removeItem(STORE);location.reload()}};
+document.getElementById('settingsSave').onclick=()=>{prefs.effects=document.getElementById('settingEffects').value;prefs.joy=Number(document.getElementById('settingJoy').value);prefs.motion=document.getElementById('settingMotion').checked;prefs.hints=document.getElementById('settingHints').checked;let persisted=true;try{localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs))}catch(_){persisted=false}applySettings();document.getElementById('settingsOverlay').classList.add('hidden');toast(persisted?'Настройки сохранены':'Настройки применены, но браузер не смог их сохранить')};
+document.getElementById('settingsReset').onclick=()=>{if(confirm('Удалить сохранение Apocalypse на этом устройстве? Это нельзя отменить.')){try{localStorage.removeItem(STORE);location.reload()}catch(_){toast('Не удалось удалить сохранение: хранилище недоступно')}}};
 document.getElementById('pauseMenu').onclick=()=>{if(window.matchMedia('(max-width: 700px), (pointer: coarse)').matches)openMobileQuickMenu();else leaveToMenu();};
 document.getElementById('mobileMoreClose').onclick=closeMobileQuickMenu;
 document.getElementById('mobileMoreBackdrop').onclick=closeMobileQuickMenu;
@@ -751,5 +813,5 @@ window.addEventListener('focus',()=>{if(gameActive)focusGame();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&gameActive)focusGame();});
 canvas.tabIndex=0;canvas.addEventListener('pointerdown',focusGame);
 window.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('selectstart',e=>e.preventDefault());window.addEventListener('resize',resize);
-window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();save();requestAnimationFrame(loop);
+window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getDayReward:()=>state.dayReward,getClock:()=>worldClock,getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();save();requestAnimationFrame(loop);
 })();
