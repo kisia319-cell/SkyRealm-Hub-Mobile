@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.2.2"
+APP_VERSION = "apocalypse-pc-v1.2.3"
 
 
 def resource_path(relative: str) -> Path:
