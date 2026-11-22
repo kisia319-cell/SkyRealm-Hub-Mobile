@@ -98,6 +98,9 @@ body.menu-open .hud,body.menu-open .joy,body.menu-open .bottom{opacity:0;pointer
 @keyframes journalFade{from{opacity:0}to{opacity:1}}@keyframes journalRise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}@keyframes journalItem{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 @media(max-width:560px){.journal-head{padding:19px 16px 14px}.journal-head h2{font-size:21px}.journal-body{padding:7px 16px 14px}.journal-foot{padding:11px 16px 15px}.journal-foot small{max-width:45%}}
 @media(prefers-reduced-motion:reduce){#updateJournal,.journal-dialog,.journal-item{animation:none!important}}
+
+.journal-section-title{padding:15px 0 5px;color:#e6d09a;font-size:11px;font-weight:950;letter-spacing:.8px;text-transform:uppercase}
+.journal-section-title:first-child{padding-top:5px}
 </style></head><body class="menu-open">
 <canvas id="world" tabindex="0" aria-label="Игровой мир"></canvas><div class="hud"><div class="status"><div class="statusline"><span class="dot"></span><span>ПОСЕЛЕНИЕ · СЕКТОР 01</span></div><div class="stats"><span id="health">♥ 100 / 100</span><span id="weather">Ветер · тихий</span></div><div class="day" id="day">День 1 · Утро</div></div></div>
 <div class="control-hint">WASD / СТРЕЛКИ · E — ДЕЙСТВИЕ</div><div class="joy" id="joy"><div class="stick" id="stick"></div></div><div class="bottom"><button class="btn" id="pauseMenu"><span class="ico">☰</span>Меню</button><button class="btn" id="action"><span class="ico">⚒</span>Действие</button><button class="btn" id="inventory"><span class="ico">▣</span>Рюкзак</button><button class="btn" id="exit">↩</button></div><div class="toast" id="toast"></div>
