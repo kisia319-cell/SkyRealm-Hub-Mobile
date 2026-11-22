@@ -36,7 +36,7 @@ for (const asset of ['apocalypse-changelog.js', 'apocalypse-coop.js', 'apocalyps
   assert.ok(fs.existsSync(path.join(root, 'app/src/main/assets', asset)), 'Missing asset: ' + asset);
 }
 
-assert.ok(game.includes('const groundX=state.x-w/2-700,groundY=state.y-h/2-700'), 'Ground texture must follow the camera across the expanded map');
+assert.ok(game.includes('const groundX=state.x-w/2-80,groundY=state.y-h/2-80'), 'Ground texture must follow the camera across the expanded map');
 assert.ok(game.includes('function findSafeSpawn(') && game.includes('findSafeSpawn(state.x+150,state.y+110)'), 'Respawn must find a collision-free position');
 assert.ok(!/Math\.min\(9900,state\.[xy]\+/.test(game), 'Old 9,900 map clamp must not remain');
 assert.ok(game.includes('function enterSolo(){gameActive=false'), 'Intro dialogue must pause simulation');
