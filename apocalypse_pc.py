@@ -13,7 +13,6 @@ from urllib.parse import urlsplit
 import webview
 
 APP_VERSION = "apocalypse-pc-v1.1.0"
-PORT = 48732
 
 
 def resource_path(relative: str) -> Path:
@@ -91,7 +90,8 @@ def main() -> int:
 
     handler = functools.partial(ApocalypseFileHandler, directory=str(asset_dir))
     try:
-        server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), handler)
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        port = server.server_address[1]
     except OSError as exc:
         raise RuntimeError(
             f"Не удалось открыть локальный игровой порт {PORT}. "
@@ -106,7 +106,7 @@ def main() -> int:
     try:
         window = webview.create_window(
             "SkyRealm — Apocalypse",
-            f"http://127.0.0.1:{PORT}/apocalypse.html",
+            f"http://127.0.0.1:{port}/apocalypse.html",
             width=1360,
             height=820,
             min_size=(980, 620),
