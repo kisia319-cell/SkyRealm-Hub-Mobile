@@ -270,9 +270,34 @@ function daily(){let today=new Date().toDateString();if(state.lastDay!==today){s
 function focusGame(){try{canvas.focus({preventScroll:true});}catch(_){canvas.focus();}}
 function leaveToMenu(){save();gameActive=false;keys.clear();moveX=moveY=0;document.getElementById('deathOverlay').classList.add('hidden');document.body.classList.add('menu-open');document.getElementById('mainMenu').classList.remove('menu-out');}
 function exitGame(){save();const api=window.pywebview?.api;if(api?.close_app){api.close_app();return;}if(window.Android?.exitGame){window.Android.exitGame();return;}if(history.length>1){history.back();return;}location.href='hub.html';}
+const JOURNAL_VERSION='1.1.1';
+const JOURNAL_SEEN_KEY='skyrealm_apocalypse_journal_seen_'+JOURNAL_VERSION;
+let journalResumeGame=false;
+function openUpdateJournal(resumeGame=false){
+ const panel=document.getElementById('updateJournal');
+ if(!panel)return;
+ journalResumeGame=!!resumeGame&&gameActive;
+ if(journalResumeGame)gameActive=false;
+ keys.clear();moveX=moveY=0;
+ panel.classList.remove('hidden');
+}
+function closeUpdateJournal(){
+ const panel=document.getElementById('updateJournal');
+ if(panel)panel.classList.add('hidden');
+ try{localStorage.setItem(JOURNAL_SEEN_KEY,'1')}catch(_){}
+ if(journalResumeGame){gameActive=true;focusGame();}
+ journalResumeGame=false;
+}
+function showJournalOnWorldEntry(resumeGame=true){
+ let seen=false;try{seen=localStorage.getItem(JOURNAL_SEEN_KEY)==='1'}catch(_){}
+ if(!seen)openUpdateJournal(resumeGame);
+}
 function enterSolo(){gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.remove('hidden');focusGame();}
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;}
 document.getElementById('menuPlay').onclick=enterSolo;
+document.getElementById('menuJournal').onclick=()=>openUpdateJournal(false);
+document.getElementById('journalX').onclick=closeUpdateJournal;
+document.getElementById('journalOk').onclick=closeUpdateJournal;
 document.getElementById('menuSettings').onclick=()=>{applySettings();document.getElementById('settingsOverlay').classList.remove('hidden')};
 document.getElementById('menuExit').onclick=exitGame;
 document.getElementById('deathRespawn').onclick=respawn;
@@ -281,8 +306,8 @@ document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',
 document.getElementById('settingsSave').onclick=()=>{prefs.effects=document.getElementById('settingEffects').value;prefs.joy=Number(document.getElementById('settingJoy').value);prefs.motion=document.getElementById('settingMotion').checked;prefs.hints=document.getElementById('settingHints').checked;localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs));applySettings();document.getElementById('settingsOverlay').classList.add('hidden');toast('Настройки сохранены')};
 document.getElementById('settingsReset').onclick=()=>{if(confirm('Удалить сохранение Apocalypse на этом устройстве? Это нельзя отменить.')){localStorage.removeItem(STORE);location.reload()}};
 document.getElementById('pauseMenu').onclick=()=>leaveToMenu();
-document.getElementById('start').onclick=()=>{document.getElementById('dialogue').classList.add('hidden');gameActive=true;focusGame();};
-window.addEventListener('apocalypse-coop-enter',()=>{gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.add('hidden');document.getElementById('coopOverlay').classList.add('hidden');focusGame();});
+document.getElementById('start').onclick=()=>{document.getElementById('dialogue').classList.add('hidden');gameActive=true;focusGame();showJournalOnWorldEntry(true);};
+window.addEventListener('apocalypse-coop-enter',()=>{gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.add('hidden');document.getElementById('coopOverlay').classList.add('hidden');focusGame();showJournalOnWorldEntry(true);});
 window.addEventListener('apocalypse-coop-event',e=>{const p=e.detail,coop=window.ApocalypseCoop;if(!p||!coop||!coop.room)return;if(p.kind==='zombie-spawn'&&!coop.isOwner()&&Number.isFinite(p.x)&&Number.isFinite(p.y))spawnZombie(p.x,p.y,p.ztype||'night');if(Number.isFinite(p.worldClock))worldClock=p.worldClock;if(p.kind==='world'&&!coop.isOwner()&&Array.isArray(p.wrecks)){p.wrecks.forEach((done,i)=>{if(wrecks[i])wrecks[i].done=!!done});state.quest=Math.max(0,Number(p.quest)||0);state.day=Math.max(1,Number(p.day)||1);save();}if(p.kind==='wreck-request'&&coop.isOwner()){const remote=coop.getPlayers().find(v=>v.user_id===p.user_id),v=wrecks[Number(p.index)];if(remote&&v&&!v.done&&Math.hypot(remote.x-v.x,remote.y-v.y)<100){v.done=true;state.quest++;save();coop.send({kind:'wreck-claimed',index:Number(p.index),quest:state.quest,by:p.user_id});}}if(p.kind==='wreck-claimed'){const i=Number(p.index);if(wrecks[i])wrecks[i].done=true;state.quest=Math.max(0,Number(p.quest)||0);if(p.by===coop.userId)state.scrap++;save();toast('Общие детали: '+state.quest+'/3');}if(p.kind==='world-request'&&coop.isOwner())coop.send({kind:'world',wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day});});
 applySettings();
 document.getElementById('action').onclick=interact;document.getElementById('inventory').onclick=inventory;document.getElementById('panelClose').onclick=()=>document.getElementById('panel').classList.add('hidden');
