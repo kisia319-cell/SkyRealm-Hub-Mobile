@@ -90,9 +90,18 @@ function building(b){
   }
   if(b.id==='hospital'&&floor===Math.floor(b.floors/2)){rect(b.x+b.w/2-20,fy+2,40,18,'#b9b8a2');rect(b.x+b.w/2-3,fy+4,6,14,'#a84b43');rect(b.x+b.w/2-12,fy+8,24,5,'#a84b43');}
  }
- // Entrance, broken canopy, rooftop equipment and water tank.
- rect(b.x+b.w/2-18,b.y+b.h-52,36,52,'#30372f');rect(b.x+b.w/2-14,b.y+b.h-48,28,43,'#4a5144');
- rect(b.x+18,top-10,b.w-36,12,'#42483e');rect(b.x+b.w*.68,top-38,34,28,'#555a4d');
+ // Clearly visible, walkable ground-floor entrance and a small lobby.
+ const cx=b.x+b.w/2,bottom=b.y+b.h,lobbyW=62,lobbyTop=bottom-126;
+ rect(cx-lobbyW,lobbyTop,lobbyW*2,112,'#555746');
+ for(let yy=lobbyTop+8;yy<bottom-20;yy+=22)for(let xx=cx-lobbyW+8;xx<cx+lobbyW-8;xx+=22)rect(xx,yy,18,18,'#696b55');
+ rect(cx-42,bottom-58,84,58,'#111915');
+ rect(cx-48,bottom-64,8,64,'#343b33');rect(cx+40,bottom-64,8,64,'#343b33');
+ rect(cx-37,bottom-52,74,46,'#202a24');rect(cx-3,bottom-50,6,43,'#8c7954');
+ rect(cx-24,lobbyTop+18,48,24,'#353d34');rect(cx-20,lobbyTop+22,40,16,'#817d62');
+ rect(cx-7,lobbyTop+25,14,10,'#a59a78');
+ // Entrance canopy, rooftop equipment and water tank.
+ rect(cx-52,bottom-72,104,8,'#42483e');rect(b.x+18,top-10,b.w-36,12,'#42483e');
+ rect(b.x+b.w*.68,top-38,34,28,'#555a4d');
  rect(b.x+b.w*.22,top-30,7,30,'#393f39');rect(b.x+b.w*.22-12,top-30,31,5,'#303934');
  ctx.strokeStyle='#b2a17a88';ctx.lineWidth=2;ctx.strokeRect(b.x,top,b.w,b.h+b.floors*floorH);
 }
@@ -140,7 +149,7 @@ function drawRemotePlayers(){const coop=window.ApocalypseCoop;if(!coop)return;fo
 function drawPlayer(){drawSurvivor(w/2,h/2+Math.sin(time*.008)*2,colors,0,Math.hypot(moveX,moveY)>.08,false);}
 function spawnZombie(x,y,kind='night'){if(zombies.length>=28)return;zombies.push({id:++zombieId,x,y,kind,hp:40,attackAt:0,phase:Math.random()*6.28});}
 function updateZombies(dt,now){if(!gameActive)return;worldClock=(worldClock+dt/480)%1;const night=worldClock>.62||worldClock<.08;const coop=window.ApocalypseCoop;const canSpawn=!coop?.room||coop.isOwner();if(canSpawn&&now-lastZombieSpawn>=ZOMBIE_INTERVAL){lastZombieSpawn=now;if(Math.random()<.5){const b=buildings[Math.floor(Math.random()*buildings.length)];const byBuilding=Math.random()<.42;const cx=byBuilding?b.x+b.w/2:state.x+(Math.random()-.5)*300,cy=byBuilding?b.y+b.h/2:state.y+(Math.random()-.5)*260,count=byBuilding?2+Math.floor(Math.random()*3):1;for(let i=0;i<count;i++){const x=cx+(Math.random()-.5)*(byBuilding?100:50),y=cy+(Math.random()-.5)*(byBuilding?80:50),kind=byBuilding?'horde':(night?'night':'day');spawnZombie(x,y,kind);if(coop?.room?.status==='running')coop.send({kind:'zombie-spawn',x,y,ztype:kind});}}}
-for(let i=zombies.length-1;i>=0;i--){const z=zombies[i],d=Math.hypot(state.x-z.x,state.y-z.y),active=z.kind==='day'||z.kind==='horde'||night;if(active&&d<520){const dx=(state.x-z.x)/(d||1),dy=(state.y-z.y)/(d||1);z.x+=dx*24*dt;z.y+=dy*24*dt;if(d<24&&now>z.attackAt){z.attackAt=now+1250;state.hp=Math.max(0,state.hp-4);}}if(d>900)zombies.splice(i,1);}}
+for(let i=zombies.length-1;i>=0;i--){const z=zombies[i],d=Math.hypot(state.x-z.x,state.y-z.y),active=z.kind==='day'||z.kind==='horde'||night;if(active&&d<520){const dx=(state.x-z.x)/(d||1),dy=(state.y-z.y)/(d||1),nx=z.x+dx*24*dt,ny=z.y+dy*24*dt;if(!blocked(nx,z.y))z.x=nx;if(!blocked(z.x,ny))z.y=ny;if(d<24&&now>z.attackAt){z.attackAt=now+1250;state.hp=Math.max(0,state.hp-4);}}if(d>900)zombies.splice(i,1);}}
 function drawZombies(){for(const z of zombies){ctx.save();ctx.translate(z.x,z.y);const active=z.kind==='day'||z.kind==='horde'||worldClock>.62||worldClock<.08;ctx.globalAlpha=active?1:.35;ctx.fillStyle='#101710aa';ctx.beginPath();ctx.ellipse(0,16,12,4,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=z.kind==='horde'?'#526348':'#68735a';ctx.fillRect(-7,-8,14,22);ctx.fillStyle='#9a9877';ctx.beginPath();ctx.arc(0,-17,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#291612';ctx.fillRect(-4,-19,2,2);ctx.fillRect(3,-19,2,2);ctx.strokeStyle='#33251d';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-7,-3);ctx.lineTo(-14,5);ctx.moveTo(7,-3);ctx.lineTo(14,5);ctx.stroke();ctx.restore();}}
 function updateHud(){document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День')}
 function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();trees.forEach(t=>{if(t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawMark();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();updateHud();drawWind()}
@@ -150,13 +159,27 @@ function showPanel(title,body,items){document.getElementById('panelText').textCo
 function openMark(){if(state.quest>=3&&state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food++;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.6)v.done=false});save();showPanel('Марк · награда','Ты выполнил поручение. Забирай припасы — они пригодятся в дороге.',inventoryItems());return}let msg=state.dayReward===state.day?'Сегодня ты уже помог поселению. Отдохни, завтра будет новое поручение.':'Я Марк. Собери 3 детали с разбитых машин и возвращайся ко мне. За работу дам аптечки и еду. Сейчас собрано: '+state.quest+'/3.';showPanel('Марк · выживший',msg,[{icon:'⚙️',name:'Детали для задания',count:state.quest+'/3'},{icon:'🩹',name:'Награда: аптечки',count:'×2'},{icon:'🥫',name:'Награда: консервы',count:'×1'}])}
 function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);save();updateHud();inventory()}},{icon:'🪵',name:'Доски',count:saved.wood||0},{icon:'🔩',name:'Крепёж',count:saved.bolts||0},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0}]}
 function inventory(){showPanel('Рюкзак','Снаряжение и найденные припасы. Задание Марка также отображается здесь.',inventoryItems())}
+function nearSegment(px,py,x1,y1,x2,y2,limit){
+ const dx=x2-x1,dy=y2-y1,len=dx*dx+dy*dy;
+ const t=len?Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/len)):0;
+ const ox=px-(x1+t*dx),oy=py-(y1+t*dy);
+ return ox*ox+oy*oy<limit*limit;
+}
 function blocked(x,y){
-  const r=12;
-  if(x<25+r||y<25+r||x>9975-r||y>9975-r)return true;
-  for(const b of buildings){const top=b.y-b.floors*34,nx=Math.max(b.x,Math.min(x,b.x+b.w)),ny=Math.max(top,Math.min(y,b.y+b.h));if((x-nx)**2+(y-ny)**2<r*r)return true;}
-  for(const t of trees){const rr=10+t.size*8,dx=x-t.x,dy=y-(t.y+7);if(dx*dx+dy*dy<(r+rr)**2)return true;}
-  for(const v of wrecks){const dx=x-v.x,dy=y-v.y;if(dx*dx+dy*dy<58*58)return true;}
-  return false;
+ const r=12,wall=r+7;
+ if(x<25+r||y<25+r||x>9975-r||y>9975-r)return true;
+ for(const b of buildings){
+  const left=b.x,right=b.x+b.w,top=b.y-b.floors*34,bottom=b.y+b.h,cx=(left+right)/2,doorHalf=47;
+  // The shell is solid, except for the centered entrance.
+  if(nearSegment(x,y,left,top,right,top,wall)||nearSegment(x,y,left,top,left,bottom,wall)||nearSegment(x,y,right,top,right,bottom,wall))return true;
+  if(nearSegment(x,y,left,bottom,cx-doorHalf,bottom,wall)||nearSegment(x,y,cx+doorHalf,bottom,right,bottom,wall))return true;
+  // Short lobby side walls and back wall make the interior a real, bounded walkable space.
+  const lobbyTop=bottom-126,lobbyHalf=62;
+  if(nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx-lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx+lobbyHalf,lobbyTop,cx+lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx+lobbyHalf,lobbyTop,wall))return true;
+ }
+ for(const t of trees){const rr=10+t.size*8,dx=x-t.x,dy=y-(t.y+7);if(dx*dx+dy*dy<(r+rr)**2)return true;}
+ for(const v of wrecks){const dx=x-v.x,dy=y-v.y;if(dx*dx+dy*dy<58*58)return true;}
+ return false;
 }
 function move(dt){
   let dx=moveX,dy=moveY;
