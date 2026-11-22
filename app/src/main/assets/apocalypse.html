@@ -12,7 +12,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#172019;col
 @media(max-height:480px){.portrait{height:95px}.portrait-art{font-size:48px}.storage-top{padding:7px}.storage-main{padding:6px}.slot{aspect-ratio:1.2}.hot{height:36px}}
 
 /* Apocalypse front-end, settings and co-op shell */
-body.menu-open .hud,body.menu-open .joy,body.menu-open .bottom{opacity:0;pointer-events:none;transform:translateY(10px)}
+body.menu-open .hud,body.menu-open .joy,body.menu-open .bottom,body.menu-open .attack-touch{opacity:0;pointer-events:none;transform:translateY(10px)}
 .hud,.joy,.bottom{transition:opacity .35s ease,transform .35s ease}.control-hint{position:absolute;left:20px;bottom:max(148px,calc(env(safe-area-inset-bottom) + 145px));font-size:10px;letter-spacing:.7px;color:#e4dfc8a8;text-shadow:0 2px 5px #000;pointer-events:none}.hide-hints .control-hint{display:none}.reduced-motion *{animation:none!important;transition:none!important}@media(pointer:fine){.joy,.control-hint{display:none!important}}
 #mainMenu{z-index:8;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(180deg,#080e0c99,#080e0cbf 50%,#080e0ce8),radial-gradient(ellipse at 50% 40%,#6c745033,transparent 55%);backdrop-filter:blur(2px);opacity:1;transition:opacity .45s ease,visibility .45s ease}
 #mainMenu.menu-out{opacity:0;visibility:hidden;pointer-events:none}
