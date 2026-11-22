@@ -3,7 +3,7 @@ const canvas=document.getElementById('world'),ctx=canvas.getContext('2d'),STORE=
 const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(_){return {}}};
 const saved=read(STORE),avatar=read('skyrealm_character_v1');
 const colors={skin:avatar.skin||'#e8b88c',hair:avatar.hair||'#352d3d',shirt:avatar.armor||'#526fba',trim:avatar.accent||'#9cb9ff',eyes:avatar.eye||'#26334c'};
-const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,wood:saved.wood||0,bolts:saved.bolts||0,weaponLevel:saved.weaponLevel||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0,radioFinds:saved.radioFinds||0,survivorTrust:saved.survivorTrust||0,armorLevel:saved.armorLevel||0};
+const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,wood:saved.wood||0,bolts:saved.bolts||0,weaponLevel:saved.weaponLevel||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0,radioFinds:saved.radioFinds||0,survivorTrust:saved.survivorTrust||0,armorLevel:saved.armorLevel||0,firearm:saved.firearm||'',ammo:Math.max(0,Number(saved.ammo)||0)};
 if(!Number.isFinite(state.x)||!Number.isFinite(state.y)){state.x=440;state.y=390;}else{state.x=Math.max(25,Math.min(11975,state.x));state.y=Math.max(25,Math.min(11975,state.y));}
 const mark={x:610,y:400};
 const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false},{x:1850,y:350,done:false},{x:2200,y:780,done:false},{x:2750,y:520,done:false},{x:3100,y:1250,done:false},{x:1900,y:1950,done:false}];
@@ -63,11 +63,20 @@ const buildings=[
  {id:'clinic_outpost',x:1820,y:2820,w:310,h:250,floors:2,accent:'#85806d'},
  {id:'bus_depot',x:7600,y:2820,w:420,h:270,floors:2,accent:'#646d67'},
  {id:'radio_tower',x:8500,y:9360,w:300,h:260,floors:3,accent:'#59665e'},
- {id:'farmhouse',x:1800,y:9360,w:340,h:270,floors:2,accent:'#776b52'}
+ {id:'farmhouse',x:1800,y:9360,w:340,h:270,floors:2,accent:'#776b52'},
+ {id:'hardware_store',x:2920,y:1120,w:390,h:290,floors:2,accent:'#77705b',role:'store',kind:'hardware'},
+ {id:'weapon_shop',x:5650,y:4620,w:410,h:310,floors:2,accent:'#6b6e61',role:'store',kind:'weapons'},
+ {id:'pharmacy_ruins',x:9250,y:2820,w:340,h:260,floors:2,accent:'#7b806d',role:'store',kind:'pharmacy'},
+ {id:'underground_shelter',x:3000,y:8120,w:420,h:330,floors:1,accent:'#58645a',role:'shelter'},
+ {id:'survivor_safehouse',x:9000,y:8120,w:390,h:300,floors:2,accent:'#746c55',role:'shelter'},
+ {id:'rural_market',x:5650,y:9000,w:430,h:310,floors:2,accent:'#7a7059',role:'store',kind:'market'}
 ];
+const visitedStores=new Set(Array.isArray(saved.visitedStores)?saved.visitedStores:[]);
+const storeLoot=saved.storeLoot&&typeof saved.storeLoot==='object'?saved.storeLoot:{};
+const lootedShelters=new Set(Array.isArray(saved.lootedShelters)?saved.lootedShelters:[]);
 buildForest();
 const harvestedTrees=new Set(Array.isArray(saved.harvestedTrees)?saved.harvestedTrees:[]);trees.forEach((t,i)=>t.harvested=harvestedTrees.has(i));
-function save(){localStorage.setItem(STORE,JSON.stringify({...state,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],supplyDrop}))}
+function save(){localStorage.setItem(STORE,JSON.stringify({...state,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],supplyDrop}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
 
@@ -173,6 +182,34 @@ function building(b){
  rect(b.x+b.w*.22,top-30,7,30,'#393f39');rect(b.x+b.w*.22-12,top-30,31,5,'#303934');
  ctx.strokeStyle='#b2a17a88';ctx.lineWidth=2;ctx.beginPath();
  ctx.moveTo(b.x,top);ctx.lineTo(b.x+b.w,top);ctx.lineTo(b.x+b.w,bottom);ctx.moveTo(b.x,bottom);ctx.lineTo(cx-47,bottom);ctx.moveTo(cx+47,bottom);ctx.lineTo(b.x+b.w,bottom);ctx.lineTo(b.x,top);ctx.stroke();
+}
+function drawBuildingInterior(b){
+ const top=b.y-b.floors*34,cx=b.x+b.w/2,roomY=b.y+b.h-250;
+ if(!b.role)return;
+ ctx.save();
+ ctx.fillStyle='#171b17';ctx.globalAlpha=.78;ctx.fillRect(b.x+18,roomY,b.w-36,150);ctx.globalAlpha=1;
+ ctx.strokeStyle='#9a8d69';ctx.lineWidth=2;ctx.strokeRect(b.x+18,roomY,b.w-36,150);
+ // Broken floor tiles, stains and scattered debris make the interior read as a physical room.
+ for(let i=0;i<14;i++){const px=b.x+28+(i*47)%(b.w-58),py=roomY+12+(i*31)%122;ctx.fillStyle=i%3?'#77735d55':'#252b25aa';ctx.fillRect(px,py,18,3);if(i%4===0){ctx.strokeStyle='#292f29';ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+9,py+11);ctx.stroke();}}
+ if(b.role==='store'){
+  ctx.fillStyle='#393e34';for(let row=0;row<2;row++){const sy=roomY+24+row*58;ctx.fillRect(b.x+42,sy,b.w-84,15);ctx.fillStyle='#8a8062';for(let x=b.x+48;x<b.x+b.w-50;x+=32){ctx.fillRect(x,sy-7,18,7);ctx.fillStyle='#5c6750';ctx.fillRect(x,sy+2,18,9);ctx.fillStyle='#8a8062';}}
+  ctx.fillStyle='#665d4b';ctx.fillRect(b.x+34,roomY+118,64,23);ctx.fillStyle='#a18a60';ctx.fillRect(b.x+38,roomY+121,56,5);
+  // Abandoned shoppers and staff, lying among overturned stock and broken fixtures.
+  for(const corpse of [[b.x+b.w*.27,roomY+91,-.3],[b.x+b.w*.72,roomY+108,.7]]){
+   ctx.save();ctx.translate(corpse[0],corpse[1]);ctx.rotate(corpse[2]);ctx.fillStyle='#20201d';ctx.beginPath();ctx.ellipse(0,0,19,8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#77715f';ctx.fillRect(-15,-5,23,10);ctx.fillStyle='#b49a79';ctx.beginPath();ctx.arc(12,0,6,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+  ctx.fillStyle='#d8c18a';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText(b.kind==='weapons'?'ОРУЖИЕ':b.kind==='pharmacy'?'АПТЕКА':b.kind==='hardware'?'ХОЗТОВАРЫ':'МАРКЕТ',cx,roomY-8);
+ }else{
+  // Shelter bunks, sandbags, a radio desk and sleeping survivors.
+  for(let i=0;i<3;i++){const bx=b.x+42+i*92;ctx.fillStyle='#4a5145';ctx.fillRect(bx,roomY+30,72,26);ctx.fillStyle='#9b9275';ctx.fillRect(bx+5,roomY+34,28,17);ctx.fillStyle='#353c34';ctx.fillRect(bx,roomY+55,72,5);}
+  for(let i=0;i<5;i++){ctx.fillStyle=i%2?'#756b50':'#8b8060';ctx.fillRect(b.x+32+i*25,roomY+119,24,15);ctx.strokeStyle='#353b32';ctx.strokeRect(b.x+32+i*25,roomY+119,24,15);}
+  ctx.fillStyle='#a7b08a';ctx.fillRect(cx+55,roomY+82,38,22);ctx.fillStyle='#2d3830';ctx.fillRect(cx+62,roomY+87,24,12);
+  ctx.fillStyle='#d8c18a';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('УБЕЖИЩЕ ВЫЖИВШИХ',cx,roomY-8);ctx.fillStyle='#e2c78e';ctx.font='bold 10px system-ui';ctx.fillText(lootedShelters.has(b.id)?'ЗАПАСЫ ПУСТЫ':'E · ПРИПАСЫ',cx+72,roomY+72);
+  for(const corpse of [[b.x+b.w*.24,roomY+96],[b.x+b.w*.78,roomY+92]]){ctx.fillStyle='#262722';ctx.beginPath();ctx.ellipse(corpse[0],corpse[1],18,7,.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#9a8a70';ctx.beginPath();ctx.arc(corpse[0]+13,corpse[1],5,0,Math.PI*2);ctx.fill();}
+ }
+ const loot=storeLoot[b.id];
+ if(b.role==='store'&&loot?.weapon&&!loot.picked){const lx=cx-72,ly=roomY+76;ctx.save();ctx.translate(lx,ly);ctx.rotate(-.18);ctx.fillStyle='#171a17';ctx.fillRect(-18,-4,35,8);ctx.fillStyle='#9c8b65';ctx.fillRect(-5,-8,12,4);ctx.fillStyle='#c9b17b';ctx.fillRect(-15,4,7,3);ctx.restore();ctx.fillStyle='#e4d19b';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('E · ОРУЖИЕ',lx,ly-17);}
+ ctx.restore();
 }
 function drawWorldProp(p){
  const x=p.x,y=p.y;ctx.save();ctx.translate(x,y);
@@ -464,6 +501,14 @@ function interactExpansion(){
 }
 function updateExpansion(now){
  if(!gameActive)return;
+ for(const b of buildings){
+  if(b.role==='store'&&!visitedStores.has(b.id)&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18){
+   visitedStores.add(b.id);
+   if(Math.random()<.5){const weapon=b.kind==='weapons'?(Math.random()<.55?'shotgun':'rifle'):b.kind==='pharmacy'?'pistol':Math.random()<.55?'pistol':'shotgun';const ammo=weapon==='shotgun'?8:weapon==='rifle'?18:12;storeLoot[b.id]={weapon,ammo,picked:false};toast('В магазине найден тайник с оружием! Осмотри полки');}
+   else{storeLoot[b.id]={weapon:'',ammo:0,picked:true};toast('Магазин разграблен. Оружия не осталось');}
+   save();
+  }
+ }
  for(let i=0;i<explorationCaches.length;i++){const p=explorationCaches[i];if(!discoveredLandmarks.has(i)&&Math.hypot(state.x-p.x,state.y-p.y)<175){discoveredLandmarks.add(i);save();if(now-lastLandmarkToast>3500){lastLandmarkToast=now;toast('Обнаружено место: '+p.name);}}}
  if(!supplyDrop&&now>nextSupplyDropAt){
   let x=state.x+(Math.random()-.5)*620,y=state.y+(Math.random()-.5)*620,tries=0;
@@ -474,15 +519,27 @@ function updateExpansion(now){
  if(Math.floor(now/52000)%4===2&&now-lastLightningAt>15000&&Math.random()<.002){lastLightningAt=now;lightningUntil=now+150;}
 }
 
-function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();trees.forEach(t=>{if(!t.harvested&&t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects()}
+function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();trees.forEach(t=>{if(!t.harvested&&t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);buildings.forEach(drawBuildingInterior);worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects()}
 function drawWind(){if(prefs.effects==='low'||wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
 function applyInfectionDamage(now){if(infectionZones.some(z=>Math.hypot(state.x-z.x,state.y-z.y)<z.r*.72)&&now-lastInfectionDamageAt>2200){lastInfectionDamageAt=now;state.hp=Math.max(0,state.hp-2);toast('Заражённый воздух: -2 здоровья');if(state.hp<=0)showDeath();save();}}
-function interact(){if(interactExpansion())return;if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98){completeRadioSignal();return}if(Math.hypot(state.x-mark.x,state.y-mark.y)<75){openMark();return}let index=wrecks.findIndex(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65);if(index>=0){const coop=window.ApocalypseCoop;wrecks[index].done=true;state.quest++;state.scrap++;state.bolts++;toast('Детали найдены · '+state.quest+'/3');save();if(coop?.room?.status==='running')coop.send({kind:'wreck-claimed',index,quest:state.quest,by:coop.userId});return}const treeIndex=trees.findIndex((t,i)=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48);if(treeIndex>=0){trees[treeIndex].harvested=true;harvestedTrees.add(treeIndex);state.wood+=2;toast('Собрано древесины: +2');save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'tree-harvested',index:treeIndex});return}toast('Подойди ближе к дереву, машине или радиомаяку')}
+function interact(){
+ const indoor=buildings.find(b=>b.role&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18);
+ if(indoor?.role==='store'){
+  const loot=storeLoot[indoor.id];
+  if(loot?.weapon&&!loot.picked&&Math.hypot(state.x-(indoor.x+indoor.w/2-72),state.y-(indoor.y+indoor.h-185+76))<72){
+   state.firearm=loot.weapon;state.ammo+=loot.ammo;loot.picked=true;save();toast('Найдено оружие: '+(loot.weapon==='shotgun'?'дробовик':loot.weapon==='rifle'?'винтовка':'пистолет')+' · патроны +'+loot.ammo);inventory();return;
+  }
+ }
+ const shelter=buildings.find(b=>b.role==='shelter'&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18);
+ if(shelter&&!lootedShelters.has(shelter.id)&&Math.hypot(state.x-(shelter.x+shelter.w/2+72),state.y-(shelter.y+shelter.h-168))<82){
+  lootedShelters.add(shelter.id);state.food+=3;state.bandage+=1;state.wood+=2;state.survivorTrust+=1;save();toast('Запасы убежища: +3 еды, аптечка, +2 дерева');return;
+ }
+ if(interactExpansion())return;if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98){completeRadioSignal();return}if(Math.hypot(state.x-mark.x,state.y-mark.y)<75){openMark();return}let index=wrecks.findIndex(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65);if(index>=0){const coop=window.ApocalypseCoop;wrecks[index].done=true;state.quest++;state.scrap++;state.bolts++;toast('Детали найдены · '+state.quest+'/3');save();if(coop?.room?.status==='running')coop.send({kind:'wreck-claimed',index,quest:state.quest,by:coop.userId});return}const treeIndex=trees.findIndex((t,i)=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48);if(treeIndex>=0){trees[treeIndex].harvested=true;harvestedTrees.add(treeIndex);state.wood+=2;toast('Собрано древесины: +2');save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'tree-harvested',index:treeIndex});return}toast(indoor?'Осмотри помещение: E у полок и ящиков':'Подойди ближе к дереву, машине, зданию или радиомаяку')}
 function drawOneBarricade(b,ghost=false,valid=true){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Number(b.angle)||0);ctx.globalAlpha=ghost?.58:1;ctx.fillStyle=ghost?(valid?'#4de18a55':'#ff554e66'):'#171d18aa';ctx.fillRect(-34,13,68,9);for(let i=0;i<4;i++){ctx.fillStyle=ghost?(valid?'#7fffb0':'#ff8980'):(i%2?'#806c4d':'#9a8056');ctx.fillRect(-32,-13+i*7,64,5);ctx.strokeStyle=ghost?(valid?'#c8ffe0':'#ffd0c9'):'#3a3327';ctx.lineWidth=1;ctx.strokeRect(-32,-13+i*7,64,5);}ctx.fillStyle=ghost?(valid?'#45d986':'#d94e49'):'#4c4939';ctx.fillRect(-27,-21,6,42);ctx.fillRect(21,-21,6,42);if(ghost){ctx.globalAlpha=.22;ctx.fillStyle=valid?'#3cff91':'#ff4038';ctx.beginPath();ctx.arc(0,0,48,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=valid?'#72ffad':'#ff716a';ctx.lineWidth=3;ctx.strokeRect(-36,-25,72,50);}ctx.restore();}
 function drawBarricades(){for(const b of barricades)drawOneBarricade(b,false,true);}
 function drawBuildPreview(){if(!buildMode)return;const p=buildCandidate(),valid=canPlaceBarricade(p);drawOneBarricade(p,true,valid);const status=document.getElementById('buildStatus');if(status)status.textContent=valid?'МЕСТО СВОБОДНО':'МЕСТО ЗАНЯТО';}
 function drawInfectionZones(){for(const z of infectionZones){const pulse=1+Math.sin(time*.0017+z.x)*.035;ctx.save();ctx.globalAlpha=.17;const g=ctx.createRadialGradient(z.x,z.y,8,z.x,z.y,z.r*pulse);g.addColorStop(0,'#7da34a88');g.addColorStop(.65,'#587c3b44');g.addColorStop(1,'#334b3000');ctx.fillStyle=g;ctx.beginPath();ctx.arc(z.x,z.y,z.r*pulse,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.55;ctx.strokeStyle='#a3c16a';ctx.setLineDash([7,10]);ctx.beginPath();ctx.arc(z.x,z.y,z.r*.72,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();}}
-function attack(){const now=performance.now();if(!gameActive||now-lastAttackAt<650)return;lastAttackAt=now;let target=null,best=78;for(const z of zombies){const d=Math.hypot(state.x-z.x,state.y-z.y);if(d<best){best=d;target=z;}}if(!target){toast('Рядом нет заражённых');return;}const damage=state.weaponLevel>=2?46:state.weaponLevel?34:13;target.hp-=damage;if(target.hp<=0){const i=zombies.indexOf(target);if(i>=0)zombies.splice(i,1);state.scrap+=target.kind==='brute'?3:target.kind==='stalker'?2:1;if(Math.random()<.45)state.food++;if(Math.random()<.25)state.bandage++;const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-killed',x:target.x,y:target.y});toast('Заражённый уничтожен · добыча собрана');}else{const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-hit',x:target.x,y:target.y,damage});toast('Попадание · '+damage+' урона');}save();}
+function attack(){const now=performance.now();if(!gameActive||now-lastAttackAt<650)return;lastAttackAt=now;let target=null,best=state.firearm&&state.ammo>0?330:78;for(const z of zombies){const d=Math.hypot(state.x-z.x,state.y-z.y);if(d<best){best=d;target=z;}}if(!target){toast('Рядом нет заражённых');return;}const ranged=!!state.firearm&&state.ammo>0;const range=ranged?330:78;if(best>range){toast(ranged?'Цель слишком далеко':'Рядом нет заражённых');return;}const damage=ranged?(state.firearm==='shotgun'?78:state.firearm==='rifle'?68:48):(state.weaponLevel>=2?46:state.weaponLevel?34:13);if(ranged)state.ammo--;target.hp-=damage;if(target.hp<=0){const i=zombies.indexOf(target);if(i>=0)zombies.splice(i,1);state.scrap+=target.kind==='brute'?3:target.kind==='stalker'?2:1;if(Math.random()<.45)state.food++;if(Math.random()<.25)state.bandage++;const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-killed',x:target.x,y:target.y});toast('Заражённый уничтожен · добыча собрана');}else{const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-hit',x:target.x,y:target.y,damage});toast('Попадание · '+damage+' урона');}save();}
 function craft(cost,action){if(state.scrap<cost.scrap||state.wood<cost.wood||state.bolts<cost.bolts){toast('Не хватает ресурсов для изготовления');return false;}state.scrap-=cost.scrap;state.wood-=cost.wood;state.bolts-=cost.bolts;action();save();return true;}
 function openWorkshop(){showPanel('Мастерская','Собирай древесину с деревьев и детали с машин. Здесь можно изготовить снаряжение и укрепить позицию.',[
  {icon:'🩹',name:'Аптечка · 2 металла + 1 дерево',count:state.bandage,use:()=>{if(craft({scrap:2,wood:1,bolts:0},()=>state.bandage++)){toast('Аптечка изготовлена');openWorkshop();}}},
@@ -495,7 +552,7 @@ function openWorkshop(){showPanel('Мастерская','Собирай дре�
 ]);}
 function showPanel(title,body,items){document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot filled';let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent='×'+item.count;slot.append(art,name,count);if(item.use){slot.addEventListener('click',item.use)}box.append(slot)});document.getElementById('invHealth').textContent=state.hp;document.getElementById('invDay').textContent=state.day;document.getElementById('invSpeed').textContent=(wind>=.65?'82%':wind>=.3?'94%':'100%');document.getElementById('weight').textContent=(state.scrap*1.2+state.bandage*.2+state.food*.4).toFixed(1)+' / 40 кг';document.getElementById('panel').classList.remove('hidden')}
 function openMark(){if(state.quest>=3&&state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food++;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.6)v.done=false});save();showPanel('Марк · награда','Ты выполнил поручение. Забирай припасы — они пригодятся в дороге.',inventoryItems());return}let msg=state.dayReward===state.day?'Сегодня ты уже помог поселению. Отдохни, завтра будет новое поручение.':'Я Марк. Собери 3 детали с разбитых машин и возвращайся ко мне. За работу дам аптечки и еду. Сейчас собрано: '+state.quest+'/3.';showPanel('Марк · выживший',msg,[{icon:'⚙️',name:'Детали для задания',count:state.quest+'/3'},{icon:'🩹',name:'Награда: аптечки',count:'×2'},{icon:'🥫',name:'Награда: консервы',count:'×1'}])}
-function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🪵',name:'Древесина',count:state.wood},{icon:'🔩',name:'Крепёж',count:state.bolts},{icon:'🗡️',name:'Самодельное копьё',count:state.weaponLevel?'ур. '+state.weaponLevel:0},{icon:'🛡️',name:'Усиленная броня',count:state.armorLevel?'надета':'нет'}, {icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);save();updateHud();inventory()}},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0},{icon:'📡',name:'Найдено сигналов',count:state.radioFinds},{icon:'🤝',name:'Доверие выживших',count:state.survivorTrust}]}
+function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🔫',name:'Огнестрельное оружие',count:state.firearm||'нет'},{icon:'▣',name:'Патроны',count:state.ammo},{icon:'🪵',name:'Древесина',count:state.wood},{icon:'🔩',name:'Крепёж',count:state.bolts},{icon:'🗡️',name:'Самодельное копьё',count:state.weaponLevel?'ур. '+state.weaponLevel:0},{icon:'🛡️',name:'Усиленная броня',count:state.armorLevel?'надета':'нет'}, {icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);save();updateHud();inventory()}},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0},{icon:'📡',name:'Найдено сигналов',count:state.radioFinds},{icon:'🤝',name:'Доверие выживших',count:state.survivorTrust}]}
 function inventory(){showPanel('Рюкзак','Снаряжение и найденные припасы. Задание Марка также отображается здесь.',inventoryItems())}
 function nearSegment(px,py,x1,y1,x2,y2,limit){
  const dx=x2-x1,dy=y2-y1,len=dx*dx+dy*dy;
@@ -513,7 +570,8 @@ function blocked(x,y){
   if(nearSegment(x,y,left,bottom,cx-doorHalf,bottom,wall)||nearSegment(x,y,cx+doorHalf,bottom,right,bottom,wall))return true;
   // Short lobby side walls and back wall make the interior a real, bounded walkable space.
   const lobbyTop=bottom-126,lobbyHalf=62;
-  if(nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx-lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx+lobbyHalf,lobbyTop,cx+lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx+lobbyHalf,lobbyTop,wall))return true;
+  // New shops and shelters have open, walkable ground floors; older landmarks keep their lobby walls.
+  if(!b.role&&(nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx-lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx+lobbyHalf,lobbyTop,cx+lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx+lobbyHalf,lobbyTop,wall)))return true;
  }
  for(const t of trees){if(t.harvested)continue;const rr=10+t.size*8,dx=x-t.x,dy=y-(t.y+7);if(dx*dx+dy*dy<(r+rr)**2)return true;}
  for(const p of worldProps){if(Math.abs(x-p.x)<p.w/2+r+5&&Math.abs(y-p.y)<p.h/2+r+5)return true;}
