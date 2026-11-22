@@ -79,6 +79,13 @@ const surfaceTextures=(()=>{
    if(strokes){g.lineWidth=.6+rand()*1.4;g.beginPath();g.moveTo(x,y);g.lineTo(x+(rand()-.5)*18,y+(rand()-.5)*8);g.strokeStyle=g.fillStyle;g.stroke();}
    else{g.beginPath();g.ellipse(x,y,r,r*(.4+rand()),rand()*3,0,Math.PI*2);g.fill();}
   }
+  // Fine grain, tiny chips and hairline wear make repeated surfaces less flat.
+  for(let i=0;i<count;i++){
+   const x=rand()*128,y=rand()*128;
+   g.globalAlpha=.08+rand()*.16;g.fillStyle=colors[Math.floor(rand()*colors.length)];
+   g.fillRect(x,y,.6+rand()*1.4,.6+rand()*1.4);
+   if(i%5===0){g.globalAlpha=.1;g.strokeStyle=colors[Math.floor(rand()*colors.length)];g.lineWidth=.45;g.beginPath();g.moveTo(x,y);g.lineTo(x+2+rand()*8,y+(rand()-.5)*2);g.stroke();}
+  }
   g.globalAlpha=1;return ctx.createPattern(c,'repeat');
  }
  return {
