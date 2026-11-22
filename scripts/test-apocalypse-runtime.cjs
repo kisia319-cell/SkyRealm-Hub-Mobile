@@ -52,7 +52,7 @@ assert.ok(game.includes('if(worldClock<previousClock)advanceGameDay()') && game.
 assert.ok(game.includes('const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[]'), 'Malformed wreck save data must be ignored');
 assert.ok(game.includes('nearbyBuildings='), 'Zombie spawns must use nearby buildings only');
 assert.ok(game.includes('radioSignal&&Math.abs'), 'Radio-event props must have collision bounds');
-assert.equal((game.match(/\{x:\d+,y:\d+,done:false\}/g)||[]).length, 31, 'Expanded map should contain 31 scavenging sites');
+assert.equal((game.match(/\{x:-?\d+,y:-?\d+,done:false\}/g)||[]).length, 32, 'Expanded map should contain 32 scavenging sites');
 assert.ok(coop.includes('grant_type=refresh_token') && coop.includes('skyrealm_apocalypse_refresh'), 'Co-op must refresh expired sessions');
 assert.ok(game.includes('if(!coop?.room||coop.isOwner())') && game.includes('getClock:()=>worldClock'), 'Co-op day/night clock must be owner-authoritative');
 assert.equal((coop.match(/getClock/g)||[]).length, 2, 'Initial co-op world sync and world requests must include the clock');
@@ -123,7 +123,8 @@ function makeHarness(seed = {}, failWrites = false) {
   const window = {
     addEventListener(type, fn) { const key = 'window:' + type; if (!listeners.has(key)) listeners.set(key, []); listeners.get(key).push(fn); },
     dispatchEvent() { return true; },
-    devicePixelRatio: 1
+    devicePixelRatio: 1,
+    matchMedia() { return { matches: false, addEventListener() {}, removeEventListener() {} }; }
   };
   const sandbox = {
     window, document, localStorage, console, Math, Date, JSON, Number, String, Object, Array, Set, Map,
@@ -150,7 +151,7 @@ const harness = makeHarness({
 });
 vm.runInNewContext(game, harness.sandbox, { filename: 'apocalypse.js' });
 const saved = JSON.parse(harness.store.get('skyrealm_apocalypse_mobile_v1'));
-assert.ok(saved.x >= 37 && saved.x <= 11963 && saved.y >= 37 && saved.y <= 11963, 'invalid saved coordinates must be clamped');
+assert.ok(saved.x >= -11963 && saved.x <= 23963 && saved.y >= -11963 && saved.y <= 23963, 'invalid saved coordinates must be clamped to the expanded map');
 assert.equal(saved.hp, 100, 'invalid saved health must be normalized');
 assert.equal(saved.scrap, 0, 'negative inventory values must be normalized');
 assert.equal(saved.day, 1, 'invalid day counter must be normalized');
