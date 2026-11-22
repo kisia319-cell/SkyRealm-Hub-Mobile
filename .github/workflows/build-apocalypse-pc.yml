@@ -13,6 +13,18 @@ on:
       - "scripts/validate-apocalypse-changelog.cjs"
       - "scripts/test-apocalypse-runtime.cjs"
       - ".github/workflows/build-apocalypse-pc.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apocalypse_pc.py"
+      - "apocalypse-pc.js"
+      - "app/src/main/assets/apocalypse.html"
+      - "app/src/main/assets/apocalypse.js"
+      - "app/src/main/assets/apocalypse-coop.js"
+      - "app/src/main/assets/apocalypse-changelog.js"
+      - "scripts/validate-apocalypse-changelog.cjs"
+      - "scripts/test-apocalypse-runtime.cjs"
+      - ".github/workflows/build-apocalypse-pc.yml"
   workflow_dispatch:
 
 permissions:
@@ -78,7 +90,16 @@ jobs:
             if (-not $listing.Contains($asset)) { throw "EXE is missing bundled mobile asset: $asset" }
           }
 
+      - name: Upload Windows test executable
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkyRealm-Apocalypse-Windows-Test
+          path: dist/SkyRealmApocalypse.exe
+          if-no-files-found: error
+
       - name: Publish separate Windows Apocalypse release
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apocalypse-pc-v1.1.1
