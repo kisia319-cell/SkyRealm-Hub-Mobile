@@ -4,6 +4,7 @@ const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(_){ret
 const saved=read(STORE),avatar=read('skyrealm_character_v1');
 const colors={skin:avatar.skin||'#e8b88c',hair:avatar.hair||'#352d3d',shirt:avatar.armor||'#526fba',trim:avatar.accent||'#9cb9ff',eyes:avatar.eye||'#26334c'};
 const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,wood:saved.wood||0,bolts:saved.bolts||0,weaponLevel:saved.weaponLevel||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0,radioFinds:saved.radioFinds||0,survivorTrust:saved.survivorTrust||0};
+if(!Number.isFinite(state.x)||!Number.isFinite(state.y)){state.x=440;state.y=390;}else{state.x=Math.max(25,Math.min(11975,state.x));state.y=Math.max(25,Math.min(11975,state.y));}
 const mark={x:610,y:400};
 const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false},{x:1850,y:350,done:false},{x:2200,y:780,done:false},{x:2750,y:520,done:false},{x:3100,y:1250,done:false},{x:1900,y:1950,done:false}];
 wrecks.forEach((v,i)=>v.done=!!saved.wrecks?.[i]);
