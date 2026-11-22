@@ -97,11 +97,11 @@ const surfaceTextures=(()=>{
 function toast(t){let e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),1800)}
 function dayWind(){const cycle=(state.day*37)%100;wind=cycle<30?.12:cycle<65?.42:.78;windName=wind<.25?'тихий':wind<.6?'умеренный':'сильный';document.getElementById('weather').textContent='Ветер · '+windName;}
 function ground(){
- const groundX=state.x-w/2-700,groundY=state.y-h/2-700;
- rect(groundX,groundY,w+1400,h+1400,'#657452');
- ctx.save();ctx.globalAlpha=.68;ctx.fillStyle=surfaceTextures.grass;ctx.fillRect(groundX,groundY,w+1400,h+1400);ctx.restore();
- const left=Math.floor((state.x-w/2-700)/46)*46,top=Math.floor((state.y-h/2-700)/46)*46;
- for(let gy=top;gy<state.y+h/2+700;gy+=46)for(let gx=left;gx<state.x+w/2+700;gx+=46){
+ const groundX=state.x-w/2-80,groundY=state.y-h/2-80;
+ rect(groundX,groundY,w+160,h+160,'#657452');
+ ctx.save();ctx.globalAlpha=.68;ctx.fillStyle=surfaceTextures.grass;ctx.fillRect(groundX,groundY,w+160,h+160);ctx.restore();
+ const left=Math.floor((state.x-w/2-80)/46)*46,top=Math.floor((state.y-h/2-80)/46)*46;
+ for(let gy=top;gy<state.y+h/2+80;gy+=46)for(let gx=left;gx<state.x+w/2+80;gx+=46){
   const n=Math.abs(Math.sin(gx*12.989+gy*78.233)*43758.5453)%1;
   ctx.strokeStyle=n>.5?'#a2a47a88':'#293e2e88';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(gx+n*25,gy+12);ctx.lineTo(gx+n*25+2,gy+5+n*5);ctx.stroke();
