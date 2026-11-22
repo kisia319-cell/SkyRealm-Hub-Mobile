@@ -480,10 +480,33 @@ window.addEventListener('apocalypse-coop-event',e=>{const p=e.detail,coop=window
 applySettings();
 document.getElementById('action').onclick=interact;document.getElementById('inventory').onclick=inventory;document.getElementById('panelClose').onclick=()=>document.getElementById('panel').classList.add('hidden');
 document.getElementById('exit').onclick=exitGame;
-const keyFromEvent=e=>({KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',KeyE:'e',KeyI:'i',ArrowUp:'ArrowUp',ArrowDown:'ArrowDown',ArrowLeft:'ArrowLeft',ArrowRight:'ArrowRight'}[e.code]||(e.key.length===1?e.key.toLowerCase():e.key));
-document.addEventListener('keydown',e=>{const k=keyFromEvent(e);if(k==='F11'){e.preventDefault();e.stopPropagation();const api=window.pywebview?.api;if(api?.toggle_fullscreen){api.toggle_fullscreen();}else if(!document.fullscreenElement){document.documentElement.requestFullscreen?.().catch(()=>{});}else{document.exitFullscreen?.().catch(()=>{});}return;}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' '].includes(k))e.preventDefault();if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){keys.add(k);focusGame();return;}if(e.repeat)return;if(k==='e')interact();if(k==='i')inventory();if(k==='Escape'&&gameActive)leaveToMenu();},true);
-document.addEventListener('keyup',e=>{const k=keyFromEvent(e);keys.delete(k);},true);
+const KEY_BY_CODE={KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',KeyE:'e',KeyI:'i',ArrowUp:'ArrowUp',ArrowDown:'ArrowDown',ArrowLeft:'ArrowLeft',ArrowRight:'ArrowRight'};
+const KEY_BY_LAYOUT={'ц':'w','ф':'a','ы':'s','в':'d','е':'e','ш':'i'};
+const keyFromEvent=e=>KEY_BY_CODE[e.code]||KEY_BY_LAYOUT[String(e.key||'').toLowerCase()]||(String(e.key||'').length===1?String(e.key).toLowerCase():e.key);
+async function toggleApocalypseFullscreen(){
+ const api=window.pywebview?.api;
+ if(api?.toggle_fullscreen){
+  try{const result=await api.toggle_fullscreen();if(result!==false&&result?.ok!==false)return;}catch(_){}
+ }
+ try{
+  if(document.fullscreenElement)await document.exitFullscreen();
+  else await document.documentElement.requestFullscreen();
+ }catch(_){toast('Не удалось включить полный экран. Попробуй кнопку разворота окна.');}
+}
+window.addEventListener('keydown',e=>{
+ if(e.code==='F11'||e.key==='F11'){e.preventDefault();e.stopPropagation();toggleApocalypseFullscreen();return;}
+ const k=keyFromEvent(e);
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' '].includes(k))e.preventDefault();
+ if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){keys.add(k);focusGame();return;}
+ if(e.repeat)return;
+ if(k==='e')interact();
+ if(k==='i')inventory();
+ if(k==='Escape'&&gameActive)leaveToMenu();
+},true);
+window.addEventListener('keyup',e=>{keys.delete(keyFromEvent(e));},true);
 window.addEventListener('blur',()=>keys.clear());
+window.addEventListener('focus',()=>{if(gameActive)focusGame();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&gameActive)focusGame();});
 canvas.tabIndex=0;canvas.addEventListener('pointerdown',focusGame);
 window.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('selectstart',e=>e.preventDefault());window.addEventListener('resize',resize);
 window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,save});setupJoystick();daily();resize();save();requestAnimationFrame(loop);
