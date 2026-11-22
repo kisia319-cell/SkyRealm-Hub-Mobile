@@ -63,7 +63,7 @@ const buildings=[
 ];
 buildForest();
 const harvestedTrees=new Set(Array.isArray(saved.harvestedTrees)?saved.harvestedTrees:[]);trees.forEach((t,i)=>t.harvested=harvestedTrees.has(i));
-function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],supplyDrop}))}
+function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],supplyDrop}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
 
@@ -371,6 +371,7 @@ function updateHud(){document.getElementById('health').textContent='♥ '+state.
 /* Apocalypse expansion 1.2.0 — exploration, supply drops and weather.
    This extension deliberately leaves move(), setupJoystick() and key handling untouched. */
 const foundCaches=new Set(Array.isArray(saved.foundCaches)?saved.foundCaches:[]);
+const discoveredLandmarks=new Set(Array.isArray(saved.discoveredLandmarks)?saved.discoveredLandmarks:[]);
 const explorationCaches=[
  {x:1280,y:1860,type:'medical',name:'Полевой медпункт'},
  {x:3560,y:2460,type:'military',name:'Военный тайник'},
@@ -414,7 +415,7 @@ function drawWeatherEffects(){
   ctx.save();ctx.fillStyle='#17253518';ctx.fillRect(0,0,w,h);
   ctx.strokeStyle='#b8c8d088';ctx.lineWidth=1;
   for(let i=0;i<38;i++){const x=(i*83+time*.42)%(w+40)-20,y=(i*47+time*.78)%(h+40)-20;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-5,y+13);ctx.stroke();}
-  if(time-lightningUntil<180&&lightningUntil>0){ctx.fillStyle='#d9e4e755';ctx.fillRect(0,0,w,h);}
+  if(time<lightningUntil&&lightningUntil>0){ctx.fillStyle='#d9e4e755';ctx.fillRect(0,0,w,h);}
   ctx.restore();
  }else if(phase===1){
   ctx.save();const fog=ctx.createLinearGradient(0,0,0,h);fog.addColorStop(0,'#c5c9b00c');fog.addColorStop(.55,'#d4d2b51c');fog.addColorStop(1,'#c5c9b008');ctx.fillStyle=fog;ctx.fillRect(0,0,w,h);ctx.restore();
@@ -436,6 +437,7 @@ function interactExpansion(){
 }
 function updateExpansion(now){
  if(!gameActive)return;
+ for(let i=0;i<explorationCaches.length;i++){const p=explorationCaches[i];if(!discoveredLandmarks.has(i)&&Math.hypot(state.x-p.x,state.y-p.y)<175){discoveredLandmarks.add(i);save();if(now-lastLandmarkToast>3500){lastLandmarkToast=now;toast('Обнаружено место: '+p.name);}}}
  if(!supplyDrop&&now>nextSupplyDropAt){
   let x=state.x+(Math.random()-.5)*620,y=state.y+(Math.random()-.5)*620,tries=0;
   while((blocked(x,y)||insideBuilding(x,y)||Math.hypot(x-state.x,y-state.y)<230)&&tries++<24){x=state.x+(Math.random()-.5)*760;y=state.y+(Math.random()-.5)*760;}
