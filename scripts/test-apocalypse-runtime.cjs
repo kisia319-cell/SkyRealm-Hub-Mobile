@@ -236,4 +236,8 @@ const storageFailure = makeHarness({}, true);
 assert.doesNotThrow(() => vm.runInNewContext(game, storageFailure.sandbox, { filename: 'apocalypse.js' }), 'game must still boot if local storage is unavailable');
 storageFailure.runFrame();
 
+assert.ok(game.includes("id:'water_treatment'") && game.includes("id:'school_ruins'") && game.includes("id:'city_bank'") && game.includes("id:'garage_complex'") && game.includes("id:'research_center'") && game.includes("id:'old_mill'"), 'All six new enterable buildings must be present');
+assert.ok(game.includes("role:'loot',texture:'metal'") && game.includes("role:'loot',texture:'brick'") && game.includes("role:'loot',texture:'concrete'") && game.includes("role:'loot',texture:'asphalt'") && game.includes("role:'loot',texture:'plaster'") && game.includes("role:'loot',texture:'dirt'"), 'Each new building must use a distinct facade texture');
+assert.ok(game.includes("const lootCycle=['medInjector','energyDrink','armorPlate','ammoCrate','weaponParts','electronicsPack']") && game.includes("function useNewLootItem(key)") && game.includes("buildingFloors") && game.includes("buildingLoot"), 'Six functional loot items and persistent floor loot must exist');
+assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.max(.4,.68-(state.armorLevel-1)*.07)") && game.includes("46+(state.weaponLevel-2)*6"), 'New item effects must affect gameplay stats');
 console.log('Apocalypse deep-audit tests passed: JS runtime boot/frame, corrupt saves, storage failure, HTML IDs/assets, map ground, safe respawn, co-op token refresh, PC port, and unchanged movement.');
