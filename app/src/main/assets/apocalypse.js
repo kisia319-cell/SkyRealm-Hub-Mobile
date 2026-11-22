@@ -159,7 +159,7 @@ function completeRadioSignal(){
  }else if(kind==='medical'){
   const kits=1+Math.floor(Math.random()*2);
   state.bandage+=kits;state.food++;state.hp=Math.min(100,state.hp+20);
-  toast('Медпункт найден: аптечки +'+kits', еда +1, здоровье восстановлено');
+  toast('Медпункт найден: аптечки +'+kits+', еда +1, здоровье восстановлено');
  }else{
   state.survivorTrust++;state.food+=2;state.scrap++;
   toast('Выжившие спасены: доверие +1, еда +2, металлолом +1');
