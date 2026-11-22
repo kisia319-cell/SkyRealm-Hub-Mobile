@@ -13,20 +13,22 @@ const pc = fs.readFileSync(path.join(root, 'apocalypse_pc.py'), 'utf8');
 new vm.Script(game, { filename: 'apocalypse.js' });
 new vm.Script(coop, { filename: 'apocalypse-coop.js' });
 
-const expectedMove = `function move(dt){
-  let dx=moveX,dy=moveY;
-  if(keys.has('ArrowUp')||keys.has('w'))dy-=1;
-  if(keys.has('ArrowDown')||keys.has('s'))dy+=1;
-  if(keys.has('ArrowLeft')||keys.has('a'))dx-=1;
-  if(keys.has('ArrowRight')||keys.has('d'))dx+=1;
-  let len=Math.hypot(dx,dy);
-  if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}
-}`;
-assert.equal(game.match(/function move\\(dt\\)\\{[\\s\\S]*?\\n\\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
+const expectedMove = [
+"function move(dt){",
+"  let dx=moveX,dy=moveY;",
+"  if(keys.has('ArrowUp')||keys.has('w'))dy-=1;",
+"  if(keys.has('ArrowDown')||keys.has('s'))dy+=1;",
+"  if(keys.has('ArrowLeft')||keys.has('a'))dx-=1;",
+"  if(keys.has('ArrowRight')||keys.has('d'))dx+=1;",
+"  let len=Math.hypot(dx,dy);",
+"  if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}",
+"}"
+].join('\n');
+assert.equal(game.match(/function move\(dt\)\{[\s\S]*?\n\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
 
-const ids = new Set([...html.matchAll(/\\bid="([^"]+)"/g)].map(m => m[1]));
+const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
 for (const [label, source] of [['game', game], ['coop', coop]]) {
-  const refs = [...source.matchAll(/(?:document\\.getElementById|\\$)\\(['"]([^'"]+)['"]\\)/g)].map(m => m[1]);
+  const refs = [...source.matchAll(/(?:document\.getElementById|\$)\(['"]([^'"]+)['"]\)/g)].map(m => m[1]);
   const missing = [...new Set(refs.filter(id => !ids.has(id) && id !== 'copyInvite'))];
   assert.deepEqual(missing, [], label + ' references missing HTML ids');
 }
@@ -36,7 +38,7 @@ for (const asset of ['apocalypse-changelog.js', 'apocalypse-coop.js', 'apocalyps
 
 assert.ok(game.includes('const groundX=state.x-w/2-700,groundY=state.y-h/2-700'), 'Ground texture must follow the camera across the expanded map');
 assert.ok(game.includes('function findSafeSpawn(') && game.includes('findSafeSpawn(state.x+150,state.y+110)'), 'Respawn must find a collision-free position');
-assert.ok(!/Math\\.min\\(9900,state\\.[xy]\\+/.test(game), 'Old 9,900 map clamp must not remain');
+assert.ok(!/Math\.min\(9900,state\.[xy]\+/.test(game), 'Old 9,900 map clamp must not remain');
 assert.ok(game.includes('function enterSolo(){gameActive=false'), 'Intro dialogue must pause simulation');
 assert.ok(game.includes('name:playerName,'), 'Frame loop must not parse untrusted username JSON every tick');
 assert.ok(game.includes('function save(){try{localStorage.setItem('), 'Save failures must not crash gameplay');
@@ -77,7 +79,7 @@ function makeHarness(seed = {}, failWrites = false) {
   });
   function element(id = '') {
     const handlers = {};
-    const el = {
+    return {
       id, style: {}, dataset: {}, classList: fakeClassList(), hidden: false,
       value: id === 'settingEffects' ? 'high' : id === 'settingJoy' ? '100' : '',
       checked: true, textContent: '', innerHTML: '', className: '', disabled: false,
@@ -90,13 +92,12 @@ function makeHarness(seed = {}, failWrites = false) {
       getBoundingClientRect() { return { left: 0, top: 0, width: 100, height: 100 }; },
       getContext() { return ctx2d; }
     };
-    return el;
   }
   const document = {
     body: element('body'), documentElement: element('html'),
     getElementById(id) { if (!elements.has(id)) elements.set(id, element(id)); return elements.get(id); },
     createElement(tag) { return element(tag); },
-    addEventListener(type, fn) { (listeners.get('document:' + type) || listeners.set('document:' + type, []).get('document:' + type)).push(fn); },
+    addEventListener(type, fn) { const key = 'document:' + type; if (!listeners.has(key)) listeners.set(key, []); listeners.get(key).push(fn); },
     querySelectorAll() { return []; }
   };
   const canvas = document.getElementById('world');
@@ -107,7 +108,7 @@ function makeHarness(seed = {}, failWrites = false) {
     removeItem(key) { store.delete(key); }
   };
   const window = {
-    addEventListener(type, fn) { (listeners.get('window:' + type) || listeners.set('window:' + type, []).get('window:' + type)).push(fn); },
+    addEventListener(type, fn) { const key = 'window:' + type; if (!listeners.has(key)) listeners.set(key, []); listeners.get(key).push(fn); },
     dispatchEvent() { return true; },
     devicePixelRatio: 1
   };
