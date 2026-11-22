@@ -42,6 +42,8 @@ assert.ok(!/Math\.min\(9900,state\.[xy]\+/.test(game), 'Old 9,900 map clamp must
 assert.ok(game.includes('function enterSolo(){gameActive=false'), 'Intro dialogue must pause simulation');
 assert.ok(game.includes('name:playerName,'), 'Frame loop must not parse untrusted username JSON every tick');
 assert.ok(game.includes('function save(){try{localStorage.setItem('), 'Save failures must not crash gameplay');
+assert.ok(game.includes('if(now-lastAutoSave>=5000)') && game.includes('worldClock}'), 'Position and day/night state must autosave');
+assert.ok(game.includes('worldClock=savedWorldClock'), 'Day/night phase must survive reloads');
 assert.ok(game.includes('const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[]'), 'Malformed wreck save data must be ignored');
 assert.ok(game.includes('nearbyBuildings='), 'Zombie spawns must use nearby buildings only');
 assert.ok(game.includes('radioSignal&&Math.abs'), 'Radio-event props must have collision bounds');
@@ -150,6 +152,8 @@ harness.runFrame();
 harness.elements.get('menuPlay').click();
 harness.elements.get('start').click();
 harness.runFrame(1032);
+harness.runFrame(7000);
+assert.equal(typeof JSON.parse(harness.store.get('skyrealm_apocalypse_mobile_v1')).worldClock, 'number', 'autosave must persist day/night phase');
 harness.setWritesFail(true);
 assert.equal(harness.sandbox.window.ApocalypseGame.save(), false, 'storage quota failure should be reported without throwing');
 assert.doesNotThrow(() => harness.elements.get('settingsSave').click(), 'settings storage failure must not crash the UI');
