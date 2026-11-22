@@ -3,7 +3,7 @@ const canvas=document.getElementById('world'),ctx=canvas.getContext('2d'),STORE=
 const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(_){return {}}};
 const saved=read(STORE),avatar=read('skyrealm_character_v1');
 const colors={skin:avatar.skin||'#e8b88c',hair:avatar.hair||'#352d3d',shirt:avatar.armor||'#526fba',trim:avatar.accent||'#9cb9ff',eyes:avatar.eye||'#26334c'};
-const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,wood:saved.wood||0,bolts:saved.bolts||0,weaponLevel:saved.weaponLevel||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0,radioFinds:saved.radioFinds||0,survivorTrust:saved.survivorTrust||0};
+const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,wood:saved.wood||0,bolts:saved.bolts||0,weaponLevel:saved.weaponLevel||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0,radioFinds:saved.radioFinds||0,survivorTrust:saved.survivorTrust||0,armorLevel:saved.armorLevel||0};
 if(!Number.isFinite(state.x)||!Number.isFinite(state.y)){state.x=440;state.y=390;}else{state.x=Math.max(25,Math.min(11975,state.x));state.y=Math.max(25,Math.min(11975,state.y));}
 const mark={x:610,y:400};
 const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false},{x:1850,y:350,done:false},{x:2200,y:780,done:false},{x:2750,y:520,done:false},{x:3100,y:1250,done:false},{x:1900,y:1950,done:false}];
@@ -59,11 +59,15 @@ const buildings=[
  {id:'fire_station',x:10300,y:1120,w:390,h:300,floors:3,accent:'#765e52'},
  {id:'supermarket',x:10300,y:4620,w:430,h:330,floors:2,accent:'#77715f'},
  {id:'motel',x:1800,y:10620,w:380,h:300,floors:4,accent:'#756d59'},
- {id:'factory',x:6500,y:10620,w:470,h:360,floors:3,accent:'#626a64'}
+ {id:'factory',x:6500,y:10620,w:470,h:360,floors:3,accent:'#626a64'},
+ {id:'clinic_outpost',x:1820,y:2820,w:310,h:250,floors:2,accent:'#85806d'},
+ {id:'bus_depot',x:7600,y:2820,w:420,h:270,floors:2,accent:'#646d67'},
+ {id:'radio_tower',x:8500,y:9360,w:300,h:260,floors:3,accent:'#59665e'},
+ {id:'farmhouse',x:1800,y:9360,w:340,h:270,floors:2,accent:'#776b52'}
 ];
 buildForest();
 const harvestedTrees=new Set(Array.isArray(saved.harvestedTrees)?saved.harvestedTrees:[]);trees.forEach((t,i)=>t.harvested=harvestedTrees.has(i));
-function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],supplyDrop}))}
+function save(){localStorage.setItem(STORE,JSON.stringify({...state,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],supplyDrop}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
 
@@ -294,7 +298,15 @@ function drawSurvivor(x,y,palette,phase=0,moving=false,remote=false,name=''){
 }
 function drawRemotePlayers(){const coop=window.ApocalypseCoop;if(!coop)return;for(const p of coop.getPlayers()){if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;drawSurvivor(p.x,p.y,p.avatar,p.phase||0,!!p.moving,true,p.name);}}
 function drawPlayer(){drawSurvivor(w/2,h/2+Math.sin(time*.008)*2,colors,0,Math.hypot(moveX,moveY)>.08,false);}
-function spawnZombie(x,y,kind='night'){if(zombies.length>=18)return;zombies.push({id:++zombieId,x,y,kind,hp:kind==='brute'?105:kind==='runner'?28:40,speed:kind==='brute'?42:kind==='runner'?112:64,damage:kind==='brute'?12:kind==='runner'?5:6,attackAt:0,phase:Math.random()*6.28,born:performance.now(),emerge:1750});}
+function drawFlashlight(){
+ if(!saved.flashlight||!(worldClock>.62||worldClock<.08)||prefs.effects==='low')return;
+ ctx.save();ctx.globalCompositeOperation='screen';
+ const x=w/2,y=h/2,r=Math.min(230,Math.max(145,w*.23));
+ const glow=ctx.createRadialGradient(x,y,12,x,y,r);
+ glow.addColorStop(0,'#ffe6ad38');glow.addColorStop(.38,'#f6d9951b');glow.addColorStop(1,'#f6d99500');
+ ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore();
+}
+function spawnZombie(x,y,kind='night'){if(zombies.length>=18)return;const stats={brute:[105,42,12],runner:[28,112,5],stalker:[48,88,8],night:[40,64,6],day:[40,64,6]};const v=stats[kind]||stats.night;zombies.push({id:++zombieId,x,y,kind,hp:v[0],speed:v[1],damage:v[2],attackAt:0,phase:Math.random()*6.28,born:performance.now(),emerge:1750});}
 function updateZombies(dt,now){
  if(!gameActive)return;
  worldClock=(worldClock+dt/480)%1;applyInfectionDamage(now);
@@ -317,7 +329,7 @@ function updateZombies(dt,now){
     let x=cx+(Math.random()-.5)*(byBuilding?56:50),y=cy+(Math.random()-.5)*(byBuilding?56:50),tries=0;
     while(blocked(x,y)&&tries++<8){x=cx+(Math.random()-.5)*150;y=cy+(Math.random()-.5)*150;}
     if(blocked(x,y))continue;
-    const roll=Math.random();const kind=roll<.12?'brute':roll<.34?'runner':(night?'night':'day');
+    const roll=Math.random();const kind=roll<.12?'brute':roll<.30?'runner':roll<.43&&night?'stalker':(night?'night':'day');
     spawnZombie(x,y,kind);
     if(coop?.room?.status==='running')coop.send({kind:'zombie-spawn',x,y,ztype:kind});
    }
@@ -329,7 +341,7 @@ function updateZombies(dt,now){
    const dx=(state.x-z.x)/(d||1),dy=(state.y-z.y)/(d||1),nx=z.x+dx*z.speed*dt,ny=z.y+dy*z.speed*dt;
    if(!blocked(nx,z.y))z.x=nx;
    if(!blocked(z.x,ny))z.y=ny;
-   if(d<26&&now>z.attackAt&&now>respawnUntil){z.attackAt=now+950;state.hp=Math.max(0,state.hp-z.damage);if(state.hp<=0)showDeath();}
+   if(d<26&&now>z.attackAt&&now>respawnUntil){z.attackAt=now+950;state.hp=Math.max(0,state.hp-Math.max(1,Math.round(z.damage*(state.armorLevel?0.68:1))));if(state.hp<=0)showDeath();}
   }
   if(d>900)zombies.splice(i,1);
  }
@@ -353,16 +365,16 @@ function drawZombies(){
   ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(-5+walk*4,15);ctx.moveTo(3,5);ctx.lineTo(5-walk*4,15);ctx.stroke();
   ctx.strokeStyle='#4b4a3b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-5+walk*4,14);ctx.lineTo(-8+walk*5,17);ctx.moveTo(5-walk*4,14);ctx.lineTo(8-walk*5,17);ctx.stroke();
   // Torso, layered ragged clothing and fabric wear.
-  ctx.fillStyle=z.kind==='brute'?'#55433b':z.kind==='runner'?'#596b4a':'#53604c';ctx.beginPath();ctx.moveTo(-7,-10);ctx.lineTo(6,-10);ctx.lineTo(8,5);ctx.lineTo(4,9);ctx.lineTo(-7,7);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#303b31';ctx.fillRect(-6,-7,12,3);ctx.fillStyle='#83765a';ctx.fillRect(-5,-2,3,7);ctx.fillStyle='#a18d6d';ctx.fillRect(2,-6,2,3);
+  ctx.fillStyle=z.kind==='brute'?'#55433b':z.kind==='runner'?'#596b4a':z.kind==='stalker'?'#4c465b':'#53604c';ctx.beginPath();ctx.moveTo(-7,-10);ctx.lineTo(6,-10);ctx.lineTo(8,5);ctx.lineTo(4,9);ctx.lineTo(-7,7);ctx.closePath();ctx.fill();
+  ctx.fillStyle=z.kind==='stalker'?'#292336':'#303b31';ctx.fillRect(-6,-7,12,3);ctx.fillStyle='#83765a';ctx.fillRect(-5,-2,3,7);ctx.fillStyle='#a18d6d';ctx.fillRect(2,-6,2,3);
   ctx.strokeStyle='#9a9273';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-5,1);ctx.lineTo(-2,4);ctx.moveTo(4,-5);ctx.lineTo(6,-1);ctx.stroke();
   // Animated dangling arms with exposed forearms.
   for(const side of [-1,1]){ctx.save();ctx.translate(side*6,-7);ctx.rotate(side*(.24+walk*.28));ctx.strokeStyle='#555c48';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*4,8);ctx.stroke();ctx.strokeStyle='#9a8b70';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(side*4,8);ctx.lineTo(side*3+walk*2,13);ctx.stroke();ctx.fillStyle='#b1a080';ctx.beginPath();ctx.arc(side*3+walk*2,14,2.2,0,Math.PI*2);ctx.fill();ctx.restore();}
   // Neck, decayed face, scars, eye sockets and glowing eyes.
-  ctx.fillStyle='#8b8a6b';ctx.fillRect(-3,-13,6,5);ctx.fillStyle='#a09a78';ctx.beginPath();ctx.ellipse(0,-18,7.5,8.5,-.08,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=z.kind==='stalker'?'#a6a17a':'#8b8a6b';ctx.fillRect(-3,-13,6,5);ctx.fillStyle='#a09a78';ctx.beginPath();ctx.ellipse(0,-18,7.5,8.5,-.08,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#696b55';ctx.beginPath();ctx.ellipse(-5,-19,2.4,4,-.4,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#2a2119';ctx.fillRect(-4,-20,3,3);ctx.fillRect(2,-20,3,3);
-  ctx.fillStyle=z.kind==='brute'?'#ed654e':z.kind==='runner'?'#d8d26a':active?'#d7a75b':'#756b4d';ctx.fillRect(-3,-20,2,2);ctx.fillRect(3,-20,2,2);
+  ctx.fillStyle=z.kind==='stalker'?'#bd8cff':z.kind==='brute'?'#ed654e':z.kind==='runner'?'#d8d26a':active?'#d7a75b':'#756b4d';ctx.fillRect(-3,-20,2,2);ctx.fillRect(3,-20,2,2);
   ctx.strokeStyle='#514334';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-2,-13);ctx.lineTo(3,-12);ctx.moveTo(4,-23);ctx.lineTo(6,-21);ctx.stroke();
   // Texture: pores, dried dirt and scratches.
   for(let i=0;i<7;i++){const tx=Math.sin(i*17+z.id)*5,ty=-8+Math.cos(i*11+z.phase)*13;ctx.fillStyle=i%2?'#242d24':'#b0a17a';ctx.globalAlpha=(active?1:.35)*Math.min(1,p*2.5)*.55;ctx.fillRect(tx,ty,1.2,1.2);}
@@ -387,7 +399,15 @@ const explorationCaches=[
  {x:8950,y:3860,type:'military',name:'Пост охраны'},
  {x:10800,y:6920,type:'food',name:'Склад супермаркета'},
  {x:3480,y:9680,type:'military',name:'Дорожный блокпост'},
- {x:8120,y:10120,type:'medical',name:'Лагерь спасателей'}
+ {x:8120,y:10120,type:'medical',name:'Лагерь спасателей'},
+ {x:1820,y:2820,type:'medical',name:'Клиника на окраине'},
+ {x:7600,y:2820,type:'military',name:'Автобусное депо'},
+ {x:8500,y:9360,type:'military',name:'Радиостанция'},
+ {x:1800,y:9360,type:'food',name:'Заброшенная ферма'},
+ {x:5400,y:6500,type:'food',name:'Сельский магазин'},
+ {x:10800,y:9500,type:'medical',name:'Пункт спасателей'},
+ {x:3200,y:7200,type:'military',name:'Склад дорожной службы'},
+ {x:9200,y:1800,type:'food',name:'Кафе у шоссе'}
 ];
 let supplyDrop=saved.supplyDrop&&Number.isFinite(saved.supplyDrop.x)&&Number.isFinite(saved.supplyDrop.y)?{...saved.supplyDrop}:null;
 let nextSupplyDropAt=performance.now()+90000;
@@ -454,7 +474,7 @@ function updateExpansion(now){
  if(Math.floor(now/52000)%4===2&&now-lastLightningAt>15000&&Math.random()<.002){lastLightningAt=now;lightningUntil=now+150;}
 }
 
-function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();trees.forEach(t=>{if(!t.harvested&&t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();updateHud();drawWind();drawWeatherEffects()}
+function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();trees.forEach(t=>{if(!t.harvested&&t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects()}
 function drawWind(){if(prefs.effects==='low'||wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
 function applyInfectionDamage(now){if(infectionZones.some(z=>Math.hypot(state.x-z.x,state.y-z.y)<z.r*.72)&&now-lastInfectionDamageAt>2200){lastInfectionDamageAt=now;state.hp=Math.max(0,state.hp-2);toast('Заражённый воздух: -2 здоровья');if(state.hp<=0)showDeath();save();}}
 function interact(){if(interactExpansion())return;if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98){completeRadioSignal();return}if(Math.hypot(state.x-mark.x,state.y-mark.y)<75){openMark();return}let index=wrecks.findIndex(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65);if(index>=0){const coop=window.ApocalypseCoop;wrecks[index].done=true;state.quest++;state.scrap++;state.bolts++;toast('Детали найдены · '+state.quest+'/3');save();if(coop?.room?.status==='running')coop.send({kind:'wreck-claimed',index,quest:state.quest,by:coop.userId});return}const treeIndex=trees.findIndex((t,i)=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48);if(treeIndex>=0){trees[treeIndex].harvested=true;harvestedTrees.add(treeIndex);state.wood+=2;toast('Собрано древесины: +2');save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'tree-harvested',index:treeIndex});return}toast('Подойди ближе к дереву, машине или радиомаяку')}
@@ -462,17 +482,20 @@ function drawOneBarricade(b,ghost=false,valid=true){ctx.save();ctx.translate(b.x
 function drawBarricades(){for(const b of barricades)drawOneBarricade(b,false,true);}
 function drawBuildPreview(){if(!buildMode)return;const p=buildCandidate(),valid=canPlaceBarricade(p);drawOneBarricade(p,true,valid);const status=document.getElementById('buildStatus');if(status)status.textContent=valid?'МЕСТО СВОБОДНО':'МЕСТО ЗАНЯТО';}
 function drawInfectionZones(){for(const z of infectionZones){const pulse=1+Math.sin(time*.0017+z.x)*.035;ctx.save();ctx.globalAlpha=.17;const g=ctx.createRadialGradient(z.x,z.y,8,z.x,z.y,z.r*pulse);g.addColorStop(0,'#7da34a88');g.addColorStop(.65,'#587c3b44');g.addColorStop(1,'#334b3000');ctx.fillStyle=g;ctx.beginPath();ctx.arc(z.x,z.y,z.r*pulse,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.55;ctx.strokeStyle='#a3c16a';ctx.setLineDash([7,10]);ctx.beginPath();ctx.arc(z.x,z.y,z.r*.72,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();}}
-function attack(){const now=performance.now();if(!gameActive||now-lastAttackAt<650)return;lastAttackAt=now;let target=null,best=78;for(const z of zombies){const d=Math.hypot(state.x-z.x,state.y-z.y);if(d<best){best=d;target=z;}}if(!target){toast('Рядом нет заражённых');return;}const damage=state.weaponLevel?34:13;target.hp-=damage;if(target.hp<=0){const i=zombies.indexOf(target);if(i>=0)zombies.splice(i,1);state.scrap+=target.kind==='brute'?3:1;if(Math.random()<.45)state.food++;if(Math.random()<.25)state.bandage++;const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-killed',x:target.x,y:target.y});toast('Заражённый уничтожен · добыча собрана');}else{const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-hit',x:target.x,y:target.y,damage});toast('Попадание · '+damage+' урона');}save();}
+function attack(){const now=performance.now();if(!gameActive||now-lastAttackAt<650)return;lastAttackAt=now;let target=null,best=78;for(const z of zombies){const d=Math.hypot(state.x-z.x,state.y-z.y);if(d<best){best=d;target=z;}}if(!target){toast('Рядом нет заражённых');return;}const damage=state.weaponLevel>=2?46:state.weaponLevel?34:13;target.hp-=damage;if(target.hp<=0){const i=zombies.indexOf(target);if(i>=0)zombies.splice(i,1);state.scrap+=target.kind==='brute'?3:target.kind==='stalker'?2:1;if(Math.random()<.45)state.food++;if(Math.random()<.25)state.bandage++;const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-killed',x:target.x,y:target.y});toast('Заражённый уничтожен · добыча собрана');}else{const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'zombie-hit',x:target.x,y:target.y,damage});toast('Попадание · '+damage+' урона');}save();}
 function craft(cost,action){if(state.scrap<cost.scrap||state.wood<cost.wood||state.bolts<cost.bolts){toast('Не хватает ресурсов для изготовления');return false;}state.scrap-=cost.scrap;state.wood-=cost.wood;state.bolts-=cost.bolts;action();save();return true;}
 function openWorkshop(){showPanel('Мастерская','Собирай древесину с деревьев и детали с машин. Здесь можно изготовить снаряжение и укрепить позицию.',[
  {icon:'🩹',name:'Аптечка · 2 металла + 1 дерево',count:state.bandage,use:()=>{if(craft({scrap:2,wood:1,bolts:0},()=>state.bandage++)){toast('Аптечка изготовлена');openWorkshop();}}},
- {icon:'🗡️',name:'Самодельное копьё · 5 металла + 3 дерева + 2 крепежа',count:state.weaponLevel?'готово':'создать',use:()=>{if(state.weaponLevel){toast('Копьё уже изготовлено');return;}if(craft({scrap:5,wood:3,bolts:2},()=>state.weaponLevel=1)){toast('Копьё готово: атака стала сильнее');openWorkshop();}}},
+ {icon:'🗡️',name:'Самодельное копьё · 5 металла + 3 дерева + 2 крепежа',count:state.weaponLevel?'ур. '+state.weaponLevel:'создать',use:()=>{if(state.weaponLevel){toast('Копьё уже изготовлено');return;}if(craft({scrap:5,wood:3,bolts:2},()=>state.weaponLevel=1)){toast('Копьё готово: атака стала сильнее');openWorkshop();}}},
+ {icon:'🛡️',name:'Усиленная броня · 6 металла + 4 дерева + 4 крепежа',count:state.armorLevel?'надета':'создать',use:()=>{if(state.armorLevel){toast('Броня уже изготовлена');return;}if(craft({scrap:6,wood:4,bolts:4},()=>state.armorLevel=1)){toast('Броня готова: входящий урон снижен на 32%');openWorkshop();}}},
+ {icon:'⚔️',name:'Усилить копьё · 8 металла + 5 дерева + 4 крепежа',count:state.weaponLevel>=2?'максимум':state.weaponLevel?'улучшить':'сначала копьё',use:()=>{if(state.weaponLevel!==1){toast('Сначала изготовь копьё');return;}if(craft({scrap:8,wood:5,bolts:4},()=>state.weaponLevel=2)){toast('Копьё усилено: урон 46');openWorkshop();}}},
+ {icon:'🔦',name:'Фонарик · 2 металла + 1 крепёж',count:saved.flashlight?'готово':'создать',use:()=>{if(saved.flashlight){toast('Фонарик уже есть');return;}if(craft({scrap:2,wood:0,bolts:1},()=>saved.flashlight=true)){toast('Фонарик изготовлен');openWorkshop();}}},
  {icon:'🪵',name:'Баррикада · 2 металла + 3 дерева',count:barricades.length+'/24 · выбрать место',use:()=>{if(barricades.length>=24){toast('Лимит укреплений достигнут');return;}if(state.scrap<2||state.wood<3){toast('Нужно 2 металла и 3 дерева');return;}buildAngle=0;setBuildMode(true);}},
  {icon:'🥫',name:'Пайок · 1 металл + 1 дерево',count:state.food,use:()=>{if(craft({scrap:1,wood:1,bolts:0},()=>state.food++)){toast('Пайок изготовлен');openWorkshop();}}}
 ]);}
 function showPanel(title,body,items){document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot filled';let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent='×'+item.count;slot.append(art,name,count);if(item.use){slot.addEventListener('click',item.use)}box.append(slot)});document.getElementById('invHealth').textContent=state.hp;document.getElementById('invDay').textContent=state.day;document.getElementById('invSpeed').textContent=(wind>=.65?'82%':wind>=.3?'94%':'100%');document.getElementById('weight').textContent=(state.scrap*1.2+state.bandage*.2+state.food*.4).toFixed(1)+' / 40 кг';document.getElementById('panel').classList.remove('hidden')}
 function openMark(){if(state.quest>=3&&state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food++;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.6)v.done=false});save();showPanel('Марк · награда','Ты выполнил поручение. Забирай припасы — они пригодятся в дороге.',inventoryItems());return}let msg=state.dayReward===state.day?'Сегодня ты уже помог поселению. Отдохни, завтра будет новое поручение.':'Я Марк. Собери 3 детали с разбитых машин и возвращайся ко мне. За работу дам аптечки и еду. Сейчас собрано: '+state.quest+'/3.';showPanel('Марк · выживший',msg,[{icon:'⚙️',name:'Детали для задания',count:state.quest+'/3'},{icon:'🩹',name:'Награда: аптечки',count:'×2'},{icon:'🥫',name:'Награда: консервы',count:'×1'}])}
-function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🪵',name:'Древесина',count:state.wood},{icon:'🔩',name:'Крепёж',count:state.bolts},{icon:'🗡️',name:'Самодельное копьё',count:state.weaponLevel?1:0},{icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);save();updateHud();inventory()}},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0},{icon:'📡',name:'Найдено сигналов',count:state.radioFinds},{icon:'🤝',name:'Доверие выживших',count:state.survivorTrust}]}
+function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🪵',name:'Древесина',count:state.wood},{icon:'🔩',name:'Крепёж',count:state.bolts},{icon:'🗡️',name:'Самодельное копьё',count:state.weaponLevel?'ур. '+state.weaponLevel:0},{icon:'🛡️',name:'Усиленная броня',count:state.armorLevel?'надета':'нет'}, {icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);save();updateHud();inventory()}},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0},{icon:'📡',name:'Найдено сигналов',count:state.radioFinds},{icon:'🤝',name:'Доверие выживших',count:state.survivorTrust}]}
 function inventory(){showPanel('Рюкзак','Снаряжение и найденные припасы. Задание Марка также отображается здесь.',inventoryItems())}
 function nearSegment(px,py,x1,y1,x2,y2,limit){
  const dx=x2-x1,dy=y2-y1,len=dx*dx+dy*dy;
