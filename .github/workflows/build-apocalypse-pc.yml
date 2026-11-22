@@ -79,8 +79,8 @@ jobs:
       - name: Publish separate Windows Apocalypse release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apocalypse-pc-v1.1.1
-          name: SkyRealm Apocalypse for Windows 1.1.1 (keyboard and fullscreen fixes)
+          tag_name: apocalypse-pc-v1.1.2
+          name: SkyRealm Apocalypse for Windows 1.1.2 (PrimeHub account integration)
           target_commitish: main
           prerelease: true
           make_latest: false
