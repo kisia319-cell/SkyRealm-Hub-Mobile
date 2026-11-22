@@ -10,7 +10,7 @@ android {
         applicationId 'com.skyrealm.hub'
         minSdk 23
         targetSdk 28
-        versionCode 19
-        versionName '1.2.1'
+        versionCode 20
+        versionName '1.2.2'
     }
 }
