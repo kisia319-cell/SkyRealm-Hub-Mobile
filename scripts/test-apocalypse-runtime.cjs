@@ -25,6 +25,17 @@ const expectedMove = [
 "}"
 ].join('\n');
 assert.equal(game.match(/function move\(dt\)\{[\s\S]*?\n\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
+assert.ok(game.includes('runUpgrade:whole(saved.runUpgrade,0,0,3)') && game.includes('ammoUpgrade:whole(saved.ammoUpgrade,0,0,3)'), 'Both permanent upgrades must be capped at level 3');
+assert.ok(game.includes('function maxStamina(){return 100+state.runUpgrade*15;}') && game.includes('state.stamina-34*dt') && game.includes('state.stamina+(moving?17:27)*dt'), 'Sprint must drain stamina and recover it during normal movement/rest');
+assert.ok(game.includes('move(sprintActive?dt*(1.5+state.runUpgrade*.12):dt)'), 'Sprint speed must be applied outside the protected movement function');
+assert.ok(game.includes('if(state.stamina<=0)sprintLocked=true') && game.includes('sprintLocked&&!sprintHeld&&state.stamina>=25'), 'Sprint exhaustion must require recovery before sprint can be enabled again');
+assert.ok(game.includes('const roads=[-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500]') && game.includes('for(const b of buildings)'), 'Player map must show roads and nearby buildings');
+assert.ok(game.includes('function purchaseUpgrade(kind){') && game.includes('function openUpgradeBench(){') && game.includes('function openTrader(){'), 'Survivor camp must offer upgrade and trade panels');
+assert.ok(game.includes('function tradeSupplies(kind){') && game.includes("bandage:{cost:{scrap:4,bolts:1}") && game.includes("ammo:{cost:{scrap:5,bolts:1}"), 'Trader exchanges must charge resources before granting supplies');
+assert.ok(game.includes('function drawPlayerMap(){') && game.includes("m.fillStyle='#39a7ff'") && game.includes("m.fillStyle='#f4f5f2'") && game.includes('getPlayers?.()'), 'Map must show the local player blue and co-op players white');
+assert.ok(game.includes("sprintButton.addEventListener('pointerdown'") && game.includes("e.code==='ShiftLeft'||e.code==='ShiftRight'"), 'Sprint must support hold controls on mobile and Shift on desktop');
+assert.ok(html.includes('id="playerMapOverlay"') && html.includes('id="staminaFill"') && html.includes('id="sprintButton"') && html.includes('id="mapButton"'), 'New HUD controls and map overlay must exist');
+
 
 const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
 for (const [label, source] of [['game', game], ['coop', coop]]) {
@@ -145,7 +156,8 @@ function makeHarness(seed = {}, failWrites = false) {
   return {
     sandbox, store, elements, localStorage,
     runFrame(now = 1016) { assert.equal(typeof nextFrame, 'function', 'animation frame should be scheduled'); const fn = nextFrame; nextFrame = null; fn(now); },
-    setWritesFail(value) { writesFail = value; }
+    setWritesFail(value) { writesFail = value; },
+    dispatchWindow(type, event = {}) { for (const fn of listeners.get('window:' + type) || []) fn({ preventDefault() {}, stopPropagation() {}, code: event.code || '', key: event.key || '', repeat: !!event.repeat, target: event.target || canvas }); }
   };
 }
 
@@ -168,6 +180,25 @@ harness.elements.get('menuPlay').click();
 harness.elements.get('start').click();
 harness.elements.get('journalOk').click();
 harness.runFrame(1032);
+const sprintBefore = harness.sandbox.window.ApocalypseGame.getMovementStats();
+harness.dispatchWindow('keydown',{code:'ShiftLeft',key:'Shift'});
+harness.dispatchWindow('keydown',{code:'KeyW',key:'w'});
+harness.runFrame(1048);
+const sprintDuring = harness.sandbox.window.ApocalypseGame.getMovementStats();
+assert.ok(sprintDuring.stamina < sprintBefore.stamina && sprintDuring.sprinting, 'Holding Shift while moving must consume stamina and activate sprint');
+harness.dispatchWindow('keyup',{code:'ShiftLeft',key:'Shift'});
+harness.dispatchWindow('keyup',{code:'KeyW',key:'w'});
+harness.runFrame(1064);
+assert.ok(harness.sandbox.window.ApocalypseGame.getMovementStats().stamina >= sprintDuring.stamina, 'Stamina must recover after sprint ends');
+harness.elements.get('sprintButton').dispatch('pointerdown');
+harness.dispatchWindow('keydown',{code:'KeyW',key:'w'});
+harness.runFrame(1080);
+const mobileSprint = harness.sandbox.window.ApocalypseGame.getMovementStats();
+assert.ok(mobileSprint.sprinting && mobileSprint.stamina < sprintDuring.stamina+1, 'Holding the mobile sprint button while moving must consume stamina');
+harness.elements.get('sprintButton').dispatch('pointerup');
+harness.dispatchWindow('keyup',{code:'KeyW',key:'w'});
+harness.runFrame(1096);
+assert.ok(!harness.sandbox.window.ApocalypseGame.getMovementStats().sprinting, 'Releasing the mobile sprint button must stop sprinting');
 harness.runFrame(7000);
 assert.equal(typeof JSON.parse(harness.store.get('skyrealm_apocalypse_mobile_v1')).worldClock, 'number', 'autosave must persist day/night phase');
 const beforeQuickMenu = harness.sandbox.window.ApocalypseGame.getClock();
@@ -187,6 +218,13 @@ assert.equal(harness.sandbox.window.ApocalypseGame.save(), false, 'storage quota
 assert.doesNotThrow(() => harness.elements.get('settingsSave').click(), 'settings storage failure must not crash the UI');
 harness.runFrame(7064);
 assert.notEqual(harness.sandbox.window.ApocalypseGame.getClock(), beforeSettings, 'closing settings must resume the previously running game');
+const beforeMap = harness.sandbox.window.ApocalypseGame.getClock();
+harness.elements.get('mapButton').click();
+harness.runFrame(7080);
+assert.equal(harness.sandbox.window.ApocalypseGame.getClock(), beforeMap, 'opening the player map must pause gameplay');
+harness.elements.get('mapClose').click();
+harness.runFrame(7096);
+assert.notEqual(harness.sandbox.window.ApocalypseGame.getClock(), beforeMap, 'closing the player map must resume gameplay');
 
 const storageFailure = makeHarness({}, true);
 assert.doesNotThrow(() => vm.runInNewContext(game, storageFailure.sandbox, { filename: 'apocalypse.js' }), 'game must still boot if local storage is unavailable');
