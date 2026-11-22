@@ -60,6 +60,14 @@ jobs:
             if (-not (Test-Path ("app/src/main/assets/" + $asset))) { throw "Missing mobile game asset: $asset" }
           }
 
+      - name: Read Windows game version
+        id: pc_version
+        shell: pwsh
+        run: |
+          $source = Get-Content apocalypse_pc.py -Raw
+          if ($source -notmatch 'APP_VERSION\s*=\s*"apocalypse-pc-v([^"]+)"') { throw "Unable to read APP_VERSION from apocalypse_pc.py" }
+          "version=$($Matches[1])" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Install Windows WebView and packaging dependencies
         run: python -m pip install --upgrade pywebview pyinstaller
 
@@ -87,11 +95,12 @@ jobs:
           }
 
       - name: Publish separate Windows Apocalypse release
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apocalypse-pc-v1.1.4
-          name: SkyRealm Apocalypse for Windows 1.1.4 (Spawn safety and co-op expansion)
-          target_commitish: feature/apocalypse-survival-expansion
+          tag_name: apocalypse-pc-v${{ steps.pc_version.outputs.version }}
+          name: SkyRealm Apocalypse for Windows ${{ steps.pc_version.outputs.version }}
+          target_commitish: ${{ github.sha }}
           prerelease: true
           make_latest: false
           generate_release_notes: true
