@@ -800,6 +800,15 @@ async function toggleApocalypseFullscreen(){
 window.addEventListener('keydown',e=>{
  if(e.code==='F11'||e.key==='F11'){e.preventDefault();e.stopPropagation();toggleApocalypseFullscreen();return;}
  const k=keyFromEvent(e);
+ if(!gameActive){
+  if(k==='Escape'){
+   if(!document.getElementById('mobileQuickMenu').classList.contains('hidden'))closeMobileQuickMenu();
+   else if(!document.getElementById('settingsOverlay').classList.contains('hidden'))closeSettings();
+   else if(!document.getElementById('updateJournal').classList.contains('hidden'))closeUpdateJournal();
+  }
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','f'].includes(k))e.preventDefault();
+  return;
+ }
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','f'].includes(k))e.preventDefault();
  if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){keys.add(k);focusGame();return;}
  if(e.repeat)return;
