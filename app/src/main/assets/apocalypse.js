@@ -17,6 +17,7 @@ const state={
  lastDay:typeof saved.lastDay==='string'&&saved.lastDay.length<40?saved.lastDay:new Date().toDateString(),
  dayReward:whole(saved.dayReward,0,0,999999),radioFinds:whole(saved.radioFinds,0,0,999999),
  survivorTrust:whole(saved.survivorTrust,0,0,999999),armorLevel:whole(saved.armorLevel,0,0,5),
+ runUpgrade:whole(saved.runUpgrade,0,0,3),ammoUpgrade:whole(saved.ammoUpgrade,0,0,3),stamina:bounded(saved.stamina,100,0,145),
  firearm:['','pistol','shotgun','rifle'].includes(saved.firearm)?saved.firearm:'',
  ammo:whole(saved.ammo,0,0,999999)
 };
@@ -37,7 +38,7 @@ function canPlaceBarricade(p){const halfW=32,halfH=21,c=Math.cos(p.angle),s=Math
 function setBuildMode(on){buildMode=!!on;document.getElementById('buildControls').classList.toggle('hidden',!buildMode);if(buildMode){document.getElementById('panel').classList.add('hidden');toast('Выбери место · R / ПОВОРОТ · Enter / ПОСТАВИТЬ');}else{document.getElementById('buildStatus').textContent='';}}
 function rotateBuild(){if(!buildMode)return;buildAngle=(buildAngle+Math.PI/4)%(Math.PI*2);}
 function placeBarricade(){if(!buildMode)return;const p=buildCandidate();if(!canPlaceBarricade(p)){toast('Здесь нельзя строить: место занято');return;}if(state.scrap<2||state.wood<3){toast('Не хватает ресурсов: нужно 2 металла и 3 дерева');setBuildMode(false);return;}if(barricades.length>=24){toast('Лимит укреплений достигнут');setBuildMode(false);return;}state.scrap-=2;state.wood-=3;const placed={x:p.x,y:p.y,angle:p.angle};barricades.push(placed);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'barricade-built',barricade:placed});save();setBuildMode(false);toast('Баррикада установлена');}
-let gameActive=false,lastNet=0,deathHandled=false,respawnUntil=0,mobileQuickMenuResume=false,settingsResumeGame=false;
+let gameActive=false,lastNet=0,deathHandled=false,respawnUntil=0,mobileQuickMenuResume=false,settingsResumeGame=false,sprintHeld=false,sprintActive=false,mapResumeGame=false;
 let radioSignal=null,radioSignalNextAt=performance.now()+30000;
 const prefs=(()=>{const raw=read('skyrealm_apocalypse_settings_v1');return{effects:['low','high'].includes(raw.effects)?raw.effects:'high',joy:bounded(raw.joy,100,60,140),motion:raw.motion!==false,hints:raw.hints!==false}})();
 // Deterministic, irregular forest placement. One tree per roughly 8 game blocks (256 world units).
@@ -56,6 +57,7 @@ const worldProps=[
  {id:'north_market_1',type:'stall',x:4500,y:-9800,w:116,h:70},{id:'north_dumpster_1',type:'dumpster',x:8900,y:-10800,w:82,h:52},{id:'east_camp_1',type:'tent',x:22600,y:10800,w:92,h:66},
  {id:'south_market_1',type:'stall',x:15100,y:22100,w:118,h:70},{id:'west_pump_1',type:'pump',x:-10900,y:4200,w:94,h:50},{id:'west_tent_1',type:'tent',x:-6400,y:22000,w:90,h:66}
 ];
+const survivorCamp={bench:{x:1850,y:650},trader:{x:2010,y:650}};
 function buildForest(){
  let seed=0x51a7e;
  const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
@@ -491,11 +493,11 @@ function drawZombies(){
  }
 }
 
-function showDeath(){if(deathHandled)return;deathHandled=true;gameActive=false;keys.clear();moveX=moveY=0;save();document.getElementById('deathDay').textContent='Ты продержался до '+state.day+' дня';document.getElementById('deathOverlay').classList.remove('hidden');}
+function showDeath(){if(deathHandled)return;deathHandled=true;gameActive=false;sprintHeld=false;keys.clear();moveX=moveY=0;save();document.getElementById('deathDay').textContent='Ты продержался до '+state.day+' дня';document.getElementById('deathOverlay').classList.remove('hidden');}
 function respawn(){state.hp=100;const safe=findSafeSpawn(state.x+150,state.y+110);state.x=safe.x;state.y=safe.y;deathHandled=false;respawnUntil=performance.now()+4000;document.getElementById('deathOverlay').classList.add('hidden');gameActive=true;save();toast('Ты вернулся. 4 секунды защиты.');}
 let lastActionUiUpdate=-Infinity;
-function updateActionButton(){if(time-lastActionUiUpdate<120)return;lastActionUiUpdate=time;const button=document.getElementById('action');if(!button)return;const touch=window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;if(!touch){if(button.dataset.actionLabel!=='desktop'){button.classList.remove('context-hidden');button.innerHTML='<span class="ico">⚒</span>Действие';button.dataset.actionLabel='desktop';}return;}let label='';if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98)label='Радиосигнал';else if(Math.hypot(state.x-mark.x,state.y-mark.y)<75)label='Поговорить';else if(wrecks.some(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65))label='Обыскать';else if(nearbyTrees(state.x,state.y,55).some(t=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48))label='Собрать';if(button.dataset.actionLabel!==label){button.classList.toggle('context-hidden',!label);if(label)button.innerHTML='<span class="ico">⚒</span>'+label;button.dataset.actionLabel=label;}}
-function updateHud(){const now=performance.now();if(now-lastHudUpdate<125)return;lastHudUpdate=now;document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');const minutes=Math.floor(worldClock*1440),clock=document.getElementById('worldTime');if(clock)clock.textContent=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');updateActionButton();}
+function updateActionButton(){if(time-lastActionUiUpdate<120)return;lastActionUiUpdate=time;const button=document.getElementById('action');if(!button)return;const touch=window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;if(!touch){if(button.dataset.actionLabel!=='desktop'){button.classList.remove('context-hidden');button.innerHTML='<span class="ico">⚒</span>Действие';button.dataset.actionLabel='desktop';}return;}let label='';if(Math.hypot(state.x-survivorCamp.bench.x,state.y-survivorCamp.bench.y)<105)label='Улучшения';else if(Math.hypot(state.x-survivorCamp.trader.x,state.y-survivorCamp.trader.y)<105)label='Торговец';else if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98)label='Радиосигнал';else if(Math.hypot(state.x-mark.x,state.y-mark.y)<75)label='Поговорить';else if(wrecks.some(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65))label='Обыскать';else if(nearbyTrees(state.x,state.y,55).some(t=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48))label='Собрать';if(button.dataset.actionLabel!==label){button.classList.toggle('context-hidden',!label);if(label)button.innerHTML='<span class="ico">⚒</span>'+label;button.dataset.actionLabel=label;}}
+function updateHud(){const now=performance.now();if(now-lastHudUpdate<125)return;lastHudUpdate=now;document.getElementById('health').textContent='♥ '+state.hp+' / 100';const staminaFill=document.getElementById('staminaFill'),staminaLabel=document.getElementById('staminaLabel');if(staminaFill)staminaFill.style.width=(state.stamina/maxStamina()*100)+'%';if(staminaLabel)staminaLabel.textContent=Math.ceil(state.stamina)+' / '+maxStamina();const sprintButton=document.getElementById('sprintButton');if(sprintButton){sprintButton.classList.toggle('sprinting',sprintActive);sprintButton.disabled=state.stamina<1;}document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');const minutes=Math.floor(worldClock*1440),clock=document.getElementById('worldTime');if(clock)clock.textContent=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');updateActionButton();}
 
 /* Apocalypse expansion 1.2.0 — exploration, supply drops and weather.
    This extension deliberately leaves move(), setupJoystick() and key handling untouched. */
@@ -612,16 +614,67 @@ function updateExpansion(now){
  if(Math.floor(now/52000)%4===2&&now-lastLightningAt>15000&&Math.random()<.002){lastLightningAt=now;lightningUntil=now+150;}
 }
 
-function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();nearbyTrees(state.x,state.y,Math.max(w,h)+160).forEach(t=>{if(!t.harvested)tree(t)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)building(b)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)drawBuildingInterior(b)});worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});if(Math.abs(600-state.y)<h+100){const poleStart=Math.max(WORLD_MIN,Math.floor((state.x-w-100)/330)*330),poleEnd=Math.min(WORLD_MAX,state.x+w+100);for(let x=poleStart+180;x<poleEnd;x+=330)pole(x,600);}wrecks.forEach(v=>{if(Math.abs(v.x-state.x)<w+100&&Math.abs(v.y-state.y)<h+100)wreck(v)});smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects();drawWorldAnimation()}
+function drawSurvivorHub(){
+ const b=survivorCamp.bench,n=survivorCamp.trader;
+ ctx.save();ctx.fillStyle='#101710a8';ctx.beginPath();ctx.ellipse(b.x,b.y+17,66,17,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#3d3024';ctx.fillRect(b.x-43,b.y-8,86,12);ctx.fillRect(b.x-37,b.y+4,7,25);ctx.fillRect(b.x+30,b.y+4,7,25);ctx.fillStyle='#94734a';ctx.fillRect(b.x-43,b.y-12,86,8);ctx.strokeStyle='#d1b47b';ctx.lineWidth=2;ctx.strokeRect(b.x-43,b.y-12,86,20);
+ ctx.fillStyle='#586d4a';ctx.fillRect(b.x-27,b.y-26,18,14);ctx.fillStyle='#d6bf82';ctx.fillRect(b.x-23,b.y-22,10,6);ctx.fillStyle='#647a83';ctx.fillRect(b.x+4,b.y-29,17,17);ctx.fillStyle='#b7d3d8';ctx.fillRect(b.x+8,b.y-25,9,9);
+ ctx.fillStyle='#f0d49a';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillText('ЛАВКА УЛУЧШЕНИЙ',b.x,b.y-44);
+ ctx.save();ctx.translate(n.x,n.y);ctx.fillStyle='#121813aa';ctx.beginPath();ctx.ellipse(0,18,19,7,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#303b35';ctx.fillRect(-11,-2,22,26);ctx.fillStyle='#7d5941';ctx.fillRect(-10,20,8,12);ctx.fillRect(2,20,8,12);ctx.fillStyle='#9d6e4d';ctx.beginPath();ctx.arc(0,-12,10,0,Math.PI*2);ctx.fill();ctx.fillStyle='#392d27';ctx.beginPath();ctx.arc(0,-17,10,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#e8d9b4';ctx.fillRect(-3,-12,2,2);ctx.fillRect(3,-12,2,2);ctx.fillStyle='#a18a63';ctx.fillRect(11,2,8,15);ctx.fillStyle='#d9c18e';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('ТОРГОВЕЦ ИЛЬЯ',0,-34);ctx.restore();ctx.restore();
+}
+function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();nearbyTrees(state.x,state.y,Math.max(w,h)+160).forEach(t=>{if(!t.harvested)tree(t)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)building(b)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)drawBuildingInterior(b)});worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});if(Math.abs(600-state.y)<h+100){const poleStart=Math.max(WORLD_MIN,Math.floor((state.x-w-100)/330)*330),poleEnd=Math.min(WORLD_MAX,state.x+w+100);for(let x=poleStart+180;x<poleEnd;x+=330)pole(x,600);}wrecks.forEach(v=>{if(Math.abs(v.x-state.x)<w+100&&Math.abs(v.y-state.y)<h+100)wreck(v)});smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawSurvivorHub();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawPlayerMap();drawWind();drawWeatherEffects();drawWorldAnimation()}
 function drawWind(){if(prefs.effects==='low'||wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
 function applyInfectionDamage(now){if(infectionZones.some(z=>Math.hypot(state.x-z.x,state.y-z.y)<z.r*.72)&&now-lastInfectionDamageAt>2200){lastInfectionDamageAt=now;state.hp=Math.max(0,state.hp-2);toast('Заражённый воздух: -2 здоровья');if(state.hp<=0)showDeath();save();}}
+function maxStamina(){return 100+state.runUpgrade*15;}
+function ammoCapacity(){return 120+state.ammoUpgrade*30;}
+function payResources(cost){if(state.scrap<(cost.scrap||0)||state.wood<(cost.wood||0)||state.bolts<(cost.bolts||0)){toast('Не хватает ресурсов для обмена');return false;}state.scrap-=cost.scrap||0;state.wood-=cost.wood||0;state.bolts-=cost.bolts||0;return true;}
+function purchaseUpgrade(kind){
+ const field=kind==='run'?'runUpgrade':'ammoUpgrade',level=state[field];
+ if(level>=3){toast('Улучшение уже максимального уровня');return false;}
+ const costs=kind==='run'?[{scrap:8,wood:4,bolts:3},{scrap:14,wood:7,bolts:6},{scrap:22,wood:10,bolts:9}]:[{scrap:6,wood:0,bolts:2},{scrap:12,wood:0,bolts:5},{scrap:20,wood:0,bolts:8}];
+ if(!payResources(costs[level]))return false;
+ state[field]++;if(kind==='run')state.stamina=Math.min(state.stamina,maxStamina());else state.ammo=Math.min(state.ammo,ammoCapacity());
+ save();toast(kind==='run'?'Усилитель бега улучшен до уровня '+state.runUpgrade:'Запас патронов увеличен до уровня '+state.ammoUpgrade);openUpgradeBench();return true;
+}
+function openUpgradeBench(){
+ const runCosts=['8 металла · 4 дерева · 3 крепежа','14 металла · 7 дерева · 6 крепежа','22 металла · 10 дерева · 9 крепежа'];
+ const ammoCosts=['6 металла · 2 крепежа','12 металла · 5 крепежа','20 металла · 8 крепежа'];
+ showPanel('Лавка улучшений','Только два постоянных улучшения. Усилитель бега повышает скорость и запас выносливости. Вместимость патронов: '+ammoCapacity()+'. Ресурсы: '+state.scrap+' металла, '+state.wood+' дерева, '+state.bolts+' крепежа.',[
+  {icon:'🏃',name:'Усилитель бега · '+(state.runUpgrade>=3?'МАКСИМУМ':'следующий уровень: '+(state.runUpgrade+1)+' · '+runCosts[state.runUpgrade]),count:'Ур. '+state.runUpgrade+'/3',use:()=>purchaseUpgrade('run')},
+  {icon:'▣',name:'Запас патронов · '+(state.ammoUpgrade>=3?'МАКСИМУМ':'следующий уровень: '+(state.ammoUpgrade+1)+' · '+ammoCosts[state.ammoUpgrade]),count:state.ammo+'/'+ammoCapacity()+' патронов · ур. '+state.ammoUpgrade+'/3',use:()=>purchaseUpgrade('ammo')}
+ ]);
+}
+function tradeSupplies(kind){
+ const offers={
+  bandage:{cost:{scrap:4,bolts:1},give:()=>state.bandage++,label:'Аптечка'},
+  food:{cost:{scrap:3},give:()=>state.food+=2,label:'2 пайка'},
+  ammo:{cost:{scrap:5,bolts:1},give:()=>{state.ammo+=Math.min(8,Math.max(0,ammoCapacity()-state.ammo));},label:'Патроны'},
+  wood:{cost:{scrap:2},give:()=>state.wood+=3,label:'3 дерева'},
+  bolts:{cost:{scrap:2},give:()=>state.bolts+=2,label:'2 крепежа'}
+ };
+ const offer=offers[kind];if(!offer)return false;
+ if(kind==='ammo'&&state.ammo>=ammoCapacity()){toast('Запас патронов уже заполнен');return false;}
+ if(!payResources(offer.cost))return false;
+ offer.give();save();toast('Обмен завершён: '+offer.label);openTrader();return true;
+}
+function openTrader(){
+ showPanel('Торговец Илья','Обменивай металлолом и крепёж на полезные припасы. Патроны нельзя купить сверх вместимости '+ammoCapacity()+'. У тебя: '+state.scrap+' металла · '+state.bolts+' крепежа.',[
+  {icon:'🩹',name:'Аптечка · 4 металла + 1 крепёж',count:state.bandage+' шт.',use:()=>tradeSupplies('bandage')},
+  {icon:'🥫',name:'2 пайка · 3 металла',count:state.food+' шт.',use:()=>tradeSupplies('food')},
+  {icon:'▣',name:'8 патронов · 5 металла + 1 крепёж',count:state.ammo+'/'+ammoCapacity(),use:()=>tradeSupplies('ammo')},
+  {icon:'🪵',name:'3 дерева · 2 металла',count:state.wood+' шт.',use:()=>tradeSupplies('wood')},
+  {icon:'🔩',name:'2 крепежа · 2 металла',count:state.bolts+' шт.',use:()=>tradeSupplies('bolts')}
+ ]);
+}
 function interact(){
  if(!gameActive)return;triggerPlayerAction('interact',460);
+ if(Math.hypot(state.x-survivorCamp.bench.x,state.y-survivorCamp.bench.y)<105){openUpgradeBench();return;}
+ if(Math.hypot(state.x-survivorCamp.trader.x,state.y-survivorCamp.trader.y)<105){openTrader();return;}
  const indoor=buildings.find(b=>b.role&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18);
  if(indoor?.role==='store'){
   const loot=storeLoot[indoor.id];
   if(loot?.weapon&&!loot.picked&&Math.hypot(state.x-(indoor.x+indoor.w/2-72),state.y-(indoor.y+indoor.h-185+76))<72){
-   state.firearm=loot.weapon;state.ammo+=loot.ammo;loot.picked=true;save();toast('Найдено оружие: '+(loot.weapon==='shotgun'?'дробовик':loot.weapon==='rifle'?'винтовка':'пистолет')+' · патроны +'+loot.ammo);inventory();return;
+   state.firearm=loot.weapon;state.ammo=Math.min(ammoCapacity(),state.ammo+loot.ammo);loot.picked=true;save();toast('Найдено оружие: '+(loot.weapon==='shotgun'?'дробовик':loot.weapon==='rifle'?'винтовка':'пистолет')+' · патроны +'+loot.ammo);inventory();return;
   }
  }
  const shelter=buildings.find(b=>b.role==='shelter'&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18);
@@ -644,7 +697,7 @@ function openWorkshop(){showPanel('Мастерская','Собирай дре�
  {icon:'🪵',name:'Баррикада · 2 металла + 3 дерева',count:barricades.length+'/24 · выбрать место',use:()=>{if(barricades.length>=24){toast('Лимит укреплений достигнут');return;}if(state.scrap<2||state.wood<3){toast('Нужно 2 металла и 3 дерева');return;}buildAngle=0;setBuildMode(true);}},
  {icon:'🥫',name:'Пайок · 1 металл + 1 дерево',count:state.food,use:()=>{if(craft({scrap:1,wood:1,bolts:0},()=>state.food++)){toast('Пайок изготовлен');openWorkshop();}}}
 ]);}
-function showPanel(title,body,items){document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot filled';let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent='×'+item.count;slot.append(art,name,count);if(item.use){slot.addEventListener('click',item.use)}box.append(slot)});document.getElementById('invHealth').textContent=state.hp;document.getElementById('invDay').textContent=state.day;document.getElementById('invSpeed').textContent=(wind>=.65?'82%':wind>=.3?'94%':'100%');document.getElementById('weight').textContent=(state.scrap*1.2+state.bandage*.2+state.food*.4).toFixed(1)+' / 40 кг';document.getElementById('panel').classList.remove('hidden')}
+function showPanel(title,body,items){document.getElementById('panelTitle').textContent=String(title||'Хранилище').toUpperCase();document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot filled';let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent=typeof item.count==='string'?item.count:'×'+item.count;slot.append(art,name,count);if(item.use){slot.addEventListener('click',item.use)}box.append(slot)});document.getElementById('invHealth').textContent=state.hp;document.getElementById('invDay').textContent=state.day;document.getElementById('invSpeed').textContent=(wind>=.65?'82%':wind>=.3?'94%':'100%');document.getElementById('weight').textContent=(state.scrap*1.2+state.bandage*.2+state.food*.4).toFixed(1)+' / 40 кг';document.getElementById('panel').classList.remove('hidden')}
 function openMark(){if(state.quest>=3&&state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food++;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.6)v.done=false});save();showPanel('Марк · награда','Ты выполнил поручение. Забирай припасы — они пригодятся в дороге.',inventoryItems());return}let msg=state.dayReward===state.day?'Сегодня ты уже помог поселению. Отдохни, завтра будет новое поручение.':'Я Марк. Собери 3 детали с разбитых машин и возвращайся ко мне. За работу дам аптечки и еду. Сейчас собрано: '+state.quest+'/3.';showPanel('Марк · выживший',msg,[{icon:'⚙️',name:'Детали для задания',count:state.quest+'/3'},{icon:'🩹',name:'Награда: аптечки',count:'×2'},{icon:'🥫',name:'Награда: консервы',count:'×1'}])}
 function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🔫',name:'Огнестрельное оружие',count:state.firearm||'нет'},{icon:'▣',name:'Патроны',count:state.ammo},{icon:'🪵',name:'Древесина',count:state.wood},{icon:'🔩',name:'Крепёж',count:state.bolts},{icon:'🗡️',name:'Самодельное копьё',count:state.weaponLevel?'ур. '+state.weaponLevel:0},{icon:'🛡️',name:'Усиленная броня',count:state.armorLevel?'надета':'нет'}, {icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);triggerPlayerAction('heal',760);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);triggerPlayerAction('heal',620);save();updateHud();inventory()}},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0},{icon:'📡',name:'Найдено сигналов',count:state.radioFinds},{icon:'🤝',name:'Доверие выживших',count:state.survivorTrust}]}
 function inventory(){showPanel('Рюкзак','Снаряжение и найденные припасы. Задание Марка также отображается здесь.',inventoryItems())}
@@ -668,7 +721,7 @@ function blocked(x,y){
   if(!b.role&&(nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx-lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx+lobbyHalf,lobbyTop,cx+lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx+lobbyHalf,lobbyTop,wall)))return true;
  }
  for(const t of nearbyTrees(x,y,70)){if(t.harvested)continue;const rr=10+t.size*8,dx=x-t.x,dy=y-(t.y+7);if(dx*dx+dy*dy<(r+rr)**2)return true;}
- for(const p of worldProps){if(Math.abs(x-p.x)<p.w/2+r+5&&Math.abs(y-p.y)<p.h/2+r+5)return true;}
+ for(const p of worldProps){if(Math.abs(x-p.x)<p.w/2+r+5&&Math.abs(y-p.y)<p.h/2+r+5)return true;}if(Math.hypot(x-survivorCamp.bench.x,y-survivorCamp.bench.y)<53||Math.hypot(x-survivorCamp.trader.x,y-survivorCamp.trader.y)<29)return true;
  for(const v of wrecks){const dx=x-v.x,dy=y-v.y;if(dx*dx+dy*dy<58*58)return true;}
  for(const b of barricades){const dx=x-b.x,dy=y-b.y,a=-(Number(b.angle)||0),lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(lx)<35&&Math.abs(ly)<23)return true;}
  if(radioSignal&&Math.abs(x-radioSignal.x)<31&&Math.abs(y-radioSignal.y)<25)return true;
@@ -688,11 +741,11 @@ function move(dt){
   if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}
 }
 function setupJoystick(){const joy=document.getElementById('joy'),stick=document.getElementById('stick');function set(e){let r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.32,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}moveX=dx/max;moveY=dy/max;stick.style.transform='translate('+dx+'px,'+dy+'px)'}function end(){joyPointer=null;moveX=moveY=0;stick.style.transform='translate(0,0)'}joy.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);set(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer){e.preventDefault();set(e)}});['pointerup','pointercancel','lostpointercapture'].forEach(t=>joy.addEventListener(t,end))}
-let prev=performance.now(),lastAutoSave=0;function loop(now){updateExpansion(now);let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){move(dt);updateZombies(dt,now);updateRadioSignal(now);if(now-lastAutoSave>=5000){lastAutoSave=now;save();}}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:playerName,worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
+let prev=performance.now(),lastAutoSave=0;function loop(now){updateExpansion(now);let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){const moving=Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k));sprintActive=!!(sprintHeld&&moving&&state.stamina>0);if(sprintActive)state.stamina=Math.max(0,state.stamina-34*dt);else state.stamina=Math.min(maxStamina(),state.stamina+(moving?17:27)*dt);move(sprintActive?dt*(1.5+state.runUpgrade*.12):dt);updateZombies(dt,now);updateRadioSignal(now);if(now-lastAutoSave>=5000){lastAutoSave=now;save();}}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:playerName,worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
 function daily(){dayWind()}
 function focusGame(){try{canvas.focus({preventScroll:true});}catch(_){canvas.focus();}}
 function closeMobileQuickMenu(resume=true){const shouldResume=mobileQuickMenuResume;mobileQuickMenuResume=false;const menu=document.getElementById('mobileQuickMenu');if(menu)menu.classList.add('hidden');document.body.classList.remove('quick-menu-open');if(resume&&shouldResume){gameActive=true;focusGame();}}
-function openMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(!menu)return;mobileQuickMenuResume=gameActive;gameActive=false;keys.clear();moveX=moveY=0;joyPointer=null;const stick=document.getElementById('stick');if(stick)stick.style.transform='translate(0,0)';menu.classList.remove('hidden');document.body.classList.add('quick-menu-open');}
+function openMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(!menu)return;mobileQuickMenuResume=gameActive;gameActive=false;sprintHeld=false;keys.clear();moveX=moveY=0;joyPointer=null;const stick=document.getElementById('stick');if(stick)stick.style.transform='translate(0,0)';menu.classList.remove('hidden');document.body.classList.add('quick-menu-open');}
 function leaveToMenu(){save();gameActive=false;deathHandled=false;closeMobileQuickMenu(false);keys.clear();moveX=moveY=0;document.getElementById('deathOverlay').classList.add('hidden');document.body.classList.add('menu-open');document.getElementById('mainMenu').classList.remove('menu-out');}
 function exitGame(){save();const api=window.pywebview?.api;if(api?.close_app){api.close_app();return;}if(window.Android?.exitGame){window.Android.exitGame();return;}if(history.length>1){history.back();return;}location.href='hub.html';}
 const JOURNAL_DATA=window.APOCALYPSE_CHANGELOG||null;
@@ -757,6 +810,21 @@ function showJournalOnWorldEntry(resumeGame=true){
 }
 function enterSolo(){gameActive=false;keys.clear();moveX=moveY=0;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.remove('hidden');focusGame();}
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;}
+function drawPlayerMap(){
+ const overlay=document.getElementById('playerMapOverlay');if(!overlay||overlay.classList.contains('hidden'))return;
+ const map=document.getElementById('playerMap'),m=map?.getContext('2d');if(!m)return;
+ const mw=map.width||720,mh=map.height||720,range=2600,scale=Math.min(mw,mh)/(range*2);
+ m.clearRect(0,0,mw,mh);m.fillStyle='#111a16';m.fillRect(0,0,mw,mh);m.strokeStyle='#82917a33';m.lineWidth=1;
+ for(let x=0;x<=mw;x+=mw/8){m.beginPath();m.moveTo(x,0);m.lineTo(x,mh);m.stroke();}
+ for(let y=0;y<=mh;y+=mh/8){m.beginPath();m.moveTo(0,y);m.lineTo(mw,y);m.stroke();}
+ const px=x=>mw/2+(x-state.x)*scale,py=y=>mh/2+(y-state.y)*scale,camp=survivorCamp;
+ for(const item of [{x:camp.bench.x,y:camp.bench.y,label:'Лавка'},{x:camp.trader.x,y:camp.trader.y,label:'Торговец'}]){const x=px(item.x),y=py(item.y);if(x<0||x>mw||y<0||y>mh)continue;m.fillStyle='#e5bd70';m.beginPath();m.arc(x,y,8,0,Math.PI*2);m.fill();m.fillStyle='#f1dfb6';m.font='12px system-ui';m.textAlign='center';m.fillText(item.label,x,y-13);}
+ const others=window.ApocalypseCoop?.getPlayers?.()||[];
+ for(const p of others){if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;const x=px(p.x),y=py(p.y);if(x<0||x>mw||y<0||y>mh)continue;m.fillStyle='#f4f5f2';m.strokeStyle='#17211b';m.lineWidth=3;m.beginPath();m.arc(x,y,8,0,Math.PI*2);m.fill();m.stroke();m.fillStyle='#ffffff';m.font='12px system-ui';m.fillText(String(p.name||'Игрок').slice(0,14),x,y-13);}
+ m.fillStyle='#39a7ff';m.strokeStyle='#d9f0ff';m.lineWidth=4;m.beginPath();m.arc(mw/2,mh/2,11,0,Math.PI*2);m.fill();m.stroke();m.fillStyle='#d9f0ff';m.font='bold 13px system-ui';m.fillText('ТЫ',mw/2,mh/2+30);
+}
+function openPlayerMap(){mapResumeGame=gameActive;gameActive=false;keys.clear();sprintHeld=false;moveX=moveY=0;document.getElementById('playerMapOverlay').classList.remove('hidden');drawPlayerMap();}
+function closePlayerMap(){document.getElementById('playerMapOverlay').classList.add('hidden');const resume=mapResumeGame;mapResumeGame=false;if(resume){gameActive=true;focusGame();}}
 function openSettings(resumeGame=gameActive){settingsResumeGame=!!resumeGame;gameActive=false;applySettings();document.getElementById('settingsOverlay').classList.remove('hidden');}
 function closeSettings(){document.getElementById('settingsOverlay').classList.add('hidden');const resume=settingsResumeGame;settingsResumeGame=false;if(resume){gameActive=true;focusGame();}}
 document.getElementById('menuPlay').onclick=enterSolo;
@@ -770,6 +838,8 @@ document.getElementById('deathMenu').onclick=leaveToMenu;
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.close==='settingsOverlay'){closeSettings();return;}const target=document.getElementById(b.dataset.close);if(target)target.classList.add('hidden')}));
 document.getElementById('settingsSave').onclick=()=>{prefs.effects=document.getElementById('settingEffects').value;prefs.joy=Number(document.getElementById('settingJoy').value);prefs.motion=document.getElementById('settingMotion').checked;prefs.hints=document.getElementById('settingHints').checked;let persisted=true;try{localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs))}catch(_){persisted=false}closeSettings();toast(persisted?'Настройки сохранены':'Настройки применены, но браузер не смог их сохранить')};
 document.getElementById('settingsReset').onclick=()=>{if(confirm('Удалить сохранение Apocalypse на этом устройстве? Это нельзя отменить.')){try{localStorage.removeItem(STORE);location.reload()}catch(_){toast('Не удалось удалить сохранение: хранилище недоступно')}}};
+document.getElementById('mapButton').onclick=openPlayerMap;
+document.getElementById('mapClose').onclick=closePlayerMap;
 document.getElementById('pauseMenu').onclick=()=>{if(window.matchMedia('(max-width: 700px), (pointer: coarse)').matches)openMobileQuickMenu();else leaveToMenu();};
 document.getElementById('mobileMoreClose').onclick=closeMobileQuickMenu;
 document.getElementById('mobileMoreBackdrop').onclick=closeMobileQuickMenu;
@@ -799,10 +869,12 @@ async function toggleApocalypseFullscreen(){
 }
 window.addEventListener('keydown',e=>{
  if(e.code==='F11'||e.key==='F11'){e.preventDefault();e.stopPropagation();toggleApocalypseFullscreen();return;}
+ if(e.code==='ShiftLeft'||e.code==='ShiftRight'){if(gameActive){sprintHeld=true;e.preventDefault();}return;}
  const k=keyFromEvent(e);
  if(!gameActive){
   if(k==='Escape'){
-   if(!document.getElementById('mobileQuickMenu').classList.contains('hidden'))closeMobileQuickMenu();
+   if(!document.getElementById('playerMapOverlay').classList.contains('hidden'))closePlayerMap();
+   else if(!document.getElementById('mobileQuickMenu').classList.contains('hidden'))closeMobileQuickMenu();
    else if(!document.getElementById('settingsOverlay').classList.contains('hidden'))closeSettings();
    else if(!document.getElementById('updateJournal').classList.contains('hidden'))closeUpdateJournal();
   }
@@ -813,16 +885,18 @@ window.addEventListener('keydown',e=>{
  if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){keys.add(k);focusGame();return;}
  if(e.repeat)return;
  if(buildMode){if(k==='r'){e.preventDefault();rotateBuild();return;}if(k==='Enter'){e.preventDefault();placeBarricade();return;}if(k==='Escape'){e.preventDefault();setBuildMode(false);return;}}
+ if(k==='m')openPlayerMap();
  if(k==='e')interact();
  if(k==='i')inventory();
  if(k==='f'||k===' ')attack();
- if(k==='Escape'&&gameActive){if(!document.getElementById('mobileQuickMenu').classList.contains('hidden'))closeMobileQuickMenu();else if(!document.getElementById('panel').classList.contains('hidden'))document.getElementById('panel').classList.add('hidden');else leaveToMenu();}
+ if(k==='Escape'&&gameActive){if(!document.getElementById('playerMapOverlay').classList.contains('hidden'))closePlayerMap();else if(!document.getElementById('mobileQuickMenu').classList.contains('hidden'))closeMobileQuickMenu();else if(!document.getElementById('panel').classList.contains('hidden'))document.getElementById('panel').classList.add('hidden');else leaveToMenu();}
 },true);
-window.addEventListener('keyup',e=>{keys.delete(keyFromEvent(e));},true);
-window.addEventListener('blur',()=>keys.clear());
+window.addEventListener('keyup',e=>{if(e.code==='ShiftLeft'||e.code==='ShiftRight')sprintHeld=false;keys.delete(keyFromEvent(e));},true);
+window.addEventListener('blur',()=>{keys.clear();sprintHeld=false;});
 window.addEventListener('focus',()=>{if(gameActive)focusGame();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&gameActive)focusGame();});
 canvas.tabIndex=0;canvas.addEventListener('pointerdown',focusGame);
 window.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('selectstart',e=>e.preventDefault());window.addEventListener('resize',resize);
-window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getDayReward:()=>state.dayReward,getClock:()=>worldClock,getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();save();requestAnimationFrame(loop);
+const sprintButton=document.getElementById('sprintButton');sprintButton.addEventListener('pointerdown',e=>{if(!gameActive||state.stamina<=0)return;e.preventDefault();sprintHeld=true;try{sprintButton.setPointerCapture(e.pointerId)}catch(_){}});['pointerup','pointercancel','lostpointercapture'].forEach(type=>sprintButton.addEventListener(type,()=>{sprintHeld=false;}));sprintButton.addEventListener('contextmenu',e=>e.preventDefault());
+window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getDayReward:()=>state.dayReward,getClock:()=>worldClock,getMovementStats:()=>({stamina:state.stamina,maxStamina:maxStamina(),runUpgrade:state.runUpgrade,sprinting:sprintActive}),getUpgradeStats:()=>({run:state.runUpgrade,ammo:state.ammoUpgrade,ammoCapacity:ammoCapacity(),ammo:state.ammo}),getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();save();requestAnimationFrame(loop);
 })();
