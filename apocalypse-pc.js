@@ -15,7 +15,7 @@
   `;
   document.head.appendChild(style);
   const hint = document.querySelector('.control-hint');
-  if (hint) hint.textContent = 'WASD / СТРЕЛКИ — движение  ·  E — действие  ·  I — рюкзак  ·  ESC — меню';
+  if (hint) hint.textContent = 'WASD / СТРЕЛКИ — движение  ·  E — действие  ·  I — рюкзак  ·  F11 — полный экран  ·  ESC — меню';
   const save = () => { try { window.ApocalypseGame?.save?.(); } catch (_) {} };
   window.addEventListener('beforeunload', save);
   window.setInterval(save, 5000);
