@@ -63,7 +63,7 @@ const buildings=[
 ];
 buildForest();
 const harvestedTrees=new Set(Array.isArray(saved.harvestedTrees)?saved.harvestedTrees:[]);trees.forEach((t,i)=>t.harvested=harvestedTrees.has(i));
-function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades}))}
+function save(){localStorage.setItem(STORE,JSON.stringify({...state,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],supplyDrop}))}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
 
@@ -367,10 +367,88 @@ function respawn(){state.hp=100;state.x=Math.max(100,Math.min(11900,state.x+150)
 let lastActionUiUpdate=-Infinity;
 function updateActionButton(){if(time-lastActionUiUpdate<120)return;lastActionUiUpdate=time;const button=document.getElementById('action');if(!button)return;const touch=window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;if(!touch){if(button.dataset.actionLabel!=='desktop'){button.classList.remove('context-hidden');button.innerHTML='<span class="ico">⚒</span>Действие';button.dataset.actionLabel='desktop';}return;}let label='';if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98)label='Радиосигнал';else if(Math.hypot(state.x-mark.x,state.y-mark.y)<75)label='Поговорить';else if(wrecks.some(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65))label='Обыскать';else if(trees.some(t=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48))label='Собрать';if(button.dataset.actionLabel!==label){button.classList.toggle('context-hidden',!label);if(label)button.innerHTML='<span class="ico">⚒</span>'+label;button.dataset.actionLabel=label;}}
 function updateHud(){document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');updateActionButton();}
-function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();trees.forEach(t=>{if(!t.harvested&&t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();updateHud();drawWind()}
+
+/* Apocalypse expansion 1.2.0 — exploration, supply drops and weather.
+   This extension deliberately leaves move(), setupJoystick() and key handling untouched. */
+const foundCaches=new Set(Array.isArray(saved.foundCaches)?saved.foundCaches:[]);
+const explorationCaches=[
+ {x:1280,y:1860,type:'medical',name:'Полевой медпункт'},
+ {x:3560,y:2460,type:'military',name:'Военный тайник'},
+ {x:5100,y:3860,type:'food',name:'Продовольственный склад'},
+ {x:7040,y:2860,type:'medical',name:'Заброшенная амбулатория'},
+ {x:8950,y:3860,type:'military',name:'Пост охраны'},
+ {x:10800,y:6920,type:'food',name:'Склад супермаркета'},
+ {x:3480,y:9680,type:'military',name:'Дорожный блокпост'},
+ {x:8120,y:10120,type:'medical',name:'Лагерь спасателей'}
+];
+let supplyDrop=saved.supplyDrop&&Number.isFinite(saved.supplyDrop.x)&&Number.isFinite(saved.supplyDrop.y)?{...saved.supplyDrop}:null;
+let nextSupplyDropAt=performance.now()+90000;
+let lastLandmarkToast=0,lastLightningAt=0,lightningUntil=0;
+function drawExplorationSites(){
+ for(let i=0;i<explorationCaches.length;i++){
+  if(foundCaches.has(i))continue;
+  const p=explorationCaches[i];if(Math.abs(p.x-state.x)>w+100||Math.abs(p.y-state.y)>h+100)continue;
+  const pulse=.65+Math.sin(time*.004+i)*.18;
+  ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle='#111710aa';ctx.beginPath();ctx.ellipse(0,13,29,9,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=p.type==='medical'?'#777e68':p.type==='military'?'#59634e':'#806b4d';ctx.fillRect(-22,-8,44,25);
+  ctx.fillStyle='#a99a75';ctx.fillRect(-24,-12,48,7);ctx.strokeStyle='#292f27';ctx.lineWidth=2;ctx.strokeRect(-22,-8,44,25);
+  ctx.fillStyle=p.type==='medical'?'#d9ddd0':p.type==='military'?'#a8b18b':'#d2b77e';
+  if(p.type==='medical'){ctx.fillRect(-3,-5,6,17);ctx.fillRect(-9,1,18,5);}
+  else if(p.type==='military'){ctx.fillRect(-13,-3,26,3);ctx.fillRect(-13,4,26,3);}
+  else{ctx.fillRect(-14,-3,28,3);ctx.fillRect(-14,4,28,3);}
+  ctx.globalAlpha=pulse;ctx.strokeStyle='#e4d19b';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-20,8+Math.sin(time*.004)*2,0,Math.PI*2);ctx.stroke();ctx.restore();
+ }
+}
+function drawSupplyDrop(){
+ if(!supplyDrop)return;
+ const p=supplyDrop,pulse=.65+Math.sin(time*.006)*.25;
+ ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle='#111710bb';ctx.beginPath();ctx.ellipse(0,17,34,11,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#7a5940';ctx.fillRect(-25,-5,50,28);ctx.fillStyle='#b89a68';ctx.fillRect(-28,-11,56,9);ctx.fillStyle='#c8b17e';ctx.fillRect(-4,-10,8,35);ctx.fillRect(-25,4,50,5);
+ ctx.strokeStyle='#e5d39c';ctx.lineWidth=2;ctx.globalAlpha=pulse;ctx.beginPath();ctx.arc(0,-25,13+Math.sin(time*.006)*3,0,Math.PI*2);ctx.stroke();
+ ctx.restore();
+}
+function drawWeatherEffects(){
+ if(prefs.effects==='low')return;
+ const phase=(Math.floor(time/52000)%4),storm=phase===2;
+ if(storm){
+  ctx.save();ctx.fillStyle='#17253518';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#b8c8d088';ctx.lineWidth=1;
+  for(let i=0;i<38;i++){const x=(i*83+time*.42)%(w+40)-20,y=(i*47+time*.78)%(h+40)-20;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-5,y+13);ctx.stroke();}
+  if(time-lightningUntil<180&&lightningUntil>0){ctx.fillStyle='#d9e4e755';ctx.fillRect(0,0,w,h);}
+  ctx.restore();
+ }else if(phase===1){
+  ctx.save();const fog=ctx.createLinearGradient(0,0,0,h);fog.addColorStop(0,'#c5c9b00c');fog.addColorStop(.55,'#d4d2b51c');fog.addColorStop(1,'#c5c9b008');ctx.fillStyle=fog;ctx.fillRect(0,0,w,h);ctx.restore();
+ }
+}
+function interactExpansion(){
+ const cacheIndex=explorationCaches.findIndex((p,i)=>!foundCaches.has(i)&&Math.hypot(state.x-p.x,state.y-p.y)<62);
+ if(cacheIndex>=0){
+  const p=explorationCaches[cacheIndex];foundCaches.add(cacheIndex);
+  if(p.type==='medical'){state.bandage+=2;state.hp=Math.min(100,state.hp+18);toast('Полевой медпункт: +2 аптечки, +18 здоровья');}
+  else if(p.type==='military'){state.scrap+=4;state.bolts+=3;toast('Военный тайник: +4 металла, +3 крепежа');}
+  else{state.food+=4;state.wood+=2;toast('Продовольственный склад: +4 еды, +2 дерева');}
+  save();return true;
+ }
+ if(supplyDrop&&Math.hypot(state.x-supplyDrop.x,state.y-supplyDrop.y)<72){
+  state.scrap+=3;state.food+=3;state.bandage+=1;state.bolts+=2;supplyDrop=null;save();toast('Поставка получена: еда, аптечка и детали');return true;
+ }
+ return false;
+}
+function updateExpansion(now){
+ if(!gameActive)return;
+ if(!supplyDrop&&now>nextSupplyDropAt){
+  let x=state.x+(Math.random()-.5)*620,y=state.y+(Math.random()-.5)*620,tries=0;
+  while((blocked(x,y)||insideBuilding(x,y)||Math.hypot(x-state.x,y-state.y)<230)&&tries++<24){x=state.x+(Math.random()-.5)*760;y=state.y+(Math.random()-.5)*760;}
+  if(!blocked(x,y)&&!insideBuilding(x,y)){supplyDrop={x:Math.max(80,Math.min(11920,x)),y:Math.max(80,Math.min(11920,y))};save();toast('Замечен сброс припасов. Ищи маяк на местности');}
+  nextSupplyDropAt=now+240000;
+ }
+ if(Math.floor(now/52000)%4===2&&now-lastLightningAt>15000&&Math.random()<.002){lastLightningAt=now;lightningUntil=now+150;}
+}
+
+function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();trees.forEach(t=>{if(!t.harvested&&t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();updateHud();drawWind();drawWeatherEffects()}
 function drawWind(){if(prefs.effects==='low'||wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
 function applyInfectionDamage(now){if(infectionZones.some(z=>Math.hypot(state.x-z.x,state.y-z.y)<z.r*.72)&&now-lastInfectionDamageAt>2200){lastInfectionDamageAt=now;state.hp=Math.max(0,state.hp-2);toast('Заражённый воздух: -2 здоровья');if(state.hp<=0)showDeath();save();}}
-function interact(){if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98){completeRadioSignal();return}if(Math.hypot(state.x-mark.x,state.y-mark.y)<75){openMark();return}let index=wrecks.findIndex(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65);if(index>=0){const coop=window.ApocalypseCoop;wrecks[index].done=true;state.quest++;state.scrap++;state.bolts++;toast('Детали найдены · '+state.quest+'/3');save();if(coop?.room?.status==='running')coop.send({kind:'wreck-claimed',index,quest:state.quest,by:coop.userId});return}const treeIndex=trees.findIndex((t,i)=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48);if(treeIndex>=0){trees[treeIndex].harvested=true;harvestedTrees.add(treeIndex);state.wood+=2;toast('Собрано древесины: +2');save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'tree-harvested',index:treeIndex});return}toast('Подойди ближе к дереву, машине или радиомаяку')}
+function interact(){if(interactExpansion())return;if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98){completeRadioSignal();return}if(Math.hypot(state.x-mark.x,state.y-mark.y)<75){openMark();return}let index=wrecks.findIndex(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65);if(index>=0){const coop=window.ApocalypseCoop;wrecks[index].done=true;state.quest++;state.scrap++;state.bolts++;toast('Детали найдены · '+state.quest+'/3');save();if(coop?.room?.status==='running')coop.send({kind:'wreck-claimed',index,quest:state.quest,by:coop.userId});return}const treeIndex=trees.findIndex((t,i)=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48);if(treeIndex>=0){trees[treeIndex].harvested=true;harvestedTrees.add(treeIndex);state.wood+=2;toast('Собрано древесины: +2');save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'tree-harvested',index:treeIndex});return}toast('Подойди ближе к дереву, машине или радиомаяку')}
 function drawOneBarricade(b,ghost=false,valid=true){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Number(b.angle)||0);ctx.globalAlpha=ghost?.58:1;ctx.fillStyle=ghost?(valid?'#4de18a55':'#ff554e66'):'#171d18aa';ctx.fillRect(-34,13,68,9);for(let i=0;i<4;i++){ctx.fillStyle=ghost?(valid?'#7fffb0':'#ff8980'):(i%2?'#806c4d':'#9a8056');ctx.fillRect(-32,-13+i*7,64,5);ctx.strokeStyle=ghost?(valid?'#c8ffe0':'#ffd0c9'):'#3a3327';ctx.lineWidth=1;ctx.strokeRect(-32,-13+i*7,64,5);}ctx.fillStyle=ghost?(valid?'#45d986':'#d94e49'):'#4c4939';ctx.fillRect(-27,-21,6,42);ctx.fillRect(21,-21,6,42);if(ghost){ctx.globalAlpha=.22;ctx.fillStyle=valid?'#3cff91':'#ff4038';ctx.beginPath();ctx.arc(0,0,48,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=valid?'#72ffad':'#ff716a';ctx.lineWidth=3;ctx.strokeRect(-36,-25,72,50);}ctx.restore();}
 function drawBarricades(){for(const b of barricades)drawOneBarricade(b,false,true);}
 function drawBuildPreview(){if(!buildMode)return;const p=buildCandidate(),valid=canPlaceBarricade(p);drawOneBarricade(p,true,valid);const status=document.getElementById('buildStatus');if(status)status.textContent=valid?'МЕСТО СВОБОДНО':'МЕСТО ЗАНЯТО';}
@@ -425,7 +503,7 @@ function move(dt){
   if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}
 }
 function setupJoystick(){const joy=document.getElementById('joy'),stick=document.getElementById('stick');function set(e){let r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.32,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}moveX=dx/max;moveY=dy/max;stick.style.transform='translate('+dx+'px,'+dy+'px)'}function end(){joyPointer=null;moveX=moveY=0;stick.style.transform='translate(0,0)'}joy.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);set(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer){e.preventDefault();set(e)}});['pointerup','pointercancel','lostpointercapture'].forEach(t=>joy.addEventListener(t,end))}
-let prev=performance.now();function loop(now){let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){move(dt);updateZombies(dt,now);updateRadioSignal(now);}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||JSON.parse(localStorage.getItem('skyrealm_hub_user')||'{}').username||'Выживший',worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
+let prev=performance.now();function loop(now){updateExpansion(now);let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){move(dt);updateZombies(dt,now);updateRadioSignal(now);}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||JSON.parse(localStorage.getItem('skyrealm_hub_user')||'{}').username||'Выживший',worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
 function daily(){let today=new Date().toDateString();if(state.lastDay!==today){state.day++;state.quest=0;state.dayReward=0;state.lastDay=today;wrecks.forEach(v=>v.done=false);save()}dayWind()}
 function focusGame(){try{canvas.focus({preventScroll:true});}catch(_){canvas.focus();}}
 function closeMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(menu)menu.classList.add('hidden');document.body.classList.remove('quick-menu-open');}
