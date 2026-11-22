@@ -44,6 +44,7 @@ assert.ok(game.includes('name:playerName,'), 'Frame loop must not parse untruste
 assert.ok(game.includes('function save(){try{localStorage.setItem('), 'Save failures must not crash gameplay');
 assert.ok(game.includes('if(now-lastAutoSave>=5000)') && game.includes('worldClock}'), 'Position and day/night state must autosave');
 assert.ok(game.includes('worldClock=savedWorldClock'), 'Day/night phase must survive reloads');
+assert.ok(game.includes('if(worldClock<previousClock)advanceGameDay()') && game.includes('function daily(){dayWind()}'), 'Displayed day and daily quests must follow the actual game clock');
 assert.ok(game.includes('const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[]'), 'Malformed wreck save data must be ignored');
 assert.ok(game.includes('nearbyBuildings='), 'Zombie spawns must use nearby buildings only');
 assert.ok(game.includes('radioSignal&&Math.abs'), 'Radio-event props must have collision bounds');
