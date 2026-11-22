@@ -27,7 +27,7 @@ const expectedMove = [
 assert.equal(game.match(/function move\(dt\)\{[\s\S]*?\n\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
 assert.ok(game.includes('runUpgrade:whole(saved.runUpgrade,0,0,3)') && game.includes('ammoUpgrade:whole(saved.ammoUpgrade,0,0,3)'), 'Both permanent upgrades must be capped at level 3');
 assert.ok(game.includes('function maxStamina(){return 100+state.runUpgrade*15;}') && game.includes('state.stamina-34*dt') && game.includes('state.stamina+(moving?17:27)*dt'), 'Sprint must drain stamina and recover it during normal movement/rest');
-assert.ok(game.includes('move(sprintActive?dt*(1.5+state.runUpgrade*.12):dt)'), 'Sprint speed must be applied outside the protected movement function');
+assert.ok(game.includes('move((sprintActive?dt*(1.5+state.runUpgrade*.12):dt)*(energyBoostUntil>now?1.22:1))'), 'Sprint and energy boost speed must be applied outside the protected movement function');
 assert.ok(game.includes('if(state.stamina<=0)sprintLocked=true') && game.includes('sprintLocked&&!sprintHeld&&state.stamina>=25'), 'Sprint exhaustion must require recovery before sprint can be enabled again');
 assert.ok(game.includes('const roads=[-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500]') && game.includes('for(const b of buildings)'), 'Player map must show roads and nearby buildings');
 assert.ok(game.includes('function purchaseUpgrade(kind){') && game.includes('function openUpgradeBench(){') && game.includes('function openTrader(){'), 'Survivor camp must offer upgrade and trade panels');
@@ -236,4 +236,9 @@ const storageFailure = makeHarness({}, true);
 assert.doesNotThrow(() => vm.runInNewContext(game, storageFailure.sandbox, { filename: 'apocalypse.js' }), 'game must still boot if local storage is unavailable');
 storageFailure.runFrame();
 
+assert.ok(game.includes("id:'water_treatment'") && game.includes("id:'school_ruins'") && game.includes("id:'city_bank'") && game.includes("id:'garage_complex'") && game.includes("id:'research_center'") && game.includes("id:'old_mill'"), 'All six new enterable buildings must be present');
+assert.ok(game.includes("role:'loot',texture:'metal'") && game.includes("role:'loot',texture:'brick'") && game.includes("role:'loot',texture:'concrete'") && game.includes("role:'loot',texture:'asphalt'") && game.includes("role:'loot',texture:'plaster'") && game.includes("role:'loot',texture:'dirt'"), 'Each new building must use a distinct facade texture');
+assert.ok(game.includes("const lootCycle=['medInjector','energyDrink','armorPlate','ammoCrate','weaponParts','electronicsPack']") && game.includes("function useNewLootItem(key)") && game.includes("buildingFloors") && game.includes("buildingLoot"), 'Six functional loot items and persistent floor loot must exist');
+assert.ok(game.includes("Array.from({length:b.floors}") && game.includes("buildingFloors[lootBuilding.id]=floor>=lootBuilding.floors?1:floor+1") && game.includes("entry.picked=true"), 'Each floor must have a searchable persistent crate and stair traversal');
+assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.max(.4,.68-(state.armorLevel-1)*.07)") && game.includes("46+(state.weaponLevel-2)*6"), 'New item effects must affect gameplay stats');
 console.log('Apocalypse deep-audit tests passed: JS runtime boot/frame, corrupt saves, storage failure, HTML IDs/assets, map ground, safe respawn, co-op token refresh, PC port, and unchanged movement.');
