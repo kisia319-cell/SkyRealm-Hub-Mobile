@@ -411,7 +411,7 @@ function updateZombies(dt,now){
    const dx=(state.x-z.x)/(d||1),dy=(state.y-z.y)/(d||1),nx=z.x+dx*z.speed*dt,ny=z.y+dy*z.speed*dt;
    if(!blocked(nx,z.y))z.x=nx;
    if(!blocked(z.x,ny))z.y=ny;
-   if(d<26&&now>z.attackAt&&now>respawnUntil){z.attackAt=now+950;state.hp=Math.max(0,state.hp-Math.max(1,Math.round(z.damage*(state.armorLevel?0.68:1))));if(state.hp<=0)showDeath();}
+   if(d<26&&now>z.attackAt&&now>respawnUntil){z.attackAt=now+950;z.attackAnim=1;state.hp=Math.max(0,state.hp-Math.max(1,Math.round(z.damage*(state.armorLevel?0.68:1))));if(state.hp<=0)showDeath();}
   }
   if(d>900)zombies.splice(i,1);
  }
@@ -421,36 +421,61 @@ function drawZombies(){
  for(const z of zombies){
   const age=now-z.born,p=Math.max(0,Math.min(1,age/z.emerge)),rise=1-Math.pow(1-p,2),buried=1-rise;
   const active=z.kind==='day'||z.kind==='horde'||worldClock>.62||worldClock<.08;
-  const walk=age>z.emerge?Math.sin(time*.009+z.phase):Math.sin(age*.012+z.phase)*.35;
-  ctx.save();ctx.translate(z.x,z.y+buried*25);ctx.globalAlpha=(active?1:.35)*Math.min(1,p*2.5);
-  // Ground shadow and flying soil while the zombie climbs out.
-  ctx.fillStyle='#11160f99';ctx.beginPath();ctx.ellipse(0,15,13+buried*7,4+buried*2,0,0,Math.PI*2);ctx.fill();
+  const moving=age>z.emerge,walk=moving?Math.sin(time*.0085+z.phase):Math.sin(age*.012+z.phase)*.25;
+  const attack=Math.max(0,(z.attackAnim||0)-(now-(z.attackAnimAt||now))/230);
+  if(z.attackAnim){z.attackAnimAt=now;z.attackAnim=Math.max(0,z.attackAnim-.075);}
+  const brute=z.kind==='brute',runner=z.kind==='runner',stalker=z.kind==='stalker';
+  const alpha=(active?1:.72)*Math.min(1,p*2.5);
+  ctx.save();ctx.translate(z.x,z.y);
+  // Strong contact shadow and a subtle ground rim keep the silhouette readable on grass, roads and debris.
+  ctx.fillStyle='#090d0bdc';ctx.beginPath();ctx.ellipse(0,13,brute?19:14,5,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#c5b98a55';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(0,13,brute?20:15,5.8,0,0,Math.PI*2);ctx.stroke();
   if(p<1){
-   for(let i=0;i<9;i++){const a=i*2.399+z.phase,dist=(1-p)*9+(i%3)*3,px=Math.cos(a)*dist,py=8+Math.sin(a)*dist*.45-(1-p)*12;
-    ctx.fillStyle=i%2?'#554a32':'#796744';ctx.beginPath();ctx.arc(px,py,1.3+(i%3)*.5,0,Math.PI*2);ctx.fill();}
+   for(let i=0;i<12;i++){const a=i*2.399+z.phase,dist=(1-p)*13+(i%4)*3,px=Math.cos(a)*dist,py=8+Math.sin(a)*dist*.5-(1-p)*15;
+    ctx.fillStyle=i%2?'#554a32':'#a08a5c';ctx.globalAlpha=alpha*.8;ctx.beginPath();ctx.arc(px,py,1.4+(i%3)*.55,0,Math.PI*2);ctx.fill();}
   }
-  ctx.translate(0,buried*22);ctx.scale(1,Math.max(.08,rise));
-  // Legs with separate torn trouser panels and animated gait.
-  ctx.strokeStyle='#30372e';ctx.lineWidth=5;ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(-3,5);ctx.lineTo(-5+walk*4,15);ctx.moveTo(3,5);ctx.lineTo(5-walk*4,15);ctx.stroke();
-  ctx.strokeStyle='#4b4a3b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-5+walk*4,14);ctx.lineTo(-8+walk*5,17);ctx.moveTo(5-walk*4,14);ctx.lineTo(8-walk*5,17);ctx.stroke();
-  // Torso, layered ragged clothing and fabric wear.
-  ctx.fillStyle=z.kind==='brute'?'#55433b':z.kind==='runner'?'#596b4a':z.kind==='stalker'?'#4c465b':'#53604c';ctx.beginPath();ctx.moveTo(-7,-10);ctx.lineTo(6,-10);ctx.lineTo(8,5);ctx.lineTo(4,9);ctx.lineTo(-7,7);ctx.closePath();ctx.fill();
-  ctx.fillStyle=z.kind==='stalker'?'#292336':'#303b31';ctx.fillRect(-6,-7,12,3);ctx.fillStyle='#83765a';ctx.fillRect(-5,-2,3,7);ctx.fillStyle='#a18d6d';ctx.fillRect(2,-6,2,3);
-  ctx.strokeStyle='#9a9273';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-5,1);ctx.lineTo(-2,4);ctx.moveTo(4,-5);ctx.lineTo(6,-1);ctx.stroke();
-  // Animated dangling arms with exposed forearms.
-  for(const side of [-1,1]){ctx.save();ctx.translate(side*6,-7);ctx.rotate(side*(.24+walk*.28));ctx.strokeStyle='#555c48';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*4,8);ctx.stroke();ctx.strokeStyle='#9a8b70';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(side*4,8);ctx.lineTo(side*3+walk*2,13);ctx.stroke();ctx.fillStyle='#b1a080';ctx.beginPath();ctx.arc(side*3+walk*2,14,2.2,0,Math.PI*2);ctx.fill();ctx.restore();}
-  // Neck, decayed face, scars, eye sockets and glowing eyes.
-  ctx.fillStyle=z.kind==='stalker'?'#a6a17a':'#8b8a6b';ctx.fillRect(-3,-13,6,5);ctx.fillStyle='#a09a78';ctx.beginPath();ctx.ellipse(0,-18,7.5,8.5,-.08,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#696b55';ctx.beginPath();ctx.ellipse(-5,-19,2.4,4,-.4,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#2a2119';ctx.fillRect(-4,-20,3,3);ctx.fillRect(2,-20,3,3);
-  ctx.fillStyle=z.kind==='stalker'?'#bd8cff':z.kind==='brute'?'#ed654e':z.kind==='runner'?'#d8d26a':active?'#d7a75b':'#756b4d';ctx.fillRect(-3,-20,2,2);ctx.fillRect(3,-20,2,2);
-  ctx.strokeStyle='#514334';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-2,-13);ctx.lineTo(3,-12);ctx.moveTo(4,-23);ctx.lineTo(6,-21);ctx.stroke();
-  // Texture: pores, dried dirt and scratches.
-  for(let i=0;i<7;i++){const tx=Math.sin(i*17+z.id)*5,ty=-8+Math.cos(i*11+z.phase)*13;ctx.fillStyle=i%2?'#242d24':'#b0a17a';ctx.globalAlpha=(active?1:.35)*Math.min(1,p*2.5)*.55;ctx.fillRect(tx,ty,1.2,1.2);}
-  ctx.restore();
+  ctx.globalAlpha=alpha;
+  const bodyScale=brute?1.24:runner?.92:1;
+  ctx.translate(0,-buried*18+Math.sin(time*.006+z.phase)*.8);
+  ctx.scale(bodyScale,bodyScale);
+  // Silhouette outline is deliberately brighter than the ground palette.
+  ctx.save();ctx.translate(0,buried*16);ctx.scale(1,Math.max(.12,rise));
+  ctx.strokeStyle='#171d18';ctx.lineWidth=8;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-3,4);ctx.lineTo(-5+walk*5,15);ctx.moveTo(3,4);ctx.lineTo(5-walk*5,15);ctx.stroke();
+  ctx.strokeStyle=brute?'#776b59':'#8a8065';ctx.lineWidth=4.5;
+  ctx.beginPath();ctx.moveTo(-3,4);ctx.lineTo(-5+walk*5,15);ctx.moveTo(3,4);ctx.lineTo(5-walk*5,15);ctx.stroke();
+  // Torn trousers and moving feet.
+  ctx.fillStyle='#353c31';ctx.beginPath();ctx.moveTo(-7,1);ctx.lineTo(-1,1);ctx.lineTo(-3+walk*3,13);ctx.lineTo(-10+walk*4,15);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(1,1);ctx.lineTo(7,1);ctx.lineTo(10-walk*4,15);ctx.lineTo(4-walk*3,13);ctx.closePath();ctx.fill();
+  // Chest and ragged clothing, with high-contrast seams and torn edges.
+  const shirt=brute?'#765044':runner?'#718653':stalker?'#655779':'#71805c';
+  ctx.fillStyle='#171d18';ctx.beginPath();ctx.moveTo(-10,-12);ctx.lineTo(9,-12);ctx.lineTo(11,7);ctx.lineTo(5,12);ctx.lineTo(-9,9);ctx.closePath();ctx.fill();
+  ctx.fillStyle=shirt;ctx.beginPath();ctx.moveTo(-8,-12);ctx.lineTo(7,-12);ctx.lineTo(9,5);ctx.lineTo(4,9);ctx.lineTo(-7,7);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#30392e';ctx.fillRect(-7,-7,14,3);ctx.fillStyle='#b29b70';ctx.fillRect(-6,-1,3,7);ctx.fillStyle='#c1a77a';ctx.fillRect(3,-8,2,5);
+  ctx.strokeStyle='#d0bd91';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-7,2);ctx.lineTo(-3,6);ctx.moveTo(4,-5);ctx.lineTo(7,0);ctx.stroke();
+  // Shoulder joints, swinging forearms and visible clawed hands.
+  for(const side of [-1,1]){
+   ctx.save();ctx.translate(side*8,-8);ctx.rotate(side*(.22+walk*.32+(attack>.25?-.65*attack:0)));
+   ctx.strokeStyle='#202820';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*5,9);ctx.stroke();
+   ctx.strokeStyle=brute?'#8e6a57':'#8c9270';ctx.lineWidth=4.5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(side*5,9);ctx.lineTo(side*4+walk*2,15);ctx.stroke();
+   ctx.fillStyle='#c0a17b';ctx.beginPath();ctx.arc(side*4+walk*2,16,2.8,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle='#e0c69a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(side*4,17);ctx.lineTo(side*6,20);ctx.stroke();ctx.restore();
+  }
+  // Neck, face planes, jaw and scars.
+  ctx.fillStyle='#b1a17b';ctx.fillRect(-3,-16,6,7);
+  ctx.fillStyle=brute?'#a18a68':stalker?'#b2a887':'#aaa17d';ctx.beginPath();ctx.ellipse(0,-22,8.5,9.5,-.08,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#77745c';ctx.beginPath();ctx.ellipse(-6,-22,2.6,4,-.4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#30271e';ctx.fillRect(-5,-24,4,4);ctx.fillRect(2,-24,4,4);
+  const eye=stalker?'#d4a4ff':brute?'#ff765c':runner?'#f2e47a':active?'#f2c56b':'#b2a47a';
+  ctx.shadowColor=eye;ctx.shadowBlur=active?9:3;ctx.fillStyle=eye;ctx.fillRect(-4,-23,2.8,2.8);ctx.fillRect(3,-23,2.8,2.8);ctx.shadowBlur=0;
+  ctx.fillStyle='#29251e';ctx.fillRect(-2,-16,5,2);ctx.strokeStyle='#554333';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-3,-15);ctx.lineTo(1,-12);ctx.lineTo(5,-15);ctx.moveTo(4,-27);ctx.lineTo(7,-24);ctx.stroke();
+  // Permanent light rim and animated infected veins make the body separate from the terrain.
+  ctx.globalAlpha=alpha*.8;ctx.strokeStyle=stalker?'#c5a1e8':'#c2b38a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-8,-9);ctx.lineTo(-10,-2);ctx.moveTo(8,-8);ctx.lineTo(10,0);ctx.stroke();
+  for(let i=0;i<8;i++){const tx=Math.sin(i*17+z.id)*6,ty=-8+Math.cos(i*11+z.phase)*14;ctx.fillStyle=i%2?'#252d24':'#d0b78c';ctx.globalAlpha=alpha*.75;ctx.fillRect(tx,ty,1.5,1.5);}
+  ctx.restore();ctx.restore();
  }
 }
+
 function showDeath(){if(deathHandled)return;deathHandled=true;gameActive=false;keys.clear();moveX=moveY=0;save();document.getElementById('deathDay').textContent='Ты продержался до '+state.day+' дня';document.getElementById('deathOverlay').classList.remove('hidden');}
 function respawn(){state.hp=100;state.x=Math.max(100,Math.min(11900,state.x+150));state.y=Math.max(100,Math.min(11900,state.y+110));ensureSafeSpawn();deathHandled=false;respawnUntil=performance.now()+4000;document.getElementById('deathOverlay').classList.add('hidden');gameActive=true;save();toast('Ты вернулся. 4 секунды защиты.');}
 let lastActionUiUpdate=-Infinity;
@@ -505,6 +530,26 @@ function drawSupplyDrop(){
  ctx.strokeStyle='#e5d39c';ctx.lineWidth=2;ctx.globalAlpha=pulse;ctx.beginPath();ctx.arc(0,-25,13+Math.sin(time*.006)*3,0,Math.PI*2);ctx.stroke();
  ctx.restore();
 }
+function drawWorldAnimation(){
+ if(prefs.effects==='low')return;
+ // Moving motes, spores and distant ash give the whole scene subtle life without heavy particle systems.
+ const night=worldClock>.62||worldClock<.08;
+ ctx.save();
+ for(let i=0;i<22;i++){
+  const seed=i*97.31,drift=(time*(night?.009:.018)+seed*13)%(w+80)-40;
+  const x=drift,y=(seed*7+Math.sin(time*.0015+i*2)*24)%(h+30)-15;
+  const glow=.25+.25*Math.sin(time*.003+i);
+  ctx.globalAlpha=night?glow*.65:glow*.3;
+  ctx.fillStyle=night?(i%3===0?'#b7d18a':'#d2c7a1'):'#d7d0a8';
+  ctx.beginPath();ctx.arc(x,y,i%5===0?1.8:1,0,Math.PI*2);ctx.fill();
+ }
+ if(night){
+  const vignette=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.18,w/2,h/2,Math.max(w,h)*.72);
+  vignette.addColorStop(0,'#07100b00');vignette.addColorStop(1,'#02080555');
+  ctx.fillStyle=vignette;ctx.fillRect(0,0,w,h);
+ }
+ ctx.restore();
+}
 function drawWeatherEffects(){
  if(prefs.effects==='low')return;
  const phase=(Math.floor(time/52000)%4),storm=phase===2;
@@ -552,7 +597,7 @@ function updateExpansion(now){
  if(Math.floor(now/52000)%4===2&&now-lastLightningAt>15000&&Math.random()<.002){lastLightningAt=now;lightningUntil=now+150;}
 }
 
-function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();nearbyTrees(state.x,state.y,Math.max(w,h)+160).forEach(t=>{if(!t.harvested)tree(t)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)building(b)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)drawBuildingInterior(b)});worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});if(Math.abs(600-state.y)<h+100){const poleStart=Math.max(WORLD_MIN,Math.floor((state.x-w-100)/330)*330),poleEnd=Math.min(WORLD_MAX,state.x+w+100);for(let x=poleStart+180;x<poleEnd;x+=330)pole(x,600);}wrecks.forEach(v=>{if(Math.abs(v.x-state.x)<w+100&&Math.abs(v.y-state.y)<h+100)wreck(v)});smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects()}
+function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();nearbyTrees(state.x,state.y,Math.max(w,h)+160).forEach(t=>{if(!t.harvested)tree(t)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)building(b)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)drawBuildingInterior(b)});worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});if(Math.abs(600-state.y)<h+100){const poleStart=Math.max(WORLD_MIN,Math.floor((state.x-w-100)/330)*330),poleEnd=Math.min(WORLD_MAX,state.x+w+100);for(let x=poleStart+180;x<poleEnd;x+=330)pole(x,600);}wrecks.forEach(v=>{if(Math.abs(v.x-state.x)<w+100&&Math.abs(v.y-state.y)<h+100)wreck(v)});smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects();drawWorldAnimation()}
 function drawWind(){if(prefs.effects==='low'||wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
 function applyInfectionDamage(now){if(infectionZones.some(z=>Math.hypot(state.x-z.x,state.y-z.y)<z.r*.72)&&now-lastInfectionDamageAt>2200){lastInfectionDamageAt=now;state.hp=Math.max(0,state.hp-2);toast('Заражённый воздух: -2 здоровья');if(state.hp<=0)showDeath();save();}}
 function interact(){
