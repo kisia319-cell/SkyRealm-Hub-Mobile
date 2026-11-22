@@ -46,7 +46,7 @@ assert.ok(game.includes('function enterSolo(){gameActive=false'), 'Intro dialogu
 assert.ok(game.includes('function leaveToMenu(){save();gameActive=false;deathHandled=false;'), 'Returning to menu must allow the saved death screen to reopen');
 assert.ok(game.includes('name:playerName,'), 'Frame loop must not parse untrusted username JSON every tick');
 assert.ok(game.includes('function save(){try{localStorage.setItem('), 'Save failures must not crash gameplay');
-assert.ok(game.includes('if(now-lastAutoSave>=5000)') && game.includes('worldClock}'), 'Position and day/night state must autosave');
+assert.ok(game.includes('if(now-lastAutoSave>=5000)') && game.includes('worldClock,flashlight:!!saved.flashlight'), 'Position and day/night state must autosave');
 assert.ok(game.includes('worldClock=savedWorldClock'), 'Day/night phase must survive reloads');
 assert.ok(game.includes('if(worldClock<previousClock)advanceGameDay()') && game.includes('function daily(){dayWind()}'), 'Displayed day and daily quests must follow the actual game clock');
 assert.ok(game.includes('const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[]'), 'Malformed wreck save data must be ignored');
