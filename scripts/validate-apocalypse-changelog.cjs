@@ -30,7 +30,7 @@ const html = fs.readFileSync('app/src/main/assets/apocalypse.html', 'utf8');
 const js = fs.readFileSync('app/src/main/assets/apocalypse.js', 'utf8');
 if (!html.includes('apocalypse-changelog.js') || !html.includes('id="journalEntries"')) throw new Error('HTML does not load the changelog manifest or render target');
 if (!js.includes('renderUpdateJournal') || !js.includes('APOCALYPSE_CHANGELOG')) throw new Error('Game script does not render the changelog manifest');
-for (const required of ['updateRadioSignal', 'drawRadioSignal', 'completeRadioSignal', 'radioFinds', 'survivorTrust', 'surfaceTextures', 'worldProps', 'drawWorldProp']) {
+for (const required of ['updateRadioSignal', 'drawRadioSignal', 'completeRadioSignal', 'radioFinds', 'survivorTrust', 'surfaceTextures', 'worldProps', 'drawWorldProp', 'findSafeSpawn', 'groundX=state.x', 'playerName', 'savedWrecks', 'nearbyBuildings', 'lastAutoSave', 'savedWorldClock', 'advanceGameDay', 'deathHandled=false']) {
   if (!js.includes(required)) throw new Error('Endless radio-event system is missing: ' + required);
 }
 console.log('Apocalypse changelog validated: ' + data.version + ' / PC ' + data.pcVersion + ', ' + data.sections.length + ' sections, ' + count + ' detailed features.');
