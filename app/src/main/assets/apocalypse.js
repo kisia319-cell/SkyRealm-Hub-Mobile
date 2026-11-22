@@ -37,9 +37,9 @@ function canPlaceBarricade(p){const halfW=32,halfH=21,c=Math.cos(p.angle),s=Math
 function setBuildMode(on){buildMode=!!on;document.getElementById('buildControls').classList.toggle('hidden',!buildMode);if(buildMode){document.getElementById('panel').classList.add('hidden');toast('Выбери место · R / ПОВОРОТ · Enter / ПОСТАВИТЬ');}else{document.getElementById('buildStatus').textContent='';}}
 function rotateBuild(){if(!buildMode)return;buildAngle=(buildAngle+Math.PI/4)%(Math.PI*2);}
 function placeBarricade(){if(!buildMode)return;const p=buildCandidate();if(!canPlaceBarricade(p)){toast('Здесь нельзя строить: место занято');return;}if(state.scrap<2||state.wood<3){toast('Не хватает ресурсов: нужно 2 металла и 3 дерева');setBuildMode(false);return;}if(barricades.length>=24){toast('Лимит укреплений достигнут');setBuildMode(false);return;}state.scrap-=2;state.wood-=3;const placed={x:p.x,y:p.y,angle:p.angle};barricades.push(placed);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'barricade-built',barricade:placed});save();setBuildMode(false);toast('Баррикада установлена');}
-let gameActive=false,lastNet=0,deathHandled=false,respawnUntil=0;
+let gameActive=false,lastNet=0,deathHandled=false,respawnUntil=0,mobileQuickMenuResume=false,settingsResumeGame=false;
 let radioSignal=null,radioSignalNextAt=performance.now()+30000;
-const prefs=(()=>{const raw=read('skyrealm_apocalypse_settings_v1');return{effects:['low','medium','high'].includes(raw.effects)?raw.effects:'high',joy:bounded(raw.joy,100,60,140),motion:raw.motion!==false,hints:raw.hints!==false}})();
+const prefs=(()=>{const raw=read('skyrealm_apocalypse_settings_v1');return{effects:['low','high'].includes(raw.effects)?raw.effects:'high',joy:bounded(raw.joy,100,60,140),motion:raw.motion!==false,hints:raw.hints!==false}})();
 // Deterministic, irregular forest placement. One tree per roughly 8 game blocks (256 world units).
 const trees=[];
 const worldProps=[
@@ -691,9 +691,9 @@ function setupJoystick(){const joy=document.getElementById('joy'),stick=document
 let prev=performance.now(),lastAutoSave=0;function loop(now){updateExpansion(now);let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){move(dt);updateZombies(dt,now);updateRadioSignal(now);if(now-lastAutoSave>=5000){lastAutoSave=now;save();}}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:playerName,worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
 function daily(){dayWind()}
 function focusGame(){try{canvas.focus({preventScroll:true});}catch(_){canvas.focus();}}
-function closeMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(menu)menu.classList.add('hidden');document.body.classList.remove('quick-menu-open');}
-function openMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(!menu)return;keys.clear();moveX=moveY=0;joyPointer=null;const stick=document.getElementById('stick');if(stick)stick.style.transform='translate(0,0)';menu.classList.remove('hidden');document.body.classList.add('quick-menu-open');}
-function leaveToMenu(){save();gameActive=false;deathHandled=false;closeMobileQuickMenu();keys.clear();moveX=moveY=0;document.getElementById('deathOverlay').classList.add('hidden');document.body.classList.add('menu-open');document.getElementById('mainMenu').classList.remove('menu-out');}
+function closeMobileQuickMenu(resume=true){const shouldResume=mobileQuickMenuResume;mobileQuickMenuResume=false;const menu=document.getElementById('mobileQuickMenu');if(menu)menu.classList.add('hidden');document.body.classList.remove('quick-menu-open');if(resume&&shouldResume){gameActive=true;focusGame();}}
+function openMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(!menu)return;mobileQuickMenuResume=gameActive;gameActive=false;keys.clear();moveX=moveY=0;joyPointer=null;const stick=document.getElementById('stick');if(stick)stick.style.transform='translate(0,0)';menu.classList.remove('hidden');document.body.classList.add('quick-menu-open');}
+function leaveToMenu(){save();gameActive=false;deathHandled=false;closeMobileQuickMenu(false);keys.clear();moveX=moveY=0;document.getElementById('deathOverlay').classList.add('hidden');document.body.classList.add('menu-open');document.getElementById('mainMenu').classList.remove('menu-out');}
 function exitGame(){save();const api=window.pywebview?.api;if(api?.close_app){api.close_app();return;}if(window.Android?.exitGame){window.Android.exitGame();return;}if(history.length>1){history.back();return;}location.href='hub.html';}
 const JOURNAL_DATA=window.APOCALYPSE_CHANGELOG||null;
 const JOURNAL_VERSION=JOURNAL_DATA?.version||'unknown';
@@ -757,24 +757,26 @@ function showJournalOnWorldEntry(resumeGame=true){
 }
 function enterSolo(){gameActive=false;keys.clear();moveX=moveY=0;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.remove('hidden');focusGame();}
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;}
+function openSettings(resumeGame=gameActive){settingsResumeGame=!!resumeGame;gameActive=false;applySettings();document.getElementById('settingsOverlay').classList.remove('hidden');}
+function closeSettings(){document.getElementById('settingsOverlay').classList.add('hidden');const resume=settingsResumeGame;settingsResumeGame=false;if(resume){gameActive=true;focusGame();}}
 document.getElementById('menuPlay').onclick=enterSolo;
 document.getElementById('menuJournal').onclick=()=>openUpdateJournal(false);
 document.getElementById('journalX').onclick=closeUpdateJournal;
 document.getElementById('journalOk').onclick=closeUpdateJournal;
-document.getElementById('menuSettings').onclick=()=>{applySettings();document.getElementById('settingsOverlay').classList.remove('hidden')};
+document.getElementById('menuSettings').onclick=()=>openSettings(false);
 document.getElementById('menuExit').onclick=exitGame;
 document.getElementById('deathRespawn').onclick=respawn;
 document.getElementById('deathMenu').onclick=leaveToMenu;
-document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.dataset.close).classList.add('hidden')));
-document.getElementById('settingsSave').onclick=()=>{prefs.effects=document.getElementById('settingEffects').value;prefs.joy=Number(document.getElementById('settingJoy').value);prefs.motion=document.getElementById('settingMotion').checked;prefs.hints=document.getElementById('settingHints').checked;let persisted=true;try{localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs))}catch(_){persisted=false}applySettings();document.getElementById('settingsOverlay').classList.add('hidden');toast(persisted?'Настройки сохранены':'Настройки применены, но браузер не смог их сохранить')};
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.close==='settingsOverlay'){closeSettings();return;}const target=document.getElementById(b.dataset.close);if(target)target.classList.add('hidden')}));
+document.getElementById('settingsSave').onclick=()=>{prefs.effects=document.getElementById('settingEffects').value;prefs.joy=Number(document.getElementById('settingJoy').value);prefs.motion=document.getElementById('settingMotion').checked;prefs.hints=document.getElementById('settingHints').checked;let persisted=true;try{localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs))}catch(_){persisted=false}closeSettings();toast(persisted?'Настройки сохранены':'Настройки применены, но браузер не смог их сохранить')};
 document.getElementById('settingsReset').onclick=()=>{if(confirm('Удалить сохранение Apocalypse на этом устройстве? Это нельзя отменить.')){try{localStorage.removeItem(STORE);location.reload()}catch(_){toast('Не удалось удалить сохранение: хранилище недоступно')}}};
 document.getElementById('pauseMenu').onclick=()=>{if(window.matchMedia('(max-width: 700px), (pointer: coarse)').matches)openMobileQuickMenu();else leaveToMenu();};
 document.getElementById('mobileMoreClose').onclick=closeMobileQuickMenu;
 document.getElementById('mobileMoreBackdrop').onclick=closeMobileQuickMenu;
 document.getElementById('mobileMoreInventory').onclick=()=>{closeMobileQuickMenu();inventory()};
 document.getElementById('mobileMoreWorkshop').onclick=()=>{closeMobileQuickMenu();openWorkshop()};
-document.getElementById('mobileMoreSettings').onclick=()=>{closeMobileQuickMenu();applySettings();document.getElementById('settingsOverlay').classList.remove('hidden')};
-document.getElementById('mobileMoreMenu').onclick=()=>{closeMobileQuickMenu();leaveToMenu()};
+document.getElementById('mobileMoreSettings').onclick=()=>{const resume=mobileQuickMenuResume;closeMobileQuickMenu(false);openSettings(resume)};
+document.getElementById('mobileMoreMenu').onclick=()=>{closeMobileQuickMenu(false);leaveToMenu()};
 document.getElementById('start').onclick=()=>{document.getElementById('dialogue').classList.add('hidden');ensureSafeSpawn(true);gameActive=true;focusGame();showJournalOnWorldEntry(true);};
 window.addEventListener('apocalypse-coop-enter',()=>{ensureSafeSpawn(true);gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.add('hidden');document.getElementById('coopOverlay').classList.add('hidden');focusGame();showJournalOnWorldEntry(true);});
 window.addEventListener('apocalypse-coop-version-mismatch',()=>{if(gameActive){leaveToMenu();toast('Кооператив остановлен: версии игры различаются.');}});
