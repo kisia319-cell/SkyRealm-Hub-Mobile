@@ -42,6 +42,10 @@ assert.ok(!/Math\.min\(9900,state\.[xy]\+/.test(game), 'Old 9,900 map clamp must
 assert.ok(game.includes('function enterSolo(){gameActive=false'), 'Intro dialogue must pause simulation');
 assert.ok(game.includes('name:playerName,'), 'Frame loop must not parse untrusted username JSON every tick');
 assert.ok(game.includes('function save(){try{localStorage.setItem('), 'Save failures must not crash gameplay');
+assert.ok(game.includes('const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[]'), 'Malformed wreck save data must be ignored');
+assert.ok(game.includes('nearbyBuildings='), 'Zombie spawns must use nearby buildings only');
+assert.ok(game.includes('radioSignal&&Math.abs'), 'Radio-event props must have collision bounds');
+assert.equal((game.match(/\\{x:\\d+,y:\\d+,done:false\\}/g)||[]).length, 31, 'Expanded map should contain 31 scavenging sites');
 assert.ok(coop.includes('grant_type=refresh_token') && coop.includes('skyrealm_apocalypse_refresh'), 'Co-op must refresh expired sessions');
 assert.ok(coop.includes('Сервер кооператива не ответил за 12 секунд.'), 'Co-op API calls must have a timeout');
 assert.ok(pc.includes('ThreadingHTTPServer(("127.0.0.1", 0), handler)') && pc.includes('{port}/apocalypse.html'), 'Windows launcher must use a free loopback port');
