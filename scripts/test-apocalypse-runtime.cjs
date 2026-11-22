@@ -46,6 +46,7 @@ assert.ok(game.includes('function enterSolo(){gameActive=false'), 'Intro dialogu
 assert.ok(game.includes('function openMobileQuickMenu(){const menu=document.getElementById(\'mobileQuickMenu\');if(!menu)return;mobileQuickMenuResume=gameActive;gameActive=false;'), 'Mobile quick actions must pause gameplay');
 assert.ok(game.includes('function closeMobileQuickMenu(resume=true){'), 'Closing quick menu must restore its previous running state');
 assert.ok(game.includes('function openSettings(resumeGame=gameActive){') && game.includes('function closeSettings(){'), 'Settings overlay must preserve and restore previous game state');
+assert.ok(game.includes('if(!gameActive){') && game.includes("if(k==='Escape'){") && game.includes('closeMobileQuickMenu();') && game.includes('closeSettings();'), 'Escape must close paused overlays without accepting background movement');
 assert.ok(game.includes("effects:['low','high'].includes(raw.effects)"), 'Settings quality must match the available select options');
 assert.ok(game.includes('function leaveToMenu(){save();gameActive=false;deathHandled=false;'), 'Returning to menu must allow the saved death screen to reopen');
 assert.ok(game.includes('name:playerName,'), 'Frame loop must not parse untrusted username JSON every tick');
