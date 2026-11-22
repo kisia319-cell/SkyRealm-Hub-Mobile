@@ -79,8 +79,8 @@ jobs:
       - name: Publish separate Windows Apocalypse release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apocalypse-pc-v1.0.9
-          name: SkyRealm Apocalypse for Windows 1.0.9 (endless radio events)
+          tag_name: apocalypse-pc-v1.1.0
+          name: SkyRealm Apocalypse for Windows 1.1.0 (expanded textured world)
           target_commitish: main
           prerelease: true
           make_latest: false
