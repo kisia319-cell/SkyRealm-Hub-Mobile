@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.1.1"
+APP_VERSION = "apocalypse-pc-v1.1.4"
 PORT = 48732
 
 
@@ -62,12 +62,7 @@ class ApocalypseFileHandler(http.server.SimpleHTTPRequestHandler):
         if path in ("/", "/apocalypse.html"):
             try:
                 html = resource_path("apocalypse.html").read_text(encoding="utf-8")
-                # Expose the same mobile-game save routine to the desktop shell without
-                # changing the Android game source or its gameplay implementation.
-                html = html.replace(
-                    "getDay:()=>state.day});",
-                    "getDay:()=>state.day,save});",
-                )
+                # The shared ApocalypseGame API already exposes save() for the desktop shell.
                 html = html.replace(
                     "</body>",
                     '<script src="apocalypse-pc.js"></script></body>',
