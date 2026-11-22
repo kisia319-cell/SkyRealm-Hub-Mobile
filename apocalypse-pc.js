@@ -16,6 +16,15 @@
   document.head.appendChild(style);
   const hint = document.querySelector('.control-hint');
   if (hint) hint.textContent = 'WASD / СТРЕЛКИ — движение  ·  E — действие  ·  I — рюкзак  ·  F11 — полный экран  ·  ESC — меню';
+  window.addEventListener('pywebviewready', async () => {
+    try {
+      const session = await window.pywebview.api.get_primehub_auth();
+      if (session?.access_token) {
+        window.SkyRealmPrimeHubAuth = session;
+        window.dispatchEvent(new CustomEvent('skyrealm-primehub-auth', { detail: session }));
+      }
+    } catch (_) {}
+  });
   const save = () => { try { window.ApocalypseGame?.save?.(); } catch (_) {} };
   window.addEventListener('beforeunload', save);
   window.setInterval(save, 5000);
