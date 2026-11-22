@@ -43,6 +43,10 @@ assert.ok(game.includes('function ground(){') && game.includes('const left=Math.
 assert.ok(game.includes('function findSafeSpawn(') && game.includes('findSafeSpawn(state.x+150,state.y+110)'), 'Respawn must find a collision-free position');
 assert.ok(!/Math\.min\(9900,state\.[xy]\+/.test(game), 'Old 9,900 map clamp must not remain');
 assert.ok(game.includes('function enterSolo(){gameActive=false'), 'Intro dialogue must pause simulation');
+assert.ok(game.includes('function openMobileQuickMenu(){const menu=document.getElementById(\'mobileQuickMenu\');if(!menu)return;mobileQuickMenuResume=gameActive;gameActive=false;'), 'Mobile quick actions must pause gameplay');
+assert.ok(game.includes('function closeMobileQuickMenu(resume=true){'), 'Closing quick menu must restore its previous running state');
+assert.ok(game.includes('function openSettings(resumeGame=gameActive){') && game.includes('function closeSettings(){'), 'Settings overlay must preserve and restore previous game state');
+assert.ok(game.includes("effects:['low','high'].includes(raw.effects)"), 'Settings quality must match the available select options');
 assert.ok(game.includes('function leaveToMenu(){save();gameActive=false;deathHandled=false;'), 'Returning to menu must allow the saved death screen to reopen');
 assert.ok(game.includes('name:playerName,'), 'Frame loop must not parse untrusted username JSON every tick');
 assert.ok(game.includes('function save(){try{localStorage.setItem('), 'Save failures must not crash gameplay');
@@ -124,7 +128,7 @@ function makeHarness(seed = {}, failWrites = false) {
     addEventListener(type, fn) { const key = 'window:' + type; if (!listeners.has(key)) listeners.set(key, []); listeners.get(key).push(fn); },
     dispatchEvent() { return true; },
     devicePixelRatio: 1,
-    matchMedia() { return { matches: false, addEventListener() {}, removeEventListener() {} }; }
+    matchMedia() { return { matches: true, addEventListener() {}, removeEventListener() {} }; }
   };
   const sandbox = {
     window, document, localStorage, console, Math, Date, JSON, Number, String, Object, Array, Set, Map,
@@ -164,9 +168,22 @@ harness.elements.get('start').click();
 harness.runFrame(1032);
 harness.runFrame(7000);
 assert.equal(typeof JSON.parse(harness.store.get('skyrealm_apocalypse_mobile_v1')).worldClock, 'number', 'autosave must persist day/night phase');
+const beforeQuickMenu = harness.sandbox.window.ApocalypseGame.getClock();
+harness.elements.get('pauseMenu').click();
+harness.runFrame(7016);
+assert.equal(harness.sandbox.window.ApocalypseGame.getClock(), beforeQuickMenu, 'opening mobile quick menu must pause the world clock');
+harness.elements.get('mobileMoreClose').click();
+harness.runFrame(7032);
+assert.notEqual(harness.sandbox.window.ApocalypseGame.getClock(), beforeQuickMenu, 'closing mobile quick menu must resume the world clock');
+const beforeSettings = harness.sandbox.window.ApocalypseGame.getClock();
+harness.elements.get('menuSettings').click();
+harness.runFrame(7048);
+assert.equal(harness.sandbox.window.ApocalypseGame.getClock(), beforeSettings, 'opening settings during gameplay must pause the world clock');
 harness.setWritesFail(true);
 assert.equal(harness.sandbox.window.ApocalypseGame.save(), false, 'storage quota failure should be reported without throwing');
 assert.doesNotThrow(() => harness.elements.get('settingsSave').click(), 'settings storage failure must not crash the UI');
+harness.runFrame(7064);
+assert.notEqual(harness.sandbox.window.ApocalypseGame.getClock(), beforeSettings, 'closing settings must resume the previously running game');
 
 const storageFailure = makeHarness({}, true);
 assert.doesNotThrow(() => vm.runInNewContext(game, storageFailure.sandbox, { filename: 'apocalypse.js' }), 'game must still boot if local storage is unavailable');
