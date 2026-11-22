@@ -22,6 +22,17 @@ def resource_path(relative: str) -> Path:
 
 
 class ApocalypseApi:
+    def get_primehub_auth(self):
+        """Return the already-authenticated PrimeHub session supplied by the launcher."""
+        try:
+            import json
+            session = json.loads(os.environ.get("SKYREALM_PRIMEHUB_SESSION", "{}"))
+            if not isinstance(session, dict) or not session.get("access_token"):
+                return None
+            return {"access_token": session["access_token"], "user": session.get("user") or {}}
+        except Exception:
+            return None
+
     def close_app(self):
         try:
             windows = webview.windows
