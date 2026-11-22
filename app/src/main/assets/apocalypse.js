@@ -42,9 +42,20 @@ const worldProps=[
 function buildForest(){
  let seed=0x51a7e;
  const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ const legacyZones=buildings.slice(0,21).map(b=>({x:b.x+b.w/2,y:b.y-b.floors*17+b.h/2,r:Math.max(b.w,b.h+b.floors*34)*.72+70}))
+   .concat(worldProps.slice(0,12).map(p=>({x:p.x,y:p.y,r:Math.max(p.w,p.h)*.85+35})),[{x:mark.x,y:mark.y,r:135},{x:440,y:390,r:175}],wrecks.slice(0,12).map(v=>({x:v.x,y:v.y,r:100})));
+ for(let attempt=0;attempt<26000&&trees.length<360;attempt++){
+  const x=65+rand()*11870,y=65+rand()*11870;
+  if([600,4100,7600,10000].some(road=>Math.abs(y-road)<95))continue;
+  if([2700,6200,9700,10000].some(road=>Math.abs(x-road)<95))continue;
+  if(legacyZones.some(z=>(x-z.x)**2+(y-z.y)**2<z.r*z.r))continue;
+  if(trees.some(t=>(x-t.x)**2+(y-t.y)**2<256*256))continue;
+  trees.push({x,y,size:.78+rand()*.62,phase:rand()*Math.PI*2});
+ }
  const blockedZones=buildings.map(b=>({x:b.x+b.w/2,y:b.y-b.floors*17+b.h/2,r:Math.max(b.w,b.h+b.floors*34)*.72+90}))
    .concat(worldProps.map(p=>({x:p.x,y:p.y,r:Math.max(p.w,p.h)*.85+45})),[{x:mark.x,y:mark.y,r:170},{x:440,y:390,r:210}],wrecks.map(v=>({x:v.x,y:v.y,r:115})));
  const roads=[-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500],cell=280,occupied=new Map();
+ for(const t of trees){const cx=Math.floor(t.x/150),cy=Math.floor(t.y/150),key=cx+','+cy;if(!occupied.has(key))occupied.set(key,[]);occupied.get(key).push(t);}
  for(let gy=WORLD_MIN+120;gy<WORLD_MAX-120;gy+=cell)for(let gx=WORLD_MIN+120;gx<WORLD_MAX-120;gx+=cell){
   if(rand()>.46)continue;
   const x=gx+65+rand()*150,y=gy+65+rand()*150;
