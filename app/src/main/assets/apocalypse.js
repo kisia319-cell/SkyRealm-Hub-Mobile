@@ -270,12 +270,50 @@ function daily(){let today=new Date().toDateString();if(state.lastDay!==today){s
 function focusGame(){try{canvas.focus({preventScroll:true});}catch(_){canvas.focus();}}
 function leaveToMenu(){save();gameActive=false;keys.clear();moveX=moveY=0;document.getElementById('deathOverlay').classList.add('hidden');document.body.classList.add('menu-open');document.getElementById('mainMenu').classList.remove('menu-out');}
 function exitGame(){save();const api=window.pywebview?.api;if(api?.close_app){api.close_app();return;}if(window.Android?.exitGame){window.Android.exitGame();return;}if(history.length>1){history.back();return;}location.href='hub.html';}
-const JOURNAL_VERSION='1.1.1';
+const JOURNAL_DATA=window.APOCALYPSE_CHANGELOG||null;
+const JOURNAL_VERSION=JOURNAL_DATA?.version||'unknown';
 const JOURNAL_SEEN_KEY='skyrealm_apocalypse_journal_seen_'+JOURNAL_VERSION;
+function renderUpdateJournal(){
+ const version=document.getElementById('journalVersion');
+ const intro=document.getElementById('journalIntro');
+ const host=document.getElementById('journalEntries');
+ if(!host)return;
+ host.replaceChildren();
+ if(!JOURNAL_DATA||!Array.isArray(JOURNAL_DATA.sections)){
+  if(intro)intro.textContent='Не удалось загрузить журнал обновлений. Попробуй открыть его позже.';
+  if(version)version.textContent='ДАННЫЕ НЕДОСТУПНЫ';
+  return;
+ }
+ if(version)version.textContent='v'+JOURNAL_DATA.version+' / PC '+(JOURNAL_DATA.pcVersion||'—')+(JOURNAL_DATA.date?' · '+JOURNAL_DATA.date:'');
+ if(intro)intro.textContent=JOURNAL_DATA.intro||'Изменения последнего обновления.';
+ for(const section of JOURNAL_DATA.sections){
+  const heading=document.createElement('div');
+  heading.className='journal-section-title';
+  heading.textContent=(section.icon?section.icon+'　':'')+String(section.title||'Изменения');
+  host.appendChild(heading);
+  for(const feature of (Array.isArray(section.features)?section.features:[])){
+   const item=document.createElement('div');
+   item.className='journal-item';
+   const icon=document.createElement('div');
+   icon.className='journal-icon';
+   icon.textContent=section.icon||'•';
+   const copy=document.createElement('div');
+   const title=document.createElement('b');
+   title.textContent=String(feature.title||'Изменение');
+   const description=document.createElement('p');
+   description.textContent=String(feature.description||'');
+   copy.append(title,description);
+   item.append(icon,copy);
+   host.appendChild(item);
+  }
+ }
+}
+
 let journalResumeGame=false;
 function openUpdateJournal(resumeGame=false){
  const panel=document.getElementById('updateJournal');
  if(!panel)return;
+ renderUpdateJournal();
  journalResumeGame=!!resumeGame&&gameActive;
  if(journalResumeGame)gameActive=false;
  keys.clear();moveX=moveY=0;

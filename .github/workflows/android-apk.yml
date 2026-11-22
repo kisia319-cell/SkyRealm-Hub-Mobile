@@ -54,6 +54,12 @@ jobs:
           console.log('Mobile Hub account registration, verification, login and session checks passed.');
           NODE
 
+      - name: Validate detailed Apocalypse update journal
+        run: |
+          node --check app/src/main/assets/apocalypse-changelog.js
+          node --check app/src/main/assets/apocalypse.js
+          node scripts/validate-apocalypse-changelog.cjs
+
       - name: Read app version
         id: app_version
         run: echo "version=$(tr -d '\r\n' < version.txt)" >> "$GITHUB_OUTPUT"
