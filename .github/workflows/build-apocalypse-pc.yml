@@ -11,6 +11,7 @@ on:
       - "app/src/main/assets/apocalypse-coop.js"
       - "app/src/main/assets/apocalypse-changelog.js"
       - "scripts/validate-apocalypse-changelog.cjs"
+      - "scripts/test-apocalypse-runtime.cjs"
       - ".github/workflows/build-apocalypse-pc.yml"
   workflow_dispatch:
 
@@ -41,6 +42,7 @@ jobs:
           node --check app/src/main/assets/apocalypse-coop.js
           node --check app/src/main/assets/apocalypse-changelog.js
           node scripts/validate-apocalypse-changelog.cjs
+          node scripts/test-apocalypse-runtime.cjs
           python -m py_compile apocalypse_pc.py
           $html = Get-Content app/src/main/assets/apocalypse.html -Raw
           foreach ($required in @('id="mainMenu"', 'id="menuPlay"', 'id="menuSettings"', 'id="menuCoop"', 'id="world"', 'id="joy"', 'id="inventory"')) {
@@ -79,8 +81,8 @@ jobs:
       - name: Publish separate Windows Apocalypse release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apocalypse-pc-v1.1.0
-          name: SkyRealm Apocalypse for Windows 1.1.0 (expanded textured world)
+          tag_name: apocalypse-pc-v1.1.1
+          name: SkyRealm Apocalypse for Windows 1.1.1 (deep stability fixes)
           target_commitish: main
           prerelease: true
           make_latest: false
