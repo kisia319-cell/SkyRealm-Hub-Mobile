@@ -165,6 +165,7 @@ assert.ok(saved.worldClock >= 0 && saved.worldClock < 1, 'saved day/night phase 
 harness.runFrame();
 harness.elements.get('menuPlay').click();
 harness.elements.get('start').click();
+harness.elements.get('journalOk').click();
 harness.runFrame(1032);
 harness.runFrame(7000);
 assert.equal(typeof JSON.parse(harness.store.get('skyrealm_apocalypse_mobile_v1')).worldClock, 'number', 'autosave must persist day/night phase');
