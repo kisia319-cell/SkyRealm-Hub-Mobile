@@ -1,20 +1,21 @@
 (()=>{'use strict';
+const WORLD_MIN=-12000,WORLD_MAX=24000;
 const canvas=document.getElementById('world'),ctx=canvas.getContext('2d'),STORE='skyrealm_apocalypse_mobile_v1';
 const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(_){return {}}};
 const saved=read(STORE),avatar=read('skyrealm_character_v1');
 const colors={skin:avatar.skin||'#e8b88c',hair:avatar.hair||'#352d3d',shirt:avatar.armor||'#526fba',trim:avatar.accent||'#9cb9ff',eyes:avatar.eye||'#26334c'};
 const state={x:saved.x??440,y:saved.y??390,hp:saved.hp??100,scrap:saved.scrap||0,bandage:saved.bandage||0,food:saved.food||0,wood:saved.wood||0,bolts:saved.bolts||0,weaponLevel:saved.weaponLevel||0,day:saved.day||1,quest:saved.quest||0,lastDay:saved.lastDay||new Date().toDateString(),dayReward:saved.dayReward||0,radioFinds:saved.radioFinds||0,survivorTrust:saved.survivorTrust||0,armorLevel:saved.armorLevel||0,firearm:saved.firearm||'',ammo:Math.max(0,Number(saved.ammo)||0)};
-if(!Number.isFinite(state.x)||!Number.isFinite(state.y)){state.x=440;state.y=390;}else{state.x=Math.max(25,Math.min(11975,state.x));state.y=Math.max(25,Math.min(11975,state.y));}
+if(!Number.isFinite(state.x)||!Number.isFinite(state.y)){state.x=440;state.y=390;}else{state.x=Math.max(WORLD_MIN+25,Math.min(WORLD_MAX-25,state.x));state.y=Math.max(WORLD_MIN+25,Math.min(WORLD_MAX-25,state.y));}
 const mark={x:610,y:400};
-const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false},{x:1850,y:350,done:false},{x:2200,y:780,done:false},{x:2750,y:520,done:false},{x:3100,y:1250,done:false},{x:1900,y:1950,done:false}];
+const wrecks=[{x:300,y:260,done:false},{x:800,y:280,done:false},{x:930,y:650,done:false},{x:330,y:720,done:false},{x:650,y:900,done:false},{x:1200,y:420,done:false},{x:1450,y:800,done:false},{x:1850,y:350,done:false},{x:2200,y:780,done:false},{x:2750,y:520,done:false},{x:3100,y:1250,done:false},{x:1900,y:1950,done:false},{x:-9300,y:-9300,done:false},{x:-6100,y:-4200,done:false},{x:-2200,y:-10100,done:false},{x:4100,y:-8500,done:false},{x:9100,y:-9000,done:false},{x:15100,y:-9200,done:false},{x:20700,y:-5200,done:false},{x:22400,y:1800,done:false},{x:19400,y:7600,done:false},{x:22600,y:14600,done:false},{x:17200,y:21200,done:false},{x:11200,y:22600,done:false},{x:4200,y:21900,done:false},{x:-3200,y:21500,done:false},{x:-9600,y:17700,done:false},{x:-10500,y:10500,done:false},{x:-8200,y:2500,done:false},{x:13500,y:12800,done:false},{x:7200,y:15300,done:false},{x:1800,y:11200,done:false}];
 wrecks.forEach((v,i)=>v.done=!!saved.wrecks?.[i]);
 // Keep a saved player spawn clear of parked/wrecked vehicles.
 for(const v of wrecks){if(Math.hypot(state.x-v.x,state.y-v.y)<62){state.x=v.x+92;state.y=v.y+72;break;}}
 let w=0,h=0,dpr=1,time=0,toastTimer=0,dialogMode='intro',moveX=0,moveY=0,joyPointer=null,wind=0,windName='тихий';
-const zombies=[];const barricades=Array.isArray(saved.barricades)?saved.barricades.filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,24):[];const infectionZones=[{x:3250,y:3280,r:185},{x:6500,y:6450,r:220},{x:10100,y:8500,r:175},{x:8350,y:2100,r:155}];let lastZombieSpawn=0,worldClock=0,zombieId=0,lastAttackAt=0,lastInfectionDamageAt=0;const ZOMBIE_INTERVAL=38000;
+const zombies=[];const barricades=Array.isArray(saved.barricades)?saved.barricades.filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,24):[];const infectionZones=[{x:3250,y:3280,r:185},{x:6500,y:6450,r:220},{x:10100,y:8500,r:175},{x:8350,y:2100,r:155}];let lastZombieSpawn=0,worldClock=((Number(saved.worldClock)||0)%1+1)%1,zombieId=0,lastAttackAt=0,lastInfectionDamageAt=0,lastHudUpdate=0;const ZOMBIE_INTERVAL=38000;
 const keys=new Set();
 let buildMode=false,buildAngle=0;
-function buildCandidate(){return{x:Math.max(40,Math.min(11960,state.x+Math.cos(buildAngle)*76)),y:Math.max(40,Math.min(11960,state.y+Math.sin(buildAngle)*76)),angle:buildAngle};}
+function buildCandidate(){return{x:Math.max(WORLD_MIN+40,Math.min(WORLD_MAX-40,state.x+Math.cos(buildAngle)*76)),y:Math.max(WORLD_MIN+40,Math.min(WORLD_MAX-40,state.y+Math.sin(buildAngle)*76)),angle:buildAngle};}
 function canPlaceBarricade(p){const halfW=32,halfH=21,c=Math.cos(p.angle),s=Math.sin(p.angle);if(Math.hypot(p.x-state.x,p.y-state.y)<48)return false;for(const [lx,ly] of [[-halfW,-halfH],[halfW,-halfH],[-halfW,halfH],[halfW,halfH],[0,0]]){const x=p.x+lx*c-ly*s,y=p.y+lx*s+ly*c;if(blocked(x,y)||insideBuilding(x,y))return false;}if(zombies.some(z=>Math.hypot(z.x-p.x,z.y-p.y)<42))return false;return true;}
 function setBuildMode(on){buildMode=!!on;document.getElementById('buildControls').classList.toggle('hidden',!buildMode);if(buildMode){document.getElementById('panel').classList.add('hidden');toast('Выбери место · R / ПОВОРОТ · Enter / ПОСТАВИТЬ');}else{document.getElementById('buildStatus').textContent='';}}
 function rotateBuild(){if(!buildMode)return;buildAngle=(buildAngle+Math.PI/4)%(Math.PI*2);}
@@ -30,22 +31,30 @@ const worldProps=[
  {id:'barrier_1',type:'barrier',x:1570,y:5480,w:112,h:28},{id:'market_1',type:'stall',x:5650,y:5480,w:108,h:68},
  {id:'camp_tent_2',type:'tent',x:8550,y:6880,w:82,h:62},{id:'rubble_2',type:'rubble',x:2920,y:8720,w:98,h:60},
  {id:'fuel_pumps_2',type:'pump',x:6700,y:8900,w:92,h:48},{id:'dumpster_2',type:'dumpster',x:1900,y:8650,w:74,h:48},
- {id:'barrier_2',type:'barrier',x:9300,y:5420,w:120,h:30},{id:'stall_2',type:'stall',x:9250,y:8750,w:112,h:68}
+ {id:'barrier_2',type:'barrier',x:9300,y:5420,w:120,h:30},{id:'stall_2',type:'stall',x:9250,y:8750,w:112,h:68},
+ {id:'north_camp_1',type:'tent',x:-8400,y:-7200,w:88,h:64},{id:'north_rubble_1',type:'rubble',x:-5100,y:-8500,w:112,h:66},{id:'north_pump_1',type:'pump',x:-1600,y:-7800,w:96,h:52},
+ {id:'east_dumpster_1',type:'dumpster',x:14300,y:-6400,w:78,h:50},{id:'east_barrier_1',type:'barrier',x:18100,y:-2800,w:126,h:32},{id:'east_tent_1',type:'tent',x:21300,y:2400,w:92,h:68},
+ {id:'south_rubble_1',type:'rubble',x:17800,y:8200,w:112,h:68},{id:'south_pump_1',type:'pump',x:13600,y:14500,w:96,h:52},{id:'south_dumpster_1',type:'dumpster',x:8200,y:19600,w:82,h:52},
+ {id:'south_tent_1',type:'tent',x:2200,y:20800,w:90,h:66},{id:'west_rubble_1',type:'rubble',x:-8200,y:16200,w:110,h:64},{id:'west_barrier_1',type:'barrier',x:-10800,y:9800,w:124,h:30},
+ {id:'north_market_1',type:'stall',x:4500,y:-9800,w:116,h:70},{id:'north_dumpster_1',type:'dumpster',x:8900,y:-10800,w:82,h:52},{id:'east_camp_1',type:'tent',x:22600,y:10800,w:92,h:66},
+ {id:'south_market_1',type:'stall',x:15100,y:22100,w:118,h:70},{id:'west_pump_1',type:'pump',x:-10900,y:4200,w:94,h:50},{id:'west_tent_1',type:'tent',x:-6400,y:22000,w:90,h:66}
 ];
 function buildForest(){
  let seed=0x51a7e;
  const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
- const minGap=256,minGap2=minGap*minGap,limit=360;
- const blockedZones=buildings.map(b=>({x:b.x+b.w/2,y:b.y-b.floors*17+b.h/2,r:Math.max(b.w,b.h+b.floors*34)*.72+70}))
-   .concat(worldProps.map(p=>({x:p.x,y:p.y,r:Math.max(p.w,p.h)*.85+35})),[{x:mark.x,y:mark.y,r:135},{x:440,y:390,r:175}],wrecks.map(v=>({x:v.x,y:v.y,r:100})));
- for(let attempt=0;attempt<26000&&trees.length<360;attempt++){
-  const x=65+rand()*11870,y=65+rand()*11870;
-  // Keep roads, buildings, important locations and spawn areas clear.
-  if([600,4100,7600,10000].some(road=>Math.abs(y-road)<95))continue;
-  if([2700,6200,9700,10000].some(road=>Math.abs(x-road)<95))continue;
+ const blockedZones=buildings.map(b=>({x:b.x+b.w/2,y:b.y-b.floors*17+b.h/2,r:Math.max(b.w,b.h+b.floors*34)*.72+90}))
+   .concat(worldProps.map(p=>({x:p.x,y:p.y,r:Math.max(p.w,p.h)*.85+45})),[{x:mark.x,y:mark.y,r:170},{x:440,y:390,r:210}],wrecks.map(v=>({x:v.x,y:v.y,r:115})));
+ const roads=[-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500],cell=280,occupied=new Map();
+ for(let gy=WORLD_MIN+120;gy<WORLD_MAX-120;gy+=cell)for(let gx=WORLD_MIN+120;gx<WORLD_MAX-120;gx+=cell){
+  if(rand()>.46)continue;
+  const x=gx+65+rand()*150,y=gy+65+rand()*150;
+  if(roads.some(v=>Math.abs(y-v)<105)||roads.some(v=>Math.abs(x-v)<105))continue;
   if(blockedZones.some(z=>(x-z.x)**2+(y-z.y)**2<z.r*z.r))continue;
-  if(trees.some(t=>(x-t.x)**2+(y-t.y)**2<minGap2))continue;
-  trees.push({x,y,size:.78+rand()*.62,phase:rand()*Math.PI*2});
+  const cx=Math.floor(x/150),cy=Math.floor(y/150);let close=false;
+  for(let yy=cy-1;yy<=cy+1&&!close;yy++)for(let xx=cx-1;xx<=cx+1;xx++){const arr=occupied.get(xx+','+yy)||[];if(arr.some(t=>(x-t.x)**2+(y-t.y)**2<125*125)){close=true;break;}}
+  if(close)continue;
+  const t={x,y,size:.72+rand()*.7,phase:rand()*Math.PI*2};trees.push(t);
+  const key=cx+','+cy;if(!occupied.has(key))occupied.set(key,[]);occupied.get(key).push(t);
  }
 }
 const buildings=[
@@ -69,14 +78,22 @@ const buildings=[
  {id:'pharmacy_ruins',x:9250,y:2820,w:340,h:260,floors:2,accent:'#7b806d',role:'store',kind:'pharmacy'},
  {id:'underground_shelter',x:3000,y:8120,w:420,h:330,floors:1,accent:'#58645a',role:'shelter'},
  {id:'survivor_safehouse',x:9000,y:8120,w:390,h:300,floors:2,accent:'#746c55',role:'shelter'},
- {id:'rural_market',x:5650,y:9000,w:430,h:310,floors:2,accent:'#7a7059',role:'store',kind:'market'}
+ {id:'rural_market',x:5650,y:9000,w:430,h:310,floors:2,accent:'#7a7059',role:'store',kind:'market'},
+ {id:'north_residential',x:-9300,y:-6500,w:420,h:330,floors:4,accent:'#68715c'},{id:'north_warehouse',x:-4800,y:-10100,w:470,h:360,floors:3,accent:'#6d705e'},{id:'north_hospital',x:2600,y:-9100,w:410,h:320,floors:5,accent:'#8b8877'},
+ {id:'east_factory',x:14400,y:-6200,w:480,h:360,floors:3,accent:'#626a64'},{id:'east_market',x:19800,y:1200,w:430,h:330,floors:2,accent:'#77715f',role:'store',kind:'market'},{id:'east_safehouse',x:21600,y:6800,w:410,h:320,floors:2,accent:'#746c55',role:'shelter'},
+ {id:'south_fire_station',x:15100,y:14500,w:400,h:310,floors:3,accent:'#765e52'},{id:'south_clinic',x:8700,y:19600,w:340,h:270,floors:2,accent:'#85806d'},{id:'south_weapons',x:1000,y:20500,w:410,h:310,floors:2,accent:'#6b6e61',role:'store',kind:'weapons'},
+ {id:'west_motel',x:-9900,y:13200,w:390,h:310,floors:3,accent:'#756d59'},{id:'west_shelter',x:-10800,y:5000,w:420,h:330,floors:1,accent:'#58645a',role:'shelter'},{id:'west_supermarket',x:-6500,y:20500,w:430,h:330,floors:2,accent:'#77715f',role:'store',kind:'market'}
 ];
 const visitedStores=new Set(Array.isArray(saved.visitedStores)?saved.visitedStores:[]);
 const storeLoot=saved.storeLoot&&typeof saved.storeLoot==='object'?saved.storeLoot:{};
 const lootedShelters=new Set(Array.isArray(saved.lootedShelters)?saved.lootedShelters:[]);
 buildForest();
+const TREE_GRID_SIZE=320,treeGrid=new Map();
+function treeGridKey(x,y){return Math.floor(x/TREE_GRID_SIZE)+','+Math.floor(y/TREE_GRID_SIZE)}
+for(const t of trees){const key=treeGridKey(t.x,t.y);if(!treeGrid.has(key))treeGrid.set(key,[]);treeGrid.get(key).push(t);}
+function nearbyTrees(x,y,range=100){const out=[],minX=Math.floor((x-range)/TREE_GRID_SIZE),maxX=Math.floor((x+range)/TREE_GRID_SIZE),minY=Math.floor((y-range)/TREE_GRID_SIZE),maxY=Math.floor((y+range)/TREE_GRID_SIZE);for(let gy=minY;gy<=maxY;gy++)for(let gx=minX;gx<=maxX;gx++){const cell=treeGrid.get(gx+','+gy);if(cell)for(const t of cell)if(Math.abs(t.x-x)<=range&&Math.abs(t.y-y)<=range)out.push(t);}return out;}
 const harvestedTrees=new Set(Array.isArray(saved.harvestedTrees)?saved.harvestedTrees:[]);trees.forEach((t,i)=>t.harvested=harvestedTrees.has(i));
-function save(){localStorage.setItem(STORE,JSON.stringify({...state,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],supplyDrop}))}
+function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,worldClock,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],supplyDrop}))}catch(_){}}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
 
@@ -123,18 +140,19 @@ function ground(){
   ctx.strokeStyle=n>.5?'#a2a47a88':'#293e2e88';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(gx+n*25,gy+12);ctx.lineTo(gx+n*25+2,gy+5+n*5);ctx.stroke();
  }
- for(const y of [600,4100,7600,10000]){
-  rect(0,y-70,12000,140,'#77776a');ctx.save();ctx.globalAlpha=.28;ctx.fillStyle=surfaceTextures.concrete;ctx.fillRect(0,y-70,12000,140);ctx.restore();
-  rect(0,y-62,12000,124,'#424741');ctx.save();ctx.globalAlpha=.72;ctx.fillStyle=surfaceTextures.asphalt;ctx.fillRect(0,y-62,12000,124);ctx.restore();
-  rect(0,y-66,12000,4,'#b5ae91');rect(0,y+62,12000,4,'#242b27');
-  for(let x=30;x<12000;x+=150)rect(x,y-2,66,4,'#b6a87b88');
-  for(let x=90;x<12000;x+=300){rect(x,y-70,2,8,'#d5d0b4');rect(x+145,y+62,2,8,'#d5d0b455');}
+ const roads=[-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500];
+ for(const y of roads){
+  rect(WORLD_MIN,y-70,WORLD_MAX-WORLD_MIN,140,'#77776a');ctx.save();ctx.globalAlpha=.28;ctx.fillStyle=surfaceTextures.concrete;ctx.fillRect(WORLD_MIN,y-70,WORLD_MAX-WORLD_MIN,140);ctx.restore();
+  rect(WORLD_MIN,y-62,WORLD_MAX-WORLD_MIN,124,'#424741');ctx.save();ctx.globalAlpha=.72;ctx.fillStyle=surfaceTextures.asphalt;ctx.fillRect(WORLD_MIN,y-62,WORLD_MAX-WORLD_MIN,124);ctx.restore();
+  rect(WORLD_MIN,y-66,WORLD_MAX-WORLD_MIN,4,'#b5ae91');rect(WORLD_MIN,y+62,WORLD_MAX-WORLD_MIN,4,'#242b27');
+  for(let x=WORLD_MIN+30;x<WORLD_MAX;x+=150)rect(x,y-2,66,4,'#b6a87b88');
+  for(let x=WORLD_MIN+90;x<WORLD_MAX;x+=300){rect(x,y-70,2,8,'#d5d0b4');rect(x+145,y+62,2,8,'#d5d0b455');}
  }
- for(const x of [2700,6200,9700,10000]){
-  rect(x-66,0,132,12000,'#77776a');ctx.save();ctx.globalAlpha=.28;ctx.fillStyle=surfaceTextures.concrete;ctx.fillRect(x-66,0,132,12000);ctx.restore();
-  rect(x-58,0,116,12000,'#484b43');ctx.save();ctx.globalAlpha=.72;ctx.fillStyle=surfaceTextures.asphalt;ctx.fillRect(x-58,0,116,12000);ctx.restore();
-  rect(x-62,0,4,12000,'#b5ae91');rect(x+58,0,4,12000,'#242b27');
-  for(let y=30;y<12000;y+=150)rect(x-2,y,4,66,'#c0b18a66');
+ for(const x of [-8000,-4500,-1000,2700,6200,9700,10000,13500,17000,20500]){
+  rect(x-66,WORLD_MIN,132,WORLD_MAX-WORLD_MIN,'#77776a');ctx.save();ctx.globalAlpha=.28;ctx.fillStyle=surfaceTextures.concrete;ctx.fillRect(x-66,WORLD_MIN,132,WORLD_MAX-WORLD_MIN);ctx.restore();
+  rect(x-58,WORLD_MIN,116,WORLD_MAX-WORLD_MIN,'#484b43');ctx.save();ctx.globalAlpha=.72;ctx.fillStyle=surfaceTextures.asphalt;ctx.fillRect(x-58,WORLD_MIN,116,WORLD_MAX-WORLD_MIN);ctx.restore();
+  rect(x-62,WORLD_MIN,4,WORLD_MAX-WORLD_MIN,'#b5ae91');rect(x+58,WORLD_MIN,4,WORLD_MAX-WORLD_MIN,'#242b27');
+  for(let y=WORLD_MIN+30;y<WORLD_MAX;y+=150)rect(x-2,y,4,66,'#c0b18a66');
  }
  for(let i=0;i<420;i++){const x=(i*397)%11950,y=(i*613)%11950;if(i%3===0){ctx.save();ctx.globalAlpha=.35;ctx.fillStyle=surfaceTextures.dirt;ctx.fillRect(x,y,14+i%11,8+i%7);ctx.restore();rect(x+3,y+2,3+i%5,2+i%3,'#303a3188');}}
 }
@@ -234,7 +252,7 @@ function drawWorldProp(p){
  ctx.restore();
 }
 function streetLamp(x,y){ctx.fillStyle='#202821';ctx.fillRect(x-3,y-4,6,48);ctx.fillRect(x-3,y-4,22,4);ctx.fillStyle='#b9b69a';ctx.fillRect(x+15,y-7,10,7);if(worldClock>.62||worldClock<.08){const g=ctx.createRadialGradient(x+20,y-4,2,x+20,y-4,92);g.addColorStop(0,'#e5d59a30');g.addColorStop(1,'#e5d59a00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x+20,y-4,92,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e9dba8';ctx.fillRect(x+17,y-6,6,4);}}
-function drawDistrictDetails(){for(const y of [600,4100,7600,10000])for(let x=420;x<12000;x+=900){if(Math.abs(x-state.x)<w&&Math.abs(y-state.y)<h)streetLamp(x,y-92);}for(const x of [2700,6200,9700,10000])for(let y=420;y<12000;y+=900){if(Math.abs(x-state.x)<w&&Math.abs(y-state.y)<h)streetLamp(x+78,y);}}
+function drawDistrictDetails(){for(const y of [-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500])for(let x=WORLD_MIN+420;x<WORLD_MAX;x+=900){if(Math.abs(x-state.x)<w&&Math.abs(y-state.y)<h)streetLamp(x,y-92);}for(const x of [-8000,-4500,-1000,2700,6200,9700,10000,13500,17000,20500])for(let y=WORLD_MIN+420;y<WORLD_MAX;y+=900){if(Math.abs(x-state.x)<w&&Math.abs(y-state.y)<h)streetLamp(x+78,y);}}
 function wreck(v){car(v.x,v.y,1.05,.06);if(!v.done){ctx.strokeStyle='#e6c783';ctx.lineWidth=2;ctx.beginPath();ctx.arc(v.x,v.y,21+Math.sin(time*.004)*3,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#e6c783';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('ДЕТАЛИ',v.x,v.y-31)}}
 function smoke(x,y){if(prefs.effects==='low')return;for(let i=0;i<5;i++){let yy=(time*.00015+i*.21)%1;ctx.globalAlpha=(1-yy)*.2;ctx.fillStyle='#c5c5b8';ctx.beginPath();ctx.arc(x+Math.sin(time*.0006+i)*11,y-yy*52,5+yy*11,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
 function updateRadioSignal(now){
@@ -247,8 +265,8 @@ function updateRadioSignal(now){
  let x=state.x,y=state.y,found=false;
  for(let attempt=0;attempt<24;attempt++){
   const angle=Math.random()*Math.PI*2,distance=520+Math.random()*330;
-  const nx=Math.max(90,Math.min(11910,state.x+Math.cos(angle)*distance));
-  const ny=Math.max(90,Math.min(11910,state.y+Math.sin(angle)*distance));
+  const nx=Math.max(WORLD_MIN+90,Math.min(WORLD_MAX-90,state.x+Math.cos(angle)*distance));
+  const ny=Math.max(WORLD_MIN+90,Math.min(WORLD_MAX-90,state.y+Math.sin(angle)*distance));
   if(!blocked(nx,ny)){x=nx;y=ny;found=true;break;}
  }
  if(!found){radioSignalNextAt=now+18000;return;}
@@ -343,11 +361,14 @@ function drawFlashlight(){
  glow.addColorStop(0,'#ffe6ad38');glow.addColorStop(.38,'#f6d9951b');glow.addColorStop(1,'#f6d99500');
  ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore();
 }
+function advanceGameDay(){state.day=Math.max(1,Number(state.day)||1)+1;state.quest=0;state.dayReward=0;save();toast('Наступил новый день · День '+state.day);}
 function spawnZombie(x,y,kind='night'){if(zombies.length>=18)return;const stats={brute:[105,42,12],runner:[28,112,5],stalker:[48,88,8],night:[40,64,6],day:[40,64,6]};const v=stats[kind]||stats.night;zombies.push({id:++zombieId,x,y,kind,hp:v[0],speed:v[1],damage:v[2],attackAt:0,phase:Math.random()*6.28,born:performance.now(),emerge:1750});}
 function updateZombies(dt,now){
  if(!gameActive)return;
- worldClock=(worldClock+dt/480)%1;applyInfectionDamage(now);
- const night=worldClock>.62||worldClock<.08,coop=window.ApocalypseCoop;
+ const coop=window.ApocalypseCoop;
+ if(!coop?.room||coop.isOwner()){const previousClock=worldClock;worldClock=(worldClock+dt/480)%1;if(worldClock<previousClock)advanceGameDay();}
+ applyInfectionDamage(now);
+ const night=worldClock>.62||worldClock<.08;
  const canSpawn=!coop?.room||coop.isOwner();
  if(canSpawn&&now-lastZombieSpawn>=ZOMBIE_INTERVAL){
   lastZombieSpawn=now;
@@ -422,7 +443,7 @@ function showDeath(){if(deathHandled)return;deathHandled=true;gameActive=false;k
 function respawn(){state.hp=100;state.x=Math.max(100,Math.min(11900,state.x+150));state.y=Math.max(100,Math.min(11900,state.y+110));ensureSafeSpawn();deathHandled=false;respawnUntil=performance.now()+4000;document.getElementById('deathOverlay').classList.add('hidden');gameActive=true;save();toast('Ты вернулся. 4 секунды защиты.');}
 let lastActionUiUpdate=-Infinity;
 function updateActionButton(){if(time-lastActionUiUpdate<120)return;lastActionUiUpdate=time;const button=document.getElementById('action');if(!button)return;const touch=window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;if(!touch){if(button.dataset.actionLabel!=='desktop'){button.classList.remove('context-hidden');button.innerHTML='<span class="ico">⚒</span>Действие';button.dataset.actionLabel='desktop';}return;}let label='';if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98)label='Радиосигнал';else if(Math.hypot(state.x-mark.x,state.y-mark.y)<75)label='Поговорить';else if(wrecks.some(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65))label='Обыскать';else if(trees.some(t=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48))label='Собрать';if(button.dataset.actionLabel!==label){button.classList.toggle('context-hidden',!label);if(label)button.innerHTML='<span class="ico">⚒</span>'+label;button.dataset.actionLabel=label;}}
-function updateHud(){document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');updateActionButton();}
+function updateHud(){const now=performance.now();if(now-lastHudUpdate<125)return;lastHudUpdate=now;document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');const minutes=Math.floor(worldClock*1440),clock=document.getElementById('worldTime');if(clock)clock.textContent=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');updateActionButton();}
 
 /* Apocalypse expansion 1.2.0 — exploration, supply drops and weather.
    This extension deliberately leaves move(), setupJoystick() and key handling untouched. */
@@ -513,13 +534,13 @@ function updateExpansion(now){
  if(!supplyDrop&&now>nextSupplyDropAt){
   let x=state.x+(Math.random()-.5)*620,y=state.y+(Math.random()-.5)*620,tries=0;
   while((blocked(x,y)||insideBuilding(x,y)||Math.hypot(x-state.x,y-state.y)<230)&&tries++<24){x=state.x+(Math.random()-.5)*760;y=state.y+(Math.random()-.5)*760;}
-  if(!blocked(x,y)&&!insideBuilding(x,y)){supplyDrop={x:Math.max(80,Math.min(11920,x)),y:Math.max(80,Math.min(11920,y))};save();toast('Замечен сброс припасов. Ищи маяк на местности');}
+  if(!blocked(x,y)&&!insideBuilding(x,y)){supplyDrop={x:Math.max(WORLD_MIN+80,Math.min(WORLD_MAX-80,x)),y:Math.max(WORLD_MIN+80,Math.min(WORLD_MAX-80,y))};save();toast('Замечен сброс припасов. Ищи маяк на местности');}
   nextSupplyDropAt=now+240000;
  }
  if(Math.floor(now/52000)%4===2&&now-lastLightningAt>15000&&Math.random()<.002){lastLightningAt=now;lightningUntil=now+150;}
 }
 
-function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();trees.forEach(t=>{if(!t.harvested&&t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);buildings.forEach(drawBuildingInterior);worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects()}
+function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();drawInfectionZones();nearbyTrees(state.x,state.y,Math.max(w,h)+160).forEach(t=>{if(!t.harvested)tree(t)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)building(b)});buildings.forEach(b=>{if(Math.abs(b.x+b.w/2-state.x)<w+b.w&&Math.abs(b.y+b.h/2-state.y)<h+b.h)drawBuildingInterior(b)});worldProps.forEach(p=>{if(Math.abs(p.x-state.x)<w+180&&Math.abs(p.y-state.y)<h+180)drawWorldProp(p)});for(let x=WORLD_MIN+180;x<WORLD_MAX;x+=330)pole(x,600);wrecks.forEach(v=>{if(Math.abs(v.x-state.x)<w+100&&Math.abs(v.y-state.y)<h+100)wreck(v)});smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawBarricades();drawBuildPreview();drawExplorationSites();drawSupplyDrop();drawMark();drawRadioSignal();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();drawFlashlight();updateHud();drawWind();drawWeatherEffects()}
 function drawWind(){if(prefs.effects==='low'||wind<.3)return;ctx.save();ctx.globalAlpha=.13+wind*.12;ctx.strokeStyle='#e1e6ca';ctx.lineWidth=1;for(let i=0;i<8;i++){let x=(i*137+time*.07*(1+wind))%(w+80)-40,y=(i*83+Math.sin(time*.001+i)*25)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+18,y-4,x+34+wind*20,y-1);ctx.stroke()}ctx.restore()}
 function applyInfectionDamage(now){if(infectionZones.some(z=>Math.hypot(state.x-z.x,state.y-z.y)<z.r*.72)&&now-lastInfectionDamageAt>2200){lastInfectionDamageAt=now;state.hp=Math.max(0,state.hp-2);toast('Заражённый воздух: -2 здоровья');if(state.hp<=0)showDeath();save();}}
 function interact(){
@@ -562,7 +583,7 @@ function nearSegment(px,py,x1,y1,x2,y2,limit){
 }
 function blocked(x,y){
  const r=12,wall=r+7;
- if(x<25+r||y<25+r||x>11975-r||y>11975-r)return true;
+ if(x<WORLD_MIN+25+r||y<WORLD_MIN+25+r||x>WORLD_MAX-25-r||y>WORLD_MAX-25-r)return true;
  for(const b of buildings){
   const left=b.x,right=b.x+b.w,top=b.y-b.floors*34,bottom=b.y+b.h,cx=(left+right)/2,doorHalf=47;
   // The shell is solid, except for the centered entrance.
@@ -573,7 +594,7 @@ function blocked(x,y){
   // New shops and shelters have open, walkable ground floors; older landmarks keep their lobby walls.
   if(!b.role&&(nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx-lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx+lobbyHalf,lobbyTop,cx+lobbyHalf,bottom-12,wall)||nearSegment(x,y,cx-lobbyHalf,lobbyTop,cx+lobbyHalf,lobbyTop,wall)))return true;
  }
- for(const t of trees){if(t.harvested)continue;const rr=10+t.size*8,dx=x-t.x,dy=y-(t.y+7);if(dx*dx+dy*dy<(r+rr)**2)return true;}
+ for(const t of nearbyTrees(x,y,70)){if(t.harvested)continue;const rr=10+t.size*8,dx=x-t.x,dy=y-(t.y+7);if(dx*dx+dy*dy<(r+rr)**2)return true;}
  for(const p of worldProps){if(Math.abs(x-p.x)<p.w/2+r+5&&Math.abs(y-p.y)<p.h/2+r+5)return true;}
  for(const v of wrecks){const dx=x-v.x,dy=y-v.y;if(dx*dx+dy*dy<58*58)return true;}
  for(const b of barricades){const dx=x-b.x,dy=y-b.y,a=-(Number(b.angle)||0),lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(lx)<35&&Math.abs(ly)<23)return true;}
@@ -581,7 +602,7 @@ function blocked(x,y){
 }
 function insideBuilding(x,y){return buildings.some(b=>x>b.x-20&&x<b.x+b.w+20&&y>b.y-b.floors*34-20&&y<b.y+b.h+20);}
 function spawnUnsafe(x,y){return insideBuilding(x,y)||blocked(x,y);}
-function findSafeSpawn(x,y){for(let radius=36;radius<=1100;radius+=30){const steps=Math.max(12,Math.ceil(radius/22));for(let i=0;i<steps;i++){const a=i*Math.PI*2/steps,cx=x+Math.cos(a)*radius,cy=y+Math.sin(a)*radius;if(cx>40&&cy>40&&cx<11960&&cy<11960&&!spawnUnsafe(cx,cy))return{x:cx,y:cy};}}for(let radius=90;radius<=1300;radius+=40){for(let i=0;i<24;i++){const a=i*Math.PI/12,cx=440+Math.cos(a)*radius,cy=390+Math.sin(a)*radius;if(!spawnUnsafe(cx,cy))return{x:cx,y:cy};}}return{x:450,y:520};}
+function findSafeSpawn(x,y){for(let radius=36;radius<=1100;radius+=30){const steps=Math.max(12,Math.ceil(radius/22));for(let i=0;i<steps;i++){const a=i*Math.PI*2/steps,cx=x+Math.cos(a)*radius,cy=y+Math.sin(a)*radius;if(cx>WORLD_MIN+40&&cy>WORLD_MIN+40&&cx<WORLD_MAX-40&&cy<WORLD_MAX-40&&!spawnUnsafe(cx,cy))return{x:cx,y:cy};}}for(let radius=90;radius<=1300;radius+=40){for(let i=0;i<24;i++){const a=i*Math.PI/12,cx=440+Math.cos(a)*radius,cy=390+Math.sin(a)*radius;if(!spawnUnsafe(cx,cy))return{x:cx,y:cy};}}return{x:450,y:520};}
 function ensureSafeSpawn(showMessage=false){if(!spawnUnsafe(state.x,state.y))return false;const p=findSafeSpawn(state.x,state.y);state.x=p.x;state.y=p.y;save();if(showMessage)toast('Ты появился внутри объекта — перемещён на свободное место');return true;}
 function move(dt){
   let dx=moveX,dy=moveY;
@@ -593,7 +614,7 @@ function move(dt){
   if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}
 }
 function setupJoystick(){const joy=document.getElementById('joy'),stick=document.getElementById('stick');function set(e){let r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.32,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}moveX=dx/max;moveY=dy/max;stick.style.transform='translate('+dx+'px,'+dy+'px)'}function end(){joyPointer=null;moveX=moveY=0;stick.style.transform='translate(0,0)'}joy.addEventListener('pointerdown',e=>{e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);set(e)});joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer){e.preventDefault();set(e)}});['pointerup','pointercancel','lostpointercapture'].forEach(t=>joy.addEventListener(t,end))}
-let prev=performance.now();function loop(now){updateExpansion(now);let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){move(dt);updateZombies(dt,now);updateRadioSignal(now);}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||JSON.parse(localStorage.getItem('skyrealm_hub_user')||'{}').username||'Выживший',worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
+let prev=performance.now(),lastAutoSave=0;function loop(now){updateExpansion(now);let dt=Math.min(.04,(now-prev)/1000);prev=now;time=now;if(gameActive){move(dt);updateZombies(dt,now);updateRadioSignal(now);if(now-lastAutoSave>=5000){lastAutoSave=now;save();}}const coop=window.ApocalypseCoop;if(gameActive&&coop?.room?.status==='running'&&now-lastNet>250){lastNet=now;coop.sendPosition?.({kind:'position',x:state.x,y:state.y,hp:state.hp,day:state.day,name:localStorage.getItem('skyrealm_username')||JSON.parse(localStorage.getItem('skyrealm_hub_user')||'{}').username||'Выживший',worldClock,avatar:{skin:colors.skin,hair:colors.hair,shirt:colors.shirt,trim:colors.trim,eyes:colors.eyes},moving:Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k)),phase:state.x*.013+state.y*.009});}draw();requestAnimationFrame(loop)}
 function daily(){let today=new Date().toDateString();if(state.lastDay!==today){state.day++;state.quest=0;state.dayReward=0;state.lastDay=today;wrecks.forEach(v=>v.done=false);save()}dayWind()}
 function focusGame(){try{canvas.focus({preventScroll:true});}catch(_){canvas.focus();}}
 function closeMobileQuickMenu(){const menu=document.getElementById('mobileQuickMenu');if(menu)menu.classList.add('hidden');document.body.classList.remove('quick-menu-open');}
@@ -717,5 +738,5 @@ window.addEventListener('focus',()=>{if(gameActive)focusGame();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&gameActive)focusGame();});
 canvas.tabIndex=0;canvas.addEventListener('pointerdown',focusGame);
 window.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('selectstart',e=>e.preventDefault());window.addEventListener('resize',resize);
-window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();save();requestAnimationFrame(loop);
+window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();save();requestAnimationFrame(loop);
 })();
