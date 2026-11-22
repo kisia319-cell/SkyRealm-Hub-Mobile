@@ -148,8 +148,45 @@ function drawSurvivor(x,y,palette,phase=0,moving=false,remote=false,name=''){
 function drawRemotePlayers(){const coop=window.ApocalypseCoop;if(!coop)return;for(const p of coop.getPlayers()){if(!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;drawSurvivor(p.x,p.y,p.avatar,p.phase||0,!!p.moving,true,p.name);}}
 function drawPlayer(){drawSurvivor(w/2,h/2+Math.sin(time*.008)*2,colors,0,Math.hypot(moveX,moveY)>.08,false);}
 function spawnZombie(x,y,kind='night'){if(zombies.length>=28)return;zombies.push({id:++zombieId,x,y,kind,hp:40,attackAt:0,phase:Math.random()*6.28});}
-function updateZombies(dt,now){if(!gameActive)return;worldClock=(worldClock+dt/480)%1;const night=worldClock>.62||worldClock<.08;const coop=window.ApocalypseCoop;const canSpawn=!coop?.room||coop.isOwner();if(canSpawn&&now-lastZombieSpawn>=ZOMBIE_INTERVAL){lastZombieSpawn=now;if(Math.random()<.5){const b=buildings[Math.floor(Math.random()*buildings.length)];const byBuilding=Math.random()<.42;const cx=byBuilding?b.x+b.w/2:state.x+(Math.random()-.5)*300,cy=byBuilding?b.y+b.h/2:state.y+(Math.random()-.5)*260,count=byBuilding?2+Math.floor(Math.random()*3):1;for(let i=0;i<count;i++){const x=cx+(Math.random()-.5)*(byBuilding?100:50),y=cy+(Math.random()-.5)*(byBuilding?80:50),kind=byBuilding?'horde':(night?'night':'day');spawnZombie(x,y,kind);if(coop?.room?.status==='running')coop.send({kind:'zombie-spawn',x,y,ztype:kind});}}}
-for(let i=zombies.length-1;i>=0;i--){const z=zombies[i],d=Math.hypot(state.x-z.x,state.y-z.y),active=z.kind==='day'||z.kind==='horde'||night;if(active&&d<520){const dx=(state.x-z.x)/(d||1),dy=(state.y-z.y)/(d||1),nx=z.x+dx*24*dt,ny=z.y+dy*24*dt;if(!blocked(nx,z.y))z.x=nx;if(!blocked(z.x,ny))z.y=ny;if(d<24&&now>z.attackAt){z.attackAt=now+1250;state.hp=Math.max(0,state.hp-4);}}if(d>900)zombies.splice(i,1);}}
+function updateZombies(dt,now){
+ if(!gameActive)return;
+ worldClock=(worldClock+dt/480)%1;
+ const night=worldClock>.62||worldClock<.08,coop=window.ApocalypseCoop;
+ const canSpawn=!coop?.room||coop.isOwner();
+ if(canSpawn&&now-lastZombieSpawn>=ZOMBIE_INTERVAL){
+  lastZombieSpawn=now;
+  if(Math.random()<.5){
+   const b=buildings[Math.floor(Math.random()*buildings.length)],byBuilding=Math.random()<.42;
+   let cx=state.x+(Math.random()-.5)*300,cy=state.y+(Math.random()-.5)*260;
+   const count=byBuilding?2+Math.floor(Math.random()*3):1;
+   if(byBuilding){
+    const top=b.y-b.floors*34,side=Math.floor(Math.random()*4);
+    if(side===0){cx=b.x-82;cy=top+Math.random()*(b.floors*34+b.h);}
+    else if(side===1){cx=b.x+b.w+82;cy=top+Math.random()*(b.floors*34+b.h);}
+    else if(side===2){cx=b.x+Math.random()*b.w;cy=top-82;}
+    else{cx=b.x+Math.random()*b.w;cy=b.y+b.h+82;}
+   }
+   for(let i=0;i<count;i++){
+    let x=cx+(Math.random()-.5)*(byBuilding?56:50),y=cy+(Math.random()-.5)*(byBuilding?56:50),tries=0;
+    while(blocked(x,y)&&tries++<8){x=cx+(Math.random()-.5)*150;y=cy+(Math.random()-.5)*150;}
+    if(blocked(x,y))continue;
+    const kind=byBuilding?'horde':(night?'night':'day');
+    spawnZombie(x,y,kind);
+    if(coop?.room?.status==='running')coop.send({kind:'zombie-spawn',x,y,ztype:kind});
+   }
+  }
+ }
+ for(let i=zombies.length-1;i>=0;i--){
+  const z=zombies[i],d=Math.hypot(state.x-z.x,state.y-z.y),active=z.kind==='day'||z.kind==='horde'||night;
+  if(active&&d<520){
+   const dx=(state.x-z.x)/(d||1),dy=(state.y-z.y)/(d||1),nx=z.x+dx*24*dt,ny=z.y+dy*24*dt;
+   if(!blocked(nx,z.y))z.x=nx;
+   if(!blocked(z.x,ny))z.y=ny;
+   if(d<24&&now>z.attackAt){z.attackAt=now+1250;state.hp=Math.max(0,state.hp-4);}
+  }
+  if(d>900)zombies.splice(i,1);
+ }
+}
 function drawZombies(){for(const z of zombies){ctx.save();ctx.translate(z.x,z.y);const active=z.kind==='day'||z.kind==='horde'||worldClock>.62||worldClock<.08;ctx.globalAlpha=active?1:.35;ctx.fillStyle='#101710aa';ctx.beginPath();ctx.ellipse(0,16,12,4,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=z.kind==='horde'?'#526348':'#68735a';ctx.fillRect(-7,-8,14,22);ctx.fillStyle='#9a9877';ctx.beginPath();ctx.arc(0,-17,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#291612';ctx.fillRect(-4,-19,2,2);ctx.fillRect(3,-19,2,2);ctx.strokeStyle='#33251d';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-7,-3);ctx.lineTo(-14,5);ctx.moveTo(7,-3);ctx.lineTo(14,5);ctx.stroke();ctx.restore();}}
 function updateHud(){document.getElementById('health').textContent='♥ '+state.hp+' / 100';document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День')}
 function draw(){ctx.clearRect(0,0,w,h);ctx.save();ctx.translate(w/2-state.x,h/2-state.y);ground();drawDistrictDetails();trees.forEach(t=>{if(t.x>state.x-w&&t.x<state.x+w&&t.y>state.y-h&&t.y<state.y+h)tree(t)});buildings.forEach(building);for(let x=180;x<2500;x+=330)pole(x,600);wrecks.forEach(wreck);smoke(800,255);smoke(300,235);drawZombies();buildings.forEach(b=>{if(b.x>state.x-w&&b.x<state.x+w&&b.y>state.y-h&&b.y<state.y+h){ctx.fillStyle='#242b27';ctx.fillRect(b.x-22,b.y+b.h+8,10,18);ctx.fillRect(b.x+b.w+12,b.y+b.h+8,10,18);}});drawMark();drawRemotePlayers();if(worldClock>.62||worldClock<.08){ctx.fillStyle='#07101c55';ctx.fillRect(-w,-h,w*3,h*3)}else{ctx.fillStyle='#d6cfa022';ctx.fillRect(-w,-h,w*3,h*3)}ctx.restore();drawPlayer();updateHud();drawWind()}
