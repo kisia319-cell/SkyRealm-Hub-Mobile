@@ -903,6 +903,7 @@ window.addEventListener('keydown',e=>{
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','f'].includes(k))e.preventDefault();
  if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){keys.add(k);focusGame();return;}
  if(e.repeat)return;
+ if(k==='y'){e.preventDefault();document.body.classList.add('apoc-chat-open');document.getElementById('apocChatInput')?.focus();return;}
  if(buildMode){if(k==='r'){e.preventDefault();rotateBuild();return;}if(k==='Enter'){e.preventDefault();placeBarricade();return;}if(k==='Escape'){e.preventDefault();setBuildMode(false);return;}}
  if(k==='m')openPlayerMap();
  if(k==='e')interact();
