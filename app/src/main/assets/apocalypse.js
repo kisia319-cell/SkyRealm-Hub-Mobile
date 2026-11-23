@@ -673,6 +673,7 @@ function updateHud(){
  const staminaFill=document.getElementById('staminaFill'),staminaLabel=document.getElementById('staminaLabel');
  if(staminaFill)staminaFill.style.width=(state.stamina/maxStamina()*100)+'%';
  if(staminaLabel)staminaLabel.textContent=Math.ceil(state.stamina)+' / '+maxStamina();
+ const hydrationFill=document.getElementById('hydrationFill'),hydrationLabel=document.getElementById('hydrationLabel');if(hydrationFill)hydrationFill.style.width=state.hydration+'%';if(hydrationLabel)hydrationLabel.textContent=Math.ceil(state.hydration)+' / 100';const hydrationHud=document.getElementById('hydrationHud');if(hydrationHud)hydrationHud.style.display=prefs.showHydration?'block':'none';
  const sprintButton=document.getElementById('sprintButton');
  if(sprintButton){sprintButton.classList.toggle('sprinting',sprintActive);sprintButton.disabled=state.stamina<1||sprintLocked;}
  document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');
