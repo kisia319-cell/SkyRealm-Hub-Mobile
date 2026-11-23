@@ -54,6 +54,13 @@ for (const asset of ['apocalypse-changelog.js', 'apocalypse-coop.js', 'apocalyps
 }
 
 assert.ok(game.includes("role:'store'") && game.includes("role:'shelter'"), 'New store and shelter districts must be present');
+assert.ok(game.includes("id:'power_plant'") && game.includes("id:'military_bunker'") && game.includes("id:'train_station'") && game.includes("id:'greenhouse_ruins'"), 'Four new explorable world locations must exist');
+assert.ok(game.includes("let generatorRepaired=saved.generatorRepaired===true") && game.includes("generatorRepaired,generatorOnline") && game.includes("kind==='generator-state'"), 'Generator repair and online state must persist and synchronize');
+assert.ok(game.includes("function drawGeneratorField()") && game.includes("function drawAcidProjectiles()"), 'Generator power field and acid projectiles must render');
+assert.ok(game.includes("armored:[190,32,17]") && game.includes("spitter:[54,48,7]") && game.includes("screecher:[72,50,6]"), 'Three special infected types must have independent combat stats');
+assert.ok(game.includes("z.kind==='spitter'&&d>=150&&d<=360") && game.includes("z.kind==='screecher'&&d<350") && game.includes("target.kind==='armored'?.62"), 'Special infected must use ranged attacks, summons and armor resistance');
+assert.ok(game.includes("wood:tile(") && game.includes("glass:tile(") && game.includes("rust:tile(") && game.includes("roof:tile(") && game.includes("gravel:tile("), 'Additional high-detail material textures must be generated');
+
 assert.ok(game.includes("Math.random()<.5") && game.includes("state.firearm") && game.includes("storeLoot"), 'Store firearm chance, pickup and persistence must be implemented');
 assert.ok(game.includes("drawBuildingInterior") && game.includes("visitedStores"), 'Buildings must have explorable interiors and saved visits');
 assert.ok(game.includes('function ground(){') && game.includes('const left=Math.floor((state.x-w/2-700)/46)*46,top=Math.floor((state.y-h/2-700)/46)*46;'), 'Textured ground tiles must be positioned relative to the camera');
