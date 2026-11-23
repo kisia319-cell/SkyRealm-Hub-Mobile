@@ -38,7 +38,7 @@ assert.ok(html.includes('id="playerMapOverlay"') && html.includes('id="staminaFi
 assert.ok(html.includes('id="apocChat"') && html.includes('id="apocMobileChat"') && html.includes('id="apocChatInput"'), 'Desktop and mobile chat elements must exist');
 assert.ok(html.includes('id="markerEditor"') && html.includes('id="markerNameInput"') && html.includes('id="markerSave"') && html.includes('id="markerDelete"'), 'Touch-friendly marker editor must exist');
 assert.ok(game.includes('saved.mapMarkers') && game.includes('mapMarkers,activeWaypoint,bonusLives,bonusLivesActive'), 'Custom map markers and bonus lives must persist');
-assert.ok(game.includes("p.user_id===coop.room.owner_id&&!coop.isOwner()"), 'Co-op day/night phase must only be accepted from the room owner');
+assert.ok(game.includes("if(p.kind==='world'&&p.user_id===coop.room?.owner_id)") && game.includes("if(Number.isFinite(p.worldClock))worldClock=p.worldClock"), 'Co-op day/night phase must only be accepted from the room owner');
 assert.ok(game.includes("kind==='admin-command'") && game.includes("kind:'chat-message'"), 'Owner commands and chat messages must synchronize');
 assert.ok(game.includes("if(k==='y')") && game.includes("apocChatInput") , 'Y must focus the desktop chat input');
 
