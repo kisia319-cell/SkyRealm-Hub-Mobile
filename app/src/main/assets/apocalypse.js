@@ -490,7 +490,7 @@ function updateZombies(dt,now){
   }
  }
  for(let i=zombies.length-1;i>=0;i--){
-  const z=zombies[i],d=Math.hypot(state.x-z.x,state.y-z.y),active=z.kind==='day'||z.kind==='horde'||z.kind==='runner'||z.kind==='brute'||z.kind==='patrol'||z.kind==='armored'||z.kind==='spitter'||z.kind==='screecher'||night;
+  const z=zombies[i],d=Math.hypot(state.x-z.x,state.y-z.y),active=z.kind==='day'||z.kind==='horde'||z.kind==='runner'||z.kind==='brute'||z.kind==='patrol'||z.kind==='armored'||z.kind==='spitter'||z.kind==='screecher'||z.kind==='crawler'||z.kind==='bloater'||z.kind==='lurker'||!!z.eventId||night;
   if(z.kind==='patrol'&&d>=620&&now-z.born>z.emerge){const a=time*.00045+z.phase,nx=z.patrolX+Math.cos(a)*72,ny=z.patrolY+Math.sin(a)*72;if(!blocked(nx,z.y))z.x+=(nx-z.x)*Math.min(1,dt*.35);if(!blocked(z.x,ny))z.y+=(ny-z.y)*Math.min(1,dt*.35);}
   if(active&&d<620&&now-z.born>z.emerge){
    if(z.kind==='spitter'&&d>=150&&d<=360){if(now>z.rangedAt){z.rangedAt=now+3000;const angle=Math.atan2(state.y-z.y,state.x-z.x);if(acidProjectiles.length<8)acidProjectiles.push({x:z.x,y:z.y-9,vx:Math.cos(angle)*245,vy:Math.sin(angle)*245,life:1900});z.attackAnim=1;}}
