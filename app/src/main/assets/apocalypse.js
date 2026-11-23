@@ -130,7 +130,11 @@ const buildings=[
  {id:'power_plant',x:17800,y:-10000,w:500,h:370,floors:2,accent:'#59645c',role:'generator',texture:'metal',kind:'power'},
  {id:'military_bunker',x:-10300,y:-10400,w:460,h:340,floors:2,accent:'#62695d',role:'loot',texture:'concrete',kind:'bunker'},
  {id:'train_station',x:20500,y:17700,w:500,h:360,floors:3,accent:'#756a59',role:'loot',texture:'rust',kind:'station'},
- {id:'greenhouse_ruins',x:-10200,y:21500,w:460,h:330,floors:2,accent:'#68795f',role:'loot',texture:'glass',kind:'greenhouse'}
+ {id:'greenhouse_ruins',x:-10200,y:21500,w:460,h:330,floors:2,accent:'#68795f',role:'loot',texture:'glass',kind:'greenhouse'},
+ {id:'quarantine_prison',x:-7200,y:-2500,w:500,h:370,floors:3,accent:'#62695d',role:'loot',texture:'metal',kind:'prison'},
+ {id:'port_terminal',x:13900,y:21400,w:520,h:380,floors:2,accent:'#69736e',role:'loot',texture:'rust',kind:'port'},
+ {id:'deep_research_lab',x:21200,y:-9400,w:490,h:360,floors:4,accent:'#64716e',role:'loot',texture:'glass',kind:'lab'},
+ {id:'stone_quarry',x:-10800,y:-2200,w:480,h:350,floors:2,accent:'#77715f',role:'loot',texture:'gravel',kind:'quarry'}
 ];
 for(const b of buildings){if(!b.role){b.role='loot';b.kind='residential';}}
 const visitedStores=new Set(Array.isArray(saved.visitedStores)?saved.visitedStores:[]);
@@ -301,7 +305,7 @@ function drawBuildingInterior(b){
   if(entry?.weaponDrop&&!entry.weaponPicked){ctx.save();ctx.translate(lootX+70,lootY+12);ctx.rotate(-.22);ctx.fillStyle='#1d2420';ctx.fillRect(-18,-3,34,6);ctx.fillStyle=entry.weaponDrop==='rifle'?'#303a33':'#697568';ctx.fillRect(-8,-6,15,3);ctx.fillStyle='#171c19';ctx.fillRect(-12,2,7,9);ctx.fillStyle='#c2bda7';ctx.fillRect(13,-2,4,2);ctx.restore();ctx.fillStyle='#f0d49a';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillText(entry.weaponDrop==='pistol'?'ПИСТОЛЕТ':entry.weaponDrop==='shotgun'?'ДРОБОВИК':'ВИНТОВКА',lootX+70,lootY-7);}
   ctx.fillStyle=entry&&!entry.picked?'#f0d49a':'#9b9b87';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(entry&&!entry.picked?'E · ОБЫСКАТЬ':'ЯЩИК ПУСТ',lootX,lootY-26);
   ctx.fillStyle='#4c493d';ctx.fillRect(stairX-18,stairY-28,36,56);for(let i=0;i<5;i++){ctx.fillStyle=i%2?'#a08a60':'#6f654c';ctx.fillRect(stairX-17+i*7,stairY-25+i*10,34-i*4,5);}ctx.fillStyle='#e4d19b';ctx.font='bold 10px system-ui';ctx.fillText('ЛЕСТНИЦА · '+floor+'/'+b.floors,stairX,stairY+42);
-  ctx.fillStyle='#d8c18a';ctx.font='bold 12px system-ui';ctx.fillText((b.kind==='water'?'ВОДООЧИСТКА':b.kind==='school'?'ШКОЛА':b.kind==='bank'?'БАНК':b.kind==='garage'?'АВТОМАСТЕРСКАЯ':b.kind==='lab'?'ИССЛЕДОВАТЕЛЬСКИЙ ЦЕНТР':b.kind==='bunker'?'ВОЕННЫЙ БУНКЕР':b.kind==='station'?'ЖЕЛЕЗНОДОРОЖНАЯ СТАНЦИЯ':b.kind==='greenhouse'?'РАЗРУШЕННАЯ ТЕПЛИЦА':'СТАРАЯ МЕЛЬНИЦА')+' · ЭТАЖ '+floor,cx,roomY-8);
+  ctx.fillStyle='#d8c18a';ctx.font='bold 12px system-ui';ctx.fillText((b.kind==='water'?'ВОДООЧИСТКА':b.kind==='school'?'ШКОЛА':b.kind==='bank'?'БАНК':b.kind==='garage'?'АВТОМАСТЕРСКАЯ':b.kind==='lab'?'ИССЛЕДОВАТЕЛЬСКИЙ ЦЕНТР':b.kind==='bunker'?'ВОЕННЫЙ БУНКЕР':b.kind==='station'?'ЖЕЛЕЗНОДОРОЖНАЯ СТАНЦИЯ':b.kind==='greenhouse'?'РАЗРУШЕННАЯ ТЕПЛИЦА':b.kind==='prison'?'КАРАНТИННАЯ ТЮРЬМА':b.kind==='port'?'ПОРТОВЫЙ ТЕРМИНАЛ':b.kind==='quarry'?'КАМЕНОЛОМ':'ИССЛЕДОВАТЕЛЬСКИЙ ЦЕНТР')+' · ЭТАЖ '+floor,cx,roomY-8);
  }else{
   // Shelter bunks, sandbags, a radio desk and sleeping survivors.
   for(let i=0;i<3;i++){const bx=b.x+42+i*92;ctx.fillStyle='#4a5145';ctx.fillRect(bx,roomY+30,72,26);ctx.fillStyle='#9b9275';ctx.fillRect(bx+5,roomY+34,28,17);ctx.fillStyle='#353c34';ctx.fillRect(bx,roomY+55,72,5);}
@@ -445,7 +449,7 @@ function drawFlashlight(){
  ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore();
 }
 function advanceGameDay(){state.day=Math.max(1,Number(state.day)||1)+1;state.quest=0;state.dayReward=0;wrecks.forEach(v=>v.done=false);save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running'&&coop.isOwner())coop.send({kind:'world',...window.ApocalypseGame?.getWorldState?.()});toast('Наступил новый день · День '+state.day);}
-function spawnZombie(x,y,kind='night'){if(zombies.length>=18)return;const stats={brute:[105,42,12],runner:[28,112,5],stalker:[48,88,8],patrol:[40,58,6],night:[40,64,6],day:[40,64,6],armored:[190,32,17],spitter:[54,48,7],screecher:[72,50,6]};const v=stats[kind]||stats.night;zombies.push({id:++zombieId,x,y,kind,hp:v[0],speed:v[1],damage:v[2],attackAt:0,rangedAt:0,screamAt:0,phase:Math.random()*6.28,born:performance.now(),emerge:1750,patrolX:x,patrolY:y});}
+function spawnZombie(x,y,kind='night'){if(zombies.length>=18)return;const stats={brute:[105,42,12],runner:[28,112,5],stalker:[48,88,8],patrol:[40,58,6],night:[40,64,6],day:[40,64,6],armored:[190,32,17],spitter:[54,48,7],screecher:[72,50,6],crawler:[62,76,10],bloater:[145,24,14],lurker:[44,104,8]};const v=stats[kind]||stats.night;zombies.push({id:++zombieId,x,y,kind,hp:v[0],speed:v[1],damage:v[2],attackAt:0,rangedAt:0,screamAt:0,phase:Math.random()*6.28,born:performance.now(),emerge:1750,patrolX:x,patrolY:y});}
 function updateZombies(dt,now){
  if(!gameActive)return;
  const coop=window.ApocalypseCoop;
@@ -470,7 +474,7 @@ function updateZombies(dt,now){
     let x=cx+(Math.random()-.5)*(byBuilding?56:50),y=cy+(Math.random()-.5)*(byBuilding?56:50),tries=0;
     while(blocked(x,y)&&tries++<8){x=cx+(Math.random()-.5)*150;y=cy+(Math.random()-.5)*150;}
     if(blocked(x,y))continue;
-    const roll=Math.random();const kind=roll<.055?'armored':roll<.12?'spitter':roll<.17?'screecher':roll<.29?'brute':roll<.45?'runner':roll<.57&&night?'stalker':(night?'night':'day');
+    const roll=Math.random();const kind=roll<.035?'bloater':roll<.075?'crawler':roll<.105?'lurker':roll<.145?'armored':roll<.20?'spitter':roll<.24?'screecher':roll<.34?'brute':roll<.48?'runner':roll<.59&&night?'stalker':(night?'night':'day');
     spawnZombie(x,y,kind);
     if(coop?.room?.status==='running')coop.send({kind:'zombie-spawn',x,y,ztype:kind});
    }
@@ -494,8 +498,8 @@ function drawZombies(){
  const now=performance.now();
  for(const z of zombies){
   const age=now-z.born,p=Math.max(0,Math.min(1,age/z.emerge)),rise=1-Math.pow(1-p,2),buried=1-rise;
-  const spitter=z.kind==='spitter',armored=z.kind==='armored',screecher=z.kind==='screecher';
-  const active=z.kind==='day'||z.kind==='horde'||z.kind==='patrol'||spitter||armored||screecher||worldClock>.62||worldClock<.08;
+  const spitter=z.kind==='spitter',armored=z.kind==='armored',screecher=z.kind==='screecher',crawler=z.kind==='crawler',bloater=z.kind==='bloater',lurker=z.kind==='lurker';
+  const active=z.kind==='day'||z.kind==='horde'||z.kind==='patrol'||spitter||armored||screecher||crawler||bloater||lurker||worldClock>.62||worldClock<.08;
   const moving=age>z.emerge,walk=moving?Math.sin(time*.0085+z.phase):Math.sin(age*.012+z.phase)*.25;
   const attack=Math.max(0,(z.attackAnim||0)-(now-(z.attackAnimAt||now))/230);
   if(z.attackAnim){z.attackAnimAt=now;z.attackAnim=Math.max(0,z.attackAnim-.075);}
@@ -510,7 +514,7 @@ function drawZombies(){
     ctx.fillStyle=i%2?'#554a32':'#a08a5c';ctx.globalAlpha=alpha*.8;ctx.beginPath();ctx.arc(px,py,1.4+(i%3)*.55,0,Math.PI*2);ctx.fill();}
   }
   ctx.globalAlpha=alpha;
-  const bodyScale=brute||armored?1.28:runner?.92:spitter?.96:1;
+  const bodyScale=bloater?1.38:brute||armored?1.28:crawler?.76:runner?.92:spitter?.96:lurker?.9:1;
   ctx.translate(0,-buried*18+Math.sin(time*.006+z.phase)*.8);
   ctx.scale(bodyScale,bodyScale);
   // Silhouette outline is deliberately brighter than the ground palette.
