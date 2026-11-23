@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import functools
+import json
 import http.server
 import os
 import sys
@@ -12,7 +13,52 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.2.9"
+APP_VERSION = "apocalypse-pc-v1.3.0"
+APOCALYPSE_SETTINGS_PATH = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PrimeHub" / "apocalypse-settings.json"
+
+
+def normalize_apocalypse_settings(raw):
+    data = raw if isinstance(raw, dict) else {}
+    effects = data.get("effects", "high")
+    if effects not in ("high", "balanced", "low"):
+        effects = "high"
+    try:
+        joy = max(85, min(135, int(data.get("joy", 100))))
+    except (TypeError, ValueError):
+        joy = 100
+    try:
+        infected_cap = max(8, min(24, int(data.get("infectedCap", 18))))
+    except (TypeError, ValueError):
+        infected_cap = 18
+    try:
+        event_frequency = max(0.5, min(1.8, float(data.get("eventFrequency", 1))))
+    except (TypeError, ValueError):
+        event_frequency = 1.0
+    try:
+        autosave = int(data.get("autosaveSeconds", 5))
+    except (TypeError, ValueError):
+        autosave = 5
+    if autosave not in (5, 10, 15, 30):
+        autosave = 5
+    return {
+        "effects": effects, "joy": joy,
+        "motion": data.get("motion", True) is not False,
+        "hints": data.get("hints", True) is not False,
+        "weather": data.get("weather", True) is not False,
+        "ambientAudio": data.get("ambientAudio", True) is not False,
+        "infectedCap": infected_cap, "eventFrequency": event_frequency,
+        "autosaveSeconds": autosave,
+        "autoSprint": data.get("autoSprint") is True,
+        "showHydration": data.get("showHydration", True) is not False,
+    }
+
+
+def read_apocalypse_settings():
+    try:
+        raw = json.loads(APOCALYPSE_SETTINGS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        raw = {}
+    return normalize_apocalypse_settings(raw)
 
 
 def resource_path(relative: str) -> Path:
@@ -21,6 +67,18 @@ def resource_path(relative: str) -> Path:
 
 
 class ApocalypseApi:
+    def save_apocalypse_settings(self, payload):
+        """Save in-game settings so PrimeHub and Apocalypse share one profile."""
+        try:
+            settings = normalize_apocalypse_settings(payload)
+            APOCALYPSE_SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            temp = APOCALYPSE_SETTINGS_PATH.with_suffix(".tmp")
+            temp.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
+            os.replace(temp, APOCALYPSE_SETTINGS_PATH)
+            return {"ok": True, "settings": settings}
+        except Exception as exc:
+            return {"ok": False, "message": str(exc)[:180]}
+
     def get_primehub_auth(self):
         """Return the already-authenticated PrimeHub session supplied by the launcher."""
         try:
@@ -61,11 +119,15 @@ class ApocalypseFileHandler(http.server.SimpleHTTPRequestHandler):
         if path in ("/", "/apocalypse.html"):
             try:
                 html = resource_path("apocalypse.html").read_text(encoding="utf-8")
-                # The shared ApocalypseGame API already exposes save() for the desktop shell.
+                # PrimeHub and the game share this validated profile. Inject it before
+                # apocalypse.js runs so it becomes the active defaults on every launch.
+                settings_json = json.dumps(read_apocalypse_settings(), ensure_ascii=False).replace("</", "<\\/")
+                settings_script = '<script>window.PRIMEHUB_APOCALYPSE_SETTINGS = ' + settings_json + ';</script>'
                 html = html.replace(
-                    "</body>",
-                    '<script src="apocalypse-pc.js"></script></body>',
+                    '<script src="apocalypse.js"></script>',
+                    settings_script + '<script src="apocalypse.js"></script>',
                 )
+                html = html.replace("</body>", '<script src="apocalypse-pc.js"></script></body>')
                 payload = html.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
