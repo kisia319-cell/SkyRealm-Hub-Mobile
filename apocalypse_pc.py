@@ -55,6 +55,12 @@ def normalize_apocalypse_settings(raw):
 
 def read_apocalypse_settings():
     try:
+        supplied = json.loads(os.environ.get("SKYREALM_APOCALYPSE_SETTINGS_JSON", "{}"))
+        if isinstance(supplied, dict) and supplied:
+            return normalize_apocalypse_settings(supplied)
+    except (ValueError, TypeError):
+        pass
+    try:
         raw = json.loads(APOCALYPSE_SETTINGS_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         raw = {}
