@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.3.0"
+APP_VERSION = "apocalypse-pc-v1.4.0"
 APOCALYPSE_SETTINGS_PATH = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PrimeHub" / "apocalypse-settings.json"
 
 
@@ -50,6 +50,10 @@ def normalize_apocalypse_settings(raw):
         "autosaveSeconds": autosave,
         "autoSprint": data.get("autoSprint") is True,
         "showHydration": data.get("showHydration", True) is not False,
+        "survivalDifficulty": data.get("survivalDifficulty") if data.get("survivalDifficulty") in ("easy", "standard", "hard") else "standard",
+        "renderDistance": data.get("renderDistance") if data.get("renderDistance") in ("near", "normal", "far") else "normal",
+        "showEnemyHealth": data.get("showEnemyHealth", True) is not False,
+        "showSurvivalHud": data.get("showSurvivalHud", True) is not False,
     }
 
 
