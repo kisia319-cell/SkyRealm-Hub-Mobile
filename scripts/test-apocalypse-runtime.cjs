@@ -279,12 +279,12 @@ assert.ok(game.includes("prefs.infectedCap") && game.includes("/prefs.eventFrequ
 assert.ok(html.includes('id="settingWeather"') && html.includes('id="settingInfectedCap"') && html.includes('id="settingEventFrequency"') && html.includes('id="settingAutosave"') && html.includes('id="settingAutoSprint"') && html.includes('id="settingsDefaults"') && html.includes('id="settingSurvivalDifficulty"') && html.includes('id="settingRenderDistance"') && html.includes('id="settingEnemyHealth"') && html.includes('id="settingSurvivalHud"') && html.includes('id="infectionHud"') && html.includes('id="temperatureHud"'), 'Expanded survival and performance settings/HUD controls must exist');
 assert.ok(game.includes('function updateTemperature(dt,now)') && game.includes('state.infection>=65') && game.includes('function travelToWaypoint()') && game.includes('state.workbenchLevel++') && game.includes('state.vehicleRepaired=true') && game.includes("source:'safehouse-raid'") && game.includes('prefs.renderDistance') && game.includes('prefs.showEnemyHealth'), 'New infection, temperature, squad, crafting, transport, raid and rendering systems must be implemented');
 assert.ok(coop.includes('apocalypse-protocol-1.3.0') && game.includes('crewCount:state.crewCount') && game.includes('vehicleRepaired:state.vehicleRepaired'), 'Co-op must synchronize expanded shared settlement systems');
-assert.ok(pc.includes("def save_apocalypse_settings(self, payload)") && pc.includes("PRIMEHUB_APOCALYPSE_SETTINGS") && pc.includes("APOCALYPSE_SETTINGS_PATH"), 'Windows bridge must persist the shared PrimeHub settings profile');
+assert.ok(pc.includes("def save_apocalypse_settings(self, payload)") && pc.includes("PRIMEHUB_APOCALYPSE_SETTINGS") && pc.includes("APOCALYPSE_SETTINGS_PATH") && pc.includes('"survivalDifficulty"') && pc.includes('"renderDistance"') && pc.includes('"showEnemyHealth"') && pc.includes('"showSurvivalHud"'), 'Windows bridge must persist and normalize the expanded PrimeHub settings profile');
 
 const quickbarHarness = makeHarness({
   skyrealm_apocalypse_mobile_v1: JSON.stringify({
     x: 440, y: 390, hp: 30, bandage: 2, food: 1, medInjector: 1,
-    energyDrink: 1, ammoCrate: 1, armorPlate: 1, worldClock: .3,
+    energyDrink: 1, ammoCrate: 1, armorPlate: 1, worldClock: .3, infection: 22, bodyTemp: 46, crewCount: 2, crewRole: 'medic', workbenchLevel: 2, weaponDurability: 63, antibiotics: 1, vehicleRepaired: true, fuel: 2,
     activeWaypoint: { name: 'Больница', x: 1200, y: 1600 },
     mapMarkers: [{ name: 'Больница', x: 1200, y: 1600 }]
   })
@@ -295,6 +295,12 @@ quickbarHarness.elements.get('menuPlay').click();
 quickbarHarness.elements.get('start').click();
 quickbarHarness.elements.get('journalOk').click();
 quickbarHarness.runFrame(1016);
+const expandedStats = quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats();
+assert.equal(expandedStats.infection, 22, 'The infection state must load from existing save data');
+assert.equal(expandedStats.crewCount, 2, 'The recruited squad must survive reloads');
+assert.equal(expandedStats.workbenchLevel, 2, 'Workbench progression must survive reloads');
+assert.equal(expandedStats.weaponDurability, 63, 'Weapon durability must survive reloads');
+assert.equal(expandedStats.vehicleRepaired, true, 'Vehicle restoration must survive reloads');
 quickbarHarness.elements.get('quickSlot1').click();
 assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().hp, 75, 'Clicking quick slot 1 should heal 45 HP');
 assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().bandage, 1, 'Clicking quick slot 1 should consume one bandage');
@@ -308,6 +314,9 @@ quickbarHarness.dispatchWindow('keydown', { code: 'F5', key: 'F5' });
 const quickbarSave = JSON.parse(quickbarHarness.store.get('skyrealm_apocalypse_mobile_v1'));
 assert.equal(quickbarSave.hp, 100, 'F5 must persist the latest health value');
 assert.equal(quickbarSave.activeWaypoint.name, 'Больница', 'The selected map waypoint must persist in the world save');
+assert.equal(quickbarSave.infection, 22, 'Infection progress must persist in the world save');
+assert.equal(quickbarSave.crewCount, 2, 'Squad size must persist in the world save');
+assert.equal(quickbarSave.vehicleRepaired, true, 'Vehicle repair state must persist in the world save');
 assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().activeWaypoint.name, 'Больница', 'The active waypoint must survive game startup');
 
 console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
