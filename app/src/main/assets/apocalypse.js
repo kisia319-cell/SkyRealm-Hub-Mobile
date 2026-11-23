@@ -21,7 +21,16 @@ const state={
  firearm:['','pistol','shotgun','rifle'].includes(saved.firearm)?saved.firearm:'',
  meleeWeapon:['','knife'].includes(saved.meleeWeapon)?saved.meleeWeapon:'',
  ammo:whole(saved.ammo,0,0,999999),
- medInjector:whole(saved.medInjector,0,0,999999),energyDrink:whole(saved.energyDrink,0,0,999999),armorPlate:whole(saved.armorPlate,0,0,999999),ammoCrate:whole(saved.ammoCrate,0,0,999999),weaponParts:whole(saved.weaponParts,0,0,999999),electronicsPack:whole(saved.electronicsPack,0,0,999999)
+ medInjector:whole(saved.medInjector,0,0,999999),energyDrink:whole(saved.energyDrink,0,0,999999),armorPlate:whole(saved.armorPlate,0,0,999999),ammoCrate:whole(saved.ammoCrate,0,0,999999),weaponParts:whole(saved.weaponParts,0,0,999999),electronicsPack:whole(saved.electronicsPack,0,0,999999),
+ cleanWater:whole(saved.cleanWater,2,0,999999),
+ hydration:bounded(saved.hydration,100,0,100),
+ safehouseLevel:whole(saved.safehouseLevel,0,0,3),
+ waterFilterLevel:whole(saved.waterFilterLevel,0,0,2),
+ scannerLevel:whole(saved.scannerLevel,0,0,1),
+ contractDay:whole(saved.contractDay,0,0,999999),
+ contractType:['wood','kills','salvage'].includes(saved.contractType)?saved.contractType:'wood',
+ contractProgress:whole(saved.contractProgress,0,0,99),
+ contractClaimed:saved.contractClaimed===true
 };
 const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[];
 let starterKnife=saved.starterKnife&&Number.isFinite(saved.starterKnife.x)&&Number.isFinite(saved.starterKnife.y)?{x:saved.starterKnife.x,y:saved.starterKnife.y,picked:saved.starterKnife.picked===true}:{x:state.x+42,y:state.y+12,picked:false};
@@ -36,19 +45,20 @@ wrecks.forEach((v,i)=>v.done=savedWrecks[i]===true);
 // Keep a saved player spawn clear of parked/wrecked vehicles.
 for(const v of wrecks){if(Math.hypot(state.x-v.x,state.y-v.y)<62){state.x=v.x+92;state.y=v.y+72;break;}}
 let w=0,h=0,dpr=1,time=0,toastTimer=0,dialogMode='intro',moveX=0,moveY=0,joyPointer=null,wind=0,windName='тихий';
-const zombies=[];const barricades=Array.isArray(saved.barricades)?saved.barricades.filter(v=>v&&typeof v==='object'&&Number.isFinite(v.x)&&Number.isFinite(v.y)&&v.x>=WORLD_MIN+40&&v.x<=WORLD_MAX-40&&v.y>=WORLD_MIN+40&&v.y<=WORLD_MAX-40).slice(0,24).map(v=>({x:v.x,y:v.y,angle:bounded(v.angle,0,-Math.PI*2,Math.PI*2)})):[];const infectionZones=[{x:3250,y:3280,r:185},{x:6500,y:6450,r:220},{x:10100,y:8500,r:175},{x:8350,y:2100,r:155}];let lastZombieSpawn=0,worldClock=savedWorldClock,zombieId=0,lastAttackAt=0,lastInfectionDamageAt=0,lastHudUpdate=0;const ZOMBIE_INTERVAL=38000;let lastExpansionUpdate=0;
+const zombies=[];const spikeTraps=Array.isArray(saved.spikeTraps)?saved.spikeTraps.filter(v=>v&&Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,36).map(v=>({x:v.x,y:v.y,charges:whole(v.charges,2,0,3)})):[];const barricades=Array.isArray(saved.barricades)?saved.barricades.filter(v=>v&&typeof v==='object'&&Number.isFinite(v.x)&&Number.isFinite(v.y)&&v.x>=WORLD_MIN+40&&v.x<=WORLD_MAX-40&&v.y>=WORLD_MIN+40&&v.y<=WORLD_MAX-40).slice(0,24).map(v=>({x:v.x,y:v.y,angle:bounded(v.angle,0,-Math.PI*2,Math.PI*2)})):[];const infectionZones=[{x:3250,y:3280,r:185},{x:6500,y:6450,r:220},{x:10100,y:8500,r:175},{x:8350,y:2100,r:155}];let lastZombieSpawn=0,worldClock=savedWorldClock,zombieId=0,lastAttackAt=0,lastInfectionDamageAt=0,lastHudUpdate=0;const ZOMBIE_INTERVAL=38000;let lastExpansionUpdate=0;
 const keys=new Set();
-let buildMode=false,buildAngle=0;
+let buildMode=false,buildAngle=0,buildType='barricade';
 function buildCandidate(){return{x:Math.max(WORLD_MIN+40,Math.min(WORLD_MAX-40,state.x+Math.cos(buildAngle)*76)),y:Math.max(WORLD_MIN+40,Math.min(WORLD_MAX-40,state.y+Math.sin(buildAngle)*76)),angle:buildAngle};}
-function canPlaceBarricade(p){const halfW=32,halfH=21,c=Math.cos(p.angle),s=Math.sin(p.angle);if(Math.hypot(p.x-state.x,p.y-state.y)<48)return false;for(const [lx,ly] of [[-halfW,-halfH],[halfW,-halfH],[-halfW,halfH],[halfW,halfH],[0,0]]){const x=p.x+lx*c-ly*s,y=p.y+lx*s+ly*c;if(blocked(x,y)||insideBuilding(x,y))return false;}if(zombies.some(z=>Math.hypot(z.x-p.x,z.y-p.y)<42))return false;return true;}
-function setBuildMode(on){buildMode=!!on;document.getElementById('buildControls').classList.toggle('hidden',!buildMode);if(buildMode){document.getElementById('panel').classList.add('hidden');toast('Выбери место · R / ПОВОРОТ · Enter / ПОСТАВИТЬ');}else{document.getElementById('buildStatus').textContent='';}}
+function canPlaceBarricade(p){const halfW=buildType==='spikes'?26:32,halfH=buildType==='spikes'?19:21,c=Math.cos(p.angle),s=Math.sin(p.angle);if(Math.hypot(p.x-state.x,p.y-state.y)<48)return false;for(const [lx,ly] of [[-halfW,-halfH],[halfW,-halfH],[-halfW,halfH],[halfW,halfH],[0,0]]){const x=p.x+lx*c-ly*s,y=p.y+lx*s+ly*c;if(blocked(x,y)||insideBuilding(x,y))return false;}if(zombies.some(z=>Math.hypot(z.x-p.x,z.y-p.y)<42))return false;return true;}
+function setBuildMode(on,type='barricade'){buildMode=!!on;buildType=type;document.getElementById('buildControls').classList.toggle('hidden',!buildMode);if(buildMode){document.getElementById('panel').classList.add('hidden');toast(type==='spikes'?'Выбери место для шипованной ловушки · R / ПОВОРОТ · Enter':'Выбери место для баррикады · R / ПОВОРОТ · Enter');}else{document.getElementById('buildStatus').textContent='';}}
 function rotateBuild(){if(!buildMode)return;buildAngle=(buildAngle+Math.PI/4)%(Math.PI*2);}
-function placeBarricade(){if(!buildMode)return;const p=buildCandidate();if(!canPlaceBarricade(p)){toast('Здесь нельзя строить: место занято');return;}if(state.scrap<2||state.wood<3){toast('Не хватает ресурсов: нужно 2 металла и 3 дерева');setBuildMode(false);return;}if(barricades.length>=24){toast('Лимит укреплений достигнут');setBuildMode(false);return;}state.scrap-=2;state.wood-=3;const placed={x:p.x,y:p.y,angle:p.angle};barricades.push(placed);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'barricade-built',barricade:placed});save();setBuildMode(false);toast('Баррикада установлена');}
+function placeBarricade(){if(!buildMode)return;const p=buildCandidate();if(!canPlaceBarricade(p)){toast('Здесь нельзя строить: место занято');return;}if(buildType==='spikes'){if(state.scrap<2||state.wood<4||state.bolts<1){toast('Ловушка требует 2 металла, 4 дерева и 1 крепёж');setBuildMode(false);return;}if(spikeTraps.length>=36){toast('Лимит ловушек достигнут');setBuildMode(false);return;}state.scrap-=2;state.wood-=4;state.bolts--;const trap={x:p.x,y:p.y,charges:3};spikeTraps.push(trap);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'spike-trap-built',trap});save();setBuildMode(false);toast('Шипованная ловушка установлена · 3 срабатывания');return;}if(state.scrap<2||state.wood<3){toast('Не хватает ресурсов: нужно 2 металла и 3 дерева');setBuildMode(false);return;}if(barricades.length>=24){toast('Лимит укреплений достигнут');setBuildMode(false);return;}state.scrap-=2;state.wood-=3;const placed={x:p.x,y:p.y,angle:p.angle};barricades.push(placed);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'barricade-built',barricade:placed});save();setBuildMode(false);toast('Баррикада установлена');}
 let gameActive=false,lastNet=0,deathHandled=false,respawnUntil=0,mobileQuickMenuResume=false,settingsResumeGame=false,sprintHeld=false,sprintActive=false,sprintLocked=false,mapResumeGame=false;
 let radioSignal=null,radioSignalNextAt=performance.now()+30000;
 let ambientEventNextAt=performance.now()+45000+Math.random()*35000;
 const randomEventSites=Array.isArray(saved.randomEventSites)?saved.randomEventSites.filter(v=>v&&['car','checkpoint','camp','gunfire','scream','convoy','quarantine','survivors','signal'].includes(v.type)&&Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(-30):[];
-const prefs=(()=>{const raw=read('skyrealm_apocalypse_settings_v1');return{effects:['low','high'].includes(raw.effects)?raw.effects:'high',joy:bounded(raw.joy,100,60,140),motion:raw.motion!==false,hints:raw.hints!==false}})();
+const primePrefs=window.PRIMEHUB_APOCALYPSE_SETTINGS&&typeof window.PRIMEHUB_APOCALYPSE_SETTINGS==='object'?window.PRIMEHUB_APOCALYPSE_SETTINGS:{};
+const prefs=(()=>{const raw={...primePrefs,...read('skyrealm_apocalypse_settings_v1')};return{effects:['low','balanced','high'].includes(raw.effects)?raw.effects:'high',joy:bounded(raw.joy,100,60,140),motion:raw.motion!==false,hints:raw.hints!==false,weather:raw.weather!==false,ambientAudio:raw.ambientAudio!==false,infectedCap:whole(raw.infectedCap,18,8,24),eventFrequency:bounded(raw.eventFrequency,1,.5,1.8),autosaveSeconds:whole(raw.autosaveSeconds,5,5,30),autoSprint:raw.autoSprint===true,showHydration:raw.showHydration!==false}}})();
 // Deterministic, irregular forest placement. One tree per roughly 8 game blocks (256 world units).
 const trees=[];
 const worldProps=[
