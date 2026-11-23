@@ -278,7 +278,8 @@ assert.ok(game.includes("function updateSpikeTraps(now){const coop=window.Apocal
 assert.ok(game.includes("prefs.infectedCap") && game.includes("/prefs.eventFrequency") && game.includes("prefs.autosaveSeconds*1000") && game.includes("prefs.autoSprint"), 'New settings must affect infected, event frequency, autosave and sprint behavior');
 assert.ok(html.includes('id="settingWeather"') && html.includes('id="settingInfectedCap"') && html.includes('id="settingEventFrequency"') && html.includes('id="settingAutosave"') && html.includes('id="settingAutoSprint"') && html.includes('id="settingsDefaults"'), 'All new Apocalypse settings controls must exist');
 assert.ok(pc.includes("def save_apocalypse_settings(self, payload)") && pc.includes("PRIMEHUB_APOCALYPSE_SETTINGS") && pc.includes("APOCALYPSE_SETTINGS_PATH"), 'Windows bridge must persist the shared PrimeHub settings profile');
-\nconst quickbarHarness = makeHarness({
+
+const quickbarHarness = makeHarness({
   skyrealm_apocalypse_mobile_v1: JSON.stringify({
     x: 440, y: 390, hp: 30, bandage: 2, food: 1, medInjector: 1,
     energyDrink: 1, ammoCrate: 1, armorPlate: 1, worldClock: .3,
