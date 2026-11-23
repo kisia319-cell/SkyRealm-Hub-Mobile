@@ -566,7 +566,7 @@ function updateQuickbar(){
   {icon:'💉',name:'Инъектор',count:state.medInjector},
   {icon:'⚡',name:'Энергетик',count:state.energyDrink},
   {icon:'📦',name:'Патроны',count:state.ammoCrate},
-  {icon:state.armorPlate>0?'🛡️':'🔧',name:state.armorPlate>0?'Броня':'Детали',count:state.armorPlate+state.weaponParts}
+  {icon:state.armorPlate>0?'🛡️':'🔧',name:state.armorPlate>0?'Броня':'Детали',count:state.armorPlate>0?state.armorPlate:state.weaponParts}
  ];
  for(let i=0;i<slots.length;i++){
   const n=i+1,item=slots[i],button=document.getElementById('quickSlot'+n),icon=document.getElementById('quickSlot'+n+'Icon'),count=document.getElementById('quickSlot'+n+'Count'),name=document.getElementById('quickSlot'+n+'Name');
