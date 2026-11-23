@@ -38,7 +38,7 @@ assert.ok(html.includes('id="playerMapOverlay"') && html.includes('id="staminaFi
 assert.ok(html.includes('id="apocChat"') && html.includes('id="apocMobileChat"') && html.includes('id="apocChatInput"'), 'Desktop and mobile chat elements must exist');
 assert.ok(html.includes('id="markerEditor"') && html.includes('id="markerNameInput"') && html.includes('id="markerSave"') && html.includes('id="markerDelete"'), 'Touch-friendly marker editor must exist');
 assert.ok(game.includes('saved.mapMarkers') && game.includes('mapMarkers,activeWaypoint,bonusLives,bonusLivesActive'), 'Custom map markers and bonus lives must persist');
-assert.ok(game.includes("p.user_id===coop.room.owner_id&&!coop.isOwner()"), 'Co-op day/night phase must only be accepted from the room owner');
+assert.ok(game.includes("if(p.kind==='world'&&p.user_id===coop.room?.owner_id)") && game.includes("if(Number.isFinite(p.worldClock))worldClock=p.worldClock"), 'Co-op day/night phase must only be accepted from the room owner');
 assert.ok(game.includes("kind==='admin-command'") && game.includes("kind:'chat-message'"), 'Owner commands and chat messages must synchronize');
 assert.ok(game.includes("if(k==='y')") && game.includes("apocChatInput") , 'Y must focus the desktop chat input');
 
@@ -78,11 +78,11 @@ assert.ok(game.includes('function openMobileQuickMenu(){const menu=document.getE
 assert.ok(game.includes('function closeMobileQuickMenu(resume=true){'), 'Closing quick menu must restore its previous running state');
 assert.ok(game.includes('function openSettings(resumeGame=gameActive){') && game.includes('function closeSettings(){'), 'Settings overlay must preserve and restore previous game state');
 assert.ok(game.includes('if(!gameActive){') && game.includes("if(k==='Escape'){") && game.includes('closeMobileQuickMenu();') && game.includes('closeSettings();'), 'Escape must close paused overlays without accepting background movement');
-assert.ok(game.includes("effects:['low','high'].includes(raw.effects)"), 'Settings quality must match the available select options');
+assert.ok(game.includes("effects:['low','balanced','high'].includes(raw.effects)"), 'Settings quality must match the available select options');
 assert.ok(game.includes('function leaveToMenu(){save();gameActive=false;deathHandled=false;'), 'Returning to menu must allow the saved death screen to reopen');
 assert.ok(game.includes('name:playerName,'), 'Frame loop must not parse untrusted username JSON every tick');
 assert.ok(game.includes('function save(){try{localStorage.setItem('), 'Save failures must not crash gameplay');
-assert.ok(game.includes('if(now-lastAutoSave>=5000)') && game.includes('worldClock,generatorRepaired,generatorOnline,flashlight:!!saved.flashlight'), 'Position and day/night state must autosave');
+assert.ok(game.includes('if(now-lastAutoSave>=prefs.autosaveSeconds*1000)') && game.includes('worldClock,generatorRepaired,generatorOnline,flashlight:!!saved.flashlight') && game.includes('spikeTraps'), 'Position and day/night state must autosave');
 assert.ok(game.includes('worldClock=savedWorldClock'), 'Day/night phase must survive reloads');
 assert.ok(game.includes('if(worldClock<previousClock)advanceGameDay()') && game.includes('function daily(){dayWind()}'), 'Displayed day and daily quests must follow the actual game clock');
 assert.ok(game.includes('const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[]'), 'Malformed wreck save data must be ignored');
@@ -252,7 +252,7 @@ storageFailure.runFrame();
 
 assert.ok(game.includes("id:'water_treatment'") && game.includes("id:'school_ruins'") && game.includes("id:'city_bank'") && game.includes("id:'garage_complex'") && game.includes("id:'research_center'") && game.includes("id:'old_mill'"), 'All six new enterable buildings must be present');
 assert.ok(game.includes("role:'loot',texture:'metal'") && game.includes("role:'loot',texture:'brick'") && game.includes("role:'loot',texture:'concrete'") && game.includes("role:'loot',texture:'asphalt'") && game.includes("role:'loot',texture:'plaster'") && game.includes("role:'loot',texture:'dirt'"), 'Each new building must use a distinct facade texture');
-assert.ok(game.includes("const lootCycle=['medInjector','energyDrink','armorPlate','ammoCrate','weaponParts','electronicsPack']") && game.includes("function useNewLootItem(key,refreshInventory=true)") && game.includes("buildingFloors") && game.includes("buildingLoot"), 'Six functional loot items and persistent floor loot must exist');
+assert.ok(game.includes("const lootCycle=['medInjector','energyDrink','armorPlate','ammoCrate','weaponParts','electronicsPack','cleanWater']") && game.includes("function useNewLootItem(key,refreshInventory=true)") && game.includes("buildingFloors") && game.includes("buildingLoot"), 'Six functional loot items and persistent floor loot must exist');
 assert.ok(game.includes('function useQuickSlot(slot){') && game.includes("useNewLootItem('medInjector',false)") && game.includes("if(k>='1'&&k<='6')"), 'Quick-use slots must consume real inventory items on click and keys 1–6');
 assert.ok(game.includes('function restAtCamp(){') && game.includes('state.food--;') && game.includes('state.stamina=maxStamina();') && game.includes('worldClock=(worldClock+10/1440)%1'), 'Camp rest must cost food, restore health/stamina and advance game time');
 assert.ok(game.includes('function nearbyActionLabel(){') && game.includes('function updateConvenienceHud(){') && game.includes('activeWaypoint,bonusLives'), 'Context actions, objective/threat tracking and active waypoint persistence must exist');
@@ -265,6 +265,20 @@ assert.ok(html.includes('id="quickbarHud"') && html.includes('id="quickSlot6"') 
 assert.ok(html.includes('id="markerNavigate"') && html.includes('id="waypointClear"') && html.includes('id="mobileMoreSave"'), 'Waypoint selection and mobile quick save controls must exist');
 assert.ok(game.includes("Array.from({length:b.floors}") && game.includes("buildingFloors[lootBuilding.id]=floor>=lootBuilding.floors?1:floor+1") && game.includes("crateEntry.picked=true"), 'Each floor must have a searchable persistent crate and stair traversal');
 assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.max(.4,.68-(state.armorLevel-1)*.07)") && game.includes("46+(state.weaponLevel-2)*6"), 'New item effects must affect gameplay stats');
+
+assert.ok(game.includes("hydration:bounded(saved.hydration,100,0,100)") && game.includes("function updateHydration(dt,now)") && game.includes("state.hydration=Math.min(100,state.hydration+45)"), 'Thirst must drain over time and clean water must restore hydration');
+assert.ok(game.includes("function updateWaterFilter(now)") && game.includes("state.cleanWater=Math.min(12,state.cleanWater+state.waterFilterLevel)"), 'Rainwater filter must collect and cap purified water');
+assert.ok(game.includes("function updateSpikeTraps(now)") && game.includes("z.hp-=46") && game.includes("function drawSpikeTraps()") && game.includes("barricades,spikeTraps"), 'Placed spike traps must render, damage infected and persist');
+assert.ok(game.includes("function purchaseSafehouse()") && game.includes("state.safehouseLevel++") && game.includes("if(safeBonus){state.scrap+=safeBonus*2"), 'Safehouse upgrades must cost resources and generate daily supplies');
+assert.ok(game.includes("function ensureDailyContract()") && game.includes("function progressContract(kind") && game.includes("function claimDailyContract()") && game.includes("contractType=['wood','kills','salvage']"), 'Daily contracts must track actions, rotate by day and pay rewards');
+assert.ok(game.includes("type==='horde'") && game.includes("eventId:id") && game.includes("event.type==='signal'"), 'Horde events must spawn a bounded group and support a clear-and-claim objective');
+assert.ok(game.includes("state.scannerLevel>0") && game.includes("const radioTower=buildings.find(b=>b.id==='radio_tower')") && game.includes("Сканер обнаружил"), 'Crafted radio scanner must find caches at the radio tower');
+assert.ok(game.includes("function moveZombiePathStep(") && game.includes("moveZombiePathStep(z,dx*direction,dy*direction,z.speed*dt)"), 'Infected must attempt alternate paths around obstacles');
+assert.ok(game.includes("function updateSpikeTraps(now){const coop=window.ApocalypseCoop;if(coop?.room&&!coop.isOwner())return;") && game.includes("kind:'spike-trap-built'") && coop.includes("apocalypse-protocol-1.2.9"), 'Co-op trap damage must be owner-authoritative and use the new protocol');
+assert.ok(game.includes("prefs.infectedCap") && game.includes("/prefs.eventFrequency") && game.includes("prefs.autosaveSeconds*1000") && game.includes("prefs.autoSprint"), 'New settings must affect infected, event frequency, autosave and sprint behavior');
+assert.ok(html.includes('id="settingWeather"') && html.includes('id="settingInfectedCap"') && html.includes('id="settingEventFrequency"') && html.includes('id="settingAutosave"') && html.includes('id="settingAutoSprint"') && html.includes('id="settingsDefaults"'), 'All new Apocalypse settings controls must exist');
+assert.ok(pc.includes("def save_apocalypse_settings(self, payload)") && pc.includes("PRIMEHUB_APOCALYPSE_SETTINGS") && pc.includes("APOCALYPSE_SETTINGS_PATH"), 'Windows bridge must persist the shared PrimeHub settings profile');
+
 const quickbarHarness = makeHarness({
   skyrealm_apocalypse_mobile_v1: JSON.stringify({
     x: 440, y: 390, hp: 30, bandage: 2, food: 1, medInjector: 1,
