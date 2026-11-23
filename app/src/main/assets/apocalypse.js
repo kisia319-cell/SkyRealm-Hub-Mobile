@@ -509,7 +509,7 @@ function drawZombies(){
  for(const z of zombies){
   const age=now-z.born,p=Math.max(0,Math.min(1,age/z.emerge)),rise=1-Math.pow(1-p,2),buried=1-rise;
   const spitter=z.kind==='spitter',armored=z.kind==='armored',screecher=z.kind==='screecher',crawler=z.kind==='crawler',bloater=z.kind==='bloater',lurker=z.kind==='lurker';
-  const active=z.kind==='day'||z.kind==='horde'||z.kind==='patrol'||spitter||armored||screecher||crawler||bloater||lurker||worldClock>.62||worldClock<.08;
+  const active=z.kind==='day'||z.kind==='horde'||z.kind==='patrol'||spitter||armored||screecher||crawler||bloater||lurker||!!z.eventId||worldClock>.62||worldClock<.08;
   const moving=age>z.emerge,walk=moving?Math.sin(time*.0085+z.phase):Math.sin(age*.012+z.phase)*.25;
   const attack=Math.max(0,(z.attackAnim||0)-(now-(z.attackAnimAt||now))/230);
   if(z.attackAnim){z.attackAnimAt=now;z.attackAnim=Math.max(0,z.attackAnim-.075);}
@@ -776,7 +776,7 @@ function updateAmbientEvents(now){
  let x=state.x+(Math.random()<.5?-1:1)*(420+Math.random()*480),y=state.y+(Math.random()-.5)*850;
  for(let tries=0;tries<18&&(blocked(x,y)||insideBuilding(x,y));tries++){x=state.x+(Math.random()-.5)*1050;y=state.y+(Math.random()-.5)*1050;}
  if(blocked(x,y)||insideBuilding(x,y))return;
- const types=['car','checkpoint','camp','patrol','gunfire','scream','convoy','quarantine','survivors','signal','horde'],type=types[Math.floor(Math.random()*types.length)],id='event_'+Math.floor(now)+'_'+randomEventSites.length;
+ const types=['car','checkpoint','camp','patrol','gunfire','scream','convoy','quarantine','survivors','signal','horde'];if(randomEventSites.some(v=>v.type==='horde'))types.splice(types.indexOf('horde'),1);const type=types[Math.floor(Math.random()*types.length)],id='event_'+Math.floor(now)+'_'+randomEventSites.length;
  if(['car','checkpoint','camp'].includes(type)){randomEventSites.push({id,type,x,y,createdAt:now});worldProps.push({id,type:type==='car'?'wrecked_car':type==='checkpoint'?'barrier':'tent',x,y,w:type==='car'?104:type==='checkpoint'?132:88,h:type==='car'?54:type==='checkpoint'?34:68});toast(type==='car'?'Обнаружен заброшенный автомобиль':type==='checkpoint'?'Обнаружен заблокированный блокпост':'Обнаружен лагерь');}
  else if(type==='patrol'){for(let i=0;i<3;i++)spawnZombie(x+(Math.random()-.5)*110,y+(Math.random()-.5)*110,'patrol');toast('Впереди патруль заражённых. Не шуми и обходи стороной');}
  else if(type==='gunfire'){randomEventSites.push({id,type,x,y,createdAt:now});for(let i=0;i<2;i++)spawnZombie(x+(Math.random()-.5)*90,y+(Math.random()-.5)*90,'runner');playAmbientSound('gunfire');toast('Вдалеке слышна перестрелка. Заражённые идут на звук');}
