@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const WORLD_MIN=-12000,WORLD_MAX=24000;
-const isAndroidDevice=/Android/i.test(navigator.userAgent||'');
+const isAndroidDevice=/Android/i.test(typeof navigator!=='undefined'?(navigator.userAgent||''):'');
 const canvas=document.getElementById('world'),ctx=canvas.getContext('2d'),STORE='skyrealm_apocalypse_mobile_v1';
 const read=k=>{try{const value=JSON.parse(localStorage.getItem(k)||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{}}catch(_){return {}}};
 const bounded=(value,fallback,min,max)=>{if(value===null||value===undefined||value==='')return fallback;const n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback};
