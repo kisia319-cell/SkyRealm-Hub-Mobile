@@ -779,7 +779,7 @@ function interactExpansion(){
   if(event.type==='convoy'){state.scrap+=6;state.bolts+=4;state.ammo+=12;toast('Колонна: +6 металла, +4 крепежа, +12 патронов');}
   else if(event.type==='quarantine'){state.electronicsPack+=1;state.medInjector+=1;toast('Кордон: найден электронный модуль и инъектор');}
   else if(event.type==='survivors'){state.food+=5;state.bandage+=2;state.survivorTrust+=2;toast('Выжившие благодарят тебя: +5 еды, +2 аптечки');}
-  else{state.scrap+=3;state.food+=2;state.electronicsPack+=1;toast('Аварийный маяк: +3 металла, +2 еды, электроника');}
+  else if(event.type==='signal'){state.scrap+=3;state.food+=2;state.electronicsPack+=1;toast('Аварийный маяк: +3 металла, +2 еды, электроника');}
   randomEventSites.splice(eventIndex,1);const wi=worldProps.findIndex(p=>p.id===event.id);if(wi>=0)worldProps.splice(wi,1);save();return true;
  }
  const cacheIndex=explorationCaches.findIndex((p,i)=>!foundCaches.has(i)&&Math.hypot(state.x-p.x,state.y-p.y)<62);
