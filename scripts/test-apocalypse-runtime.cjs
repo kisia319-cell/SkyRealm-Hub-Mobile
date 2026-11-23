@@ -238,7 +238,42 @@ storageFailure.runFrame();
 
 assert.ok(game.includes("id:'water_treatment'") && game.includes("id:'school_ruins'") && game.includes("id:'city_bank'") && game.includes("id:'garage_complex'") && game.includes("id:'research_center'") && game.includes("id:'old_mill'"), 'All six new enterable buildings must be present');
 assert.ok(game.includes("role:'loot',texture:'metal'") && game.includes("role:'loot',texture:'brick'") && game.includes("role:'loot',texture:'concrete'") && game.includes("role:'loot',texture:'asphalt'") && game.includes("role:'loot',texture:'plaster'") && game.includes("role:'loot',texture:'dirt'"), 'Each new building must use a distinct facade texture');
-assert.ok(game.includes("const lootCycle=['medInjector','energyDrink','armorPlate','ammoCrate','weaponParts','electronicsPack']") && game.includes("function useNewLootItem(key)") && game.includes("buildingFloors") && game.includes("buildingLoot"), 'Six functional loot items and persistent floor loot must exist');
+assert.ok(game.includes("const lootCycle=['medInjector','energyDrink','armorPlate','ammoCrate','weaponParts','electronicsPack']") && game.includes("function useNewLootItem(key,refreshInventory=true)") && game.includes("buildingFloors") && game.includes("buildingLoot"), 'Six functional loot items and persistent floor loot must exist');
+assert.ok(game.includes('function useQuickSlot(slot){') && game.includes("useNewLootItem('medInjector',false)") && game.includes("if(k>='1'&&k<='6')"), 'Quick-use slots must consume real inventory items on click and keys 1–6');
+assert.ok(game.includes('function restAtCamp(){') && game.includes('state.food--;') && game.includes('state.stamina=maxStamina();') && game.includes('worldClock=(worldClock+10/1440)%1'), 'Camp rest must cost food, restore health/stamina and advance game time');
+assert.ok(game.includes('function nearbyActionLabel(){') && game.includes('function updateConvenienceHud(){') && game.includes('activeWaypoint,bonusLives'), 'Context actions, objective/threat tracking and active waypoint persistence must exist');
+assert.ok(game.includes("if(e.code==='F5'||e.key==='F5')") && game.includes('function manualSave(){'), 'F5 must save the current world manually');
+assert.ok(html.includes('id="quickbarHud"') && html.includes('id="quickSlot6"') && html.includes('id="objectiveHud"') && html.includes('id="waypointHud"') && html.includes('id="threatHud"'), 'Gameplay quickbar and guidance HUD must exist');
+assert.ok(html.includes('id="markerNavigate"') && html.includes('id="waypointClear"') && html.includes('id="mobileMoreSave"'), 'Waypoint selection and mobile quick save controls must exist');
 assert.ok(game.includes("Array.from({length:b.floors}") && game.includes("buildingFloors[lootBuilding.id]=floor>=lootBuilding.floors?1:floor+1") && game.includes("entry.picked=true"), 'Each floor must have a searchable persistent crate and stair traversal');
 assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.max(.4,.68-(state.armorLevel-1)*.07)") && game.includes("46+(state.weaponLevel-2)*6"), 'New item effects must affect gameplay stats');
+const quickbarHarness = makeHarness({
+  skyrealm_apocalypse_mobile_v1: JSON.stringify({
+    x: 440, y: 390, hp: 30, bandage: 2, food: 1, medInjector: 1,
+    energyDrink: 1, ammoCrate: 1, armorPlate: 1, worldClock: .3,
+    activeWaypoint: { name: 'Больница', x: 1200, y: 1600 },
+    mapMarkers: [{ name: 'Больница', x: 1200, y: 1600 }]
+  })
+});
+vm.runInNewContext(game, quickbarHarness.sandbox, { filename: 'apocalypse.js' });
+quickbarHarness.runFrame(1000);
+quickbarHarness.elements.get('menuPlay').click();
+quickbarHarness.elements.get('start').click();
+quickbarHarness.elements.get('journalOk').click();
+quickbarHarness.runFrame(1016);
+quickbarHarness.elements.get('quickSlot1').click();
+assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().hp, 75, 'Clicking quick slot 1 should heal 45 HP');
+assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().bandage, 1, 'Clicking quick slot 1 should consume one bandage');
+quickbarHarness.dispatchWindow('keydown', { code: 'Digit2', key: '2' });
+assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().hp, 90, 'Quick slot 2 should heal 15 HP from a food ration');
+assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().food, 0, 'Quick slot 2 should consume one ration');
+quickbarHarness.dispatchWindow('keydown', { code: 'Digit3', key: '3' });
+assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().hp, 100, 'Quick slot 3 should restore up to 60 HP');
+assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().medInjector, 0, 'Quick slot 3 should consume one medical injector');
+quickbarHarness.dispatchWindow('keydown', { code: 'F5', key: 'F5' });
+const quickbarSave = JSON.parse(quickbarHarness.store.get('skyrealm_apocalypse_mobile_v1'));
+assert.equal(quickbarSave.hp, 100, 'F5 must persist the latest health value');
+assert.equal(quickbarSave.activeWaypoint.name, 'Больница', 'The selected map waypoint must persist in the world save');
+assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().activeWaypoint.name, 'Больница', 'The active waypoint must survive game startup');
+
 console.log('Apocalypse deep-audit tests passed: JS runtime boot/frame, corrupt saves, storage failure, HTML IDs/assets, map ground, safe respawn, co-op token refresh, PC port, and unchanged movement.');
