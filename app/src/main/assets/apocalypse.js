@@ -158,8 +158,8 @@ let activeInterior=saved.activeInterior&&typeof saved.activeInterior.buildingId=
 let interiorReturn=saved.interiorReturn&&Number.isFinite(saved.interiorReturn.x)&&Number.isFinite(saved.interiorReturn.y)?{x:bounded(saved.interiorReturn.x,440,WORLD_MIN+37,WORLD_MAX-37),y:bounded(saved.interiorReturn.y,390,WORLD_MIN+37,WORLD_MAX-37)}:null;
 const lootCycle=['medInjector','energyDrink','armorPlate','ammoCrate','weaponParts','electronicsPack','cleanWater'];
 for(const b of buildings){buildingFloors[b.id]=Math.max(1,Math.min(b.floors,whole(buildingFloors[b.id],1,1,b.floors)));}
-for(const b of buildings.filter(v=>v.role==='loot')){const seed=Math.abs(Math.floor(b.x/100)+Math.floor(b.y/100));if(!Array.isArray(buildingLoot[b.id]))buildingLoot[b.id]=Array.from({length:b.floors},(_,i)=>({item:lootCycle[(seed+i*3)%lootCycle.length],picked:false}));else{buildingLoot[b.id]=Array.from({length:b.floors},(_,i)=>{const v=buildingLoot[b.id][i];return v&&lootCycle.includes(v.item)?{item:lootCycle[(seed+i*3)%lootCycle.length],picked:v.picked===true,weaponDrop:v.weaponDrop||'',weaponAmmo:whole(v.weaponAmmo,0,0,60),weaponPicked:v.weaponPicked===true}:{item:lootCycle[(seed+i*3)%lootCycle.length],picked:false};});}buildingFloors[b.id]=Math.max(1,Math.min(b.floors,whole(buildingFloors[b.id],1,1,b.floors)));}
-for(const b of buildings.filter(v=>v.role==='loot')){const seed=Math.abs(Math.floor(b.x/100)+Math.floor(b.y/100));for(let i=0;i<b.floors;i++){const entry=buildingLoot[b.id][i],roll=Math.abs(Math.sin(seed*17.13+(i+1)*91.7)*10000)%100;if(!entry.weaponDrop&&roll<24){entry.weaponDrop=roll<8?'pistol':roll<16?'shotgun':'rifle';entry.weaponAmmo=entry.weaponDrop==='shotgun'?8:entry.weaponDrop==='rifle'?16:12;}entry.weaponPicked=entry.weaponPicked===true;}}
+for(const b of buildings){const seed=Math.abs(Math.floor(b.x/100)+Math.floor(b.y/100));if(!Array.isArray(buildingLoot[b.id]))buildingLoot[b.id]=Array.from({length:b.floors},(_,i)=>({item:lootCycle[(seed+i*3)%lootCycle.length],picked:false}));else{buildingLoot[b.id]=Array.from({length:b.floors},(_,i)=>{const v=buildingLoot[b.id][i];return v&&lootCycle.includes(v.item)?{item:lootCycle[(seed+i*3)%lootCycle.length],picked:v.picked===true,weaponDrop:v.weaponDrop||'',weaponAmmo:whole(v.weaponAmmo,0,0,60),weaponPicked:v.weaponPicked===true}:{item:lootCycle[(seed+i*3)%lootCycle.length],picked:false};});}buildingFloors[b.id]=Math.max(1,Math.min(b.floors,whole(buildingFloors[b.id],1,1,b.floors)));}
+for(const b of buildings){const seed=Math.abs(Math.floor(b.x/100)+Math.floor(b.y/100));for(let i=0;i<b.floors;i++){const entry=buildingLoot[b.id][i],roll=Math.abs(Math.sin(seed*17.13+(i+1)*91.7)*10000)%100;if(!entry.weaponDrop&&roll<24){entry.weaponDrop=roll<8?'pistol':roll<16?'shotgun':'rifle';entry.weaponAmmo=entry.weaponDrop==='shotgun'?8:entry.weaponDrop==='rifle'?16:12;}entry.weaponPicked=entry.weaponPicked===true;}}
 const generatorBuilding=buildings.find(b=>b.id==='power_plant');
 const generatorConsole={x:generatorBuilding.x+generatorBuilding.w/2-72,y:generatorBuilding.y+generatorBuilding.h-172};
 let generatorRepaired=saved.generatorRepaired===true,generatorOnline=generatorRepaired&&saved.generatorOnline!==false,generatorLastPulse=0;
@@ -356,7 +356,7 @@ function drawDistrictDetails(){for(const y of [-8000,-4500,-1000,600,4100,7600,1
 function wreck(v){car(v.x,v.y,1.05,.06);if(!v.done){ctx.strokeStyle='#e6c783';ctx.lineWidth=2;ctx.beginPath();ctx.arc(v.x,v.y,21+Math.sin(time*.004)*3,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#e6c783';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('ДЕТАЛИ',v.x,v.y-31)}}
 function smoke(x,y){if(prefs.effects==='low')return;for(let i=0;i<5;i++){let yy=(time*.00015+i*.21)%1;ctx.globalAlpha=(1-yy)*.2;ctx.fillStyle='#c5c5b8';ctx.beginPath();ctx.arc(x+Math.sin(time*.0006+i)*11,y-yy*52,5+yy*11,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
 function updateRadioSignal(now){
- if(!gameActive)return;
+ if(!gameActive||activeInterior)return;
  if(radioSignal){
   if(now>=radioSignal.expiresAt){radioSignal=null;radioSignalNextAt=now+25000;toast('Радиосигнал потерян. Скоро появится новый.');}
   return;
@@ -1251,7 +1251,7 @@ window.addEventListener('keydown',e=>{
  if(k==='e')interact();
  if(k==='i')inventory();
  if(k==='f'||k===' ')attack();
- if(k==='Escape'&&gameActive){if(!document.getElementById('playerMapOverlay').classList.contains('hidden'))closePlayerMap();else if(!document.getElementById('mobileQuickMenu').classList.contains('hidden'))closeMobileQuickMenu();else if(!document.getElementById('panel').classList.contains('hidden'))document.getElementById('panel').classList.add('hidden');else leaveToMenu();}
+ if(k==='Escape'&&gameActive){if(!document.getElementById('playerMapOverlay').classList.contains('hidden'))closePlayerMap();else if(!document.getElementById('mobileQuickMenu').classList.contains('hidden'))closeMobileQuickMenu();else if(!document.getElementById('panel').classList.contains('hidden'))document.getElementById('panel').classList.add('hidden');else if(activeInterior)exitBuilding();else leaveToMenu();}
 },true);
 window.addEventListener('keyup',e=>{if(e.code==='ShiftLeft'||e.code==='ShiftRight')sprintHeld=false;keys.delete(keyFromEvent(e));},true);
 window.addEventListener('blur',()=>{keys.clear();sprintHeld=false;});
