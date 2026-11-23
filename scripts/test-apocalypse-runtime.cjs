@@ -25,6 +25,11 @@ const expectedMove = [
 "}"
 ].join('\n');
 assert.equal(game.match(/function move\(dt\)\{[\s\S]*?\n\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
+assert.ok(game.includes("const isAndroidDevice=/Android/i.test(typeof navigator!=='undefined'?(navigator.userAgent||''):'')") && game.includes('isAndroidDevice?1.2:1.7') && game.includes('now-lastMobileDrawAt>=1000/30'), 'Android-only render resolution and frame-rate limits must not change PC settings');
+assert.ok(game.includes('requestedViewScale') && game.includes('isAndroidDevice?Math.min(requestedViewScale,.9):requestedViewScale'), 'Only Android must use the shorter object render distance');
+assert.ok(game.includes('function drawResidentialInteriorDetails(') && game.includes('drawResidentialInteriorDetails(id,variant,floor)'), 'Residential interiors must receive the added home furnishing pass');
+assert.ok(game.includes('function renderPlayerList()') && game.includes("e.code==='Tab'||e.key==='Tab'") && game.includes('playerListOverlay'), 'Tab must open the online player list on PC');
+assert.ok(html.includes('id="playerListOverlay"') && html.includes('id="playerListContent"') && html.includes('id="playerListClose"'), 'Player list dialog markup must exist');
 assert.ok(game.includes('runUpgrade:whole(saved.runUpgrade,0,0,3)') && game.includes('ammoUpgrade:whole(saved.ammoUpgrade,0,0,3)'), 'Both permanent upgrades must be capped at level 3');
 assert.ok(game.includes('function maxStamina(){return 100+state.runUpgrade*15;}') && game.includes('state.stamina-34*dt') && game.includes('state.stamina+(moving?17:27)*(state.bodyTemp<20?.55:1)*dt'), 'Sprint must drain stamina and recover it during normal movement/rest');
 assert.ok(game.includes('move((sprintActive?dt*(1.5+state.runUpgrade*.12):dt)*(energyBoostUntil>now?1.22:1))'), 'Sprint and energy boost speed must be applied outside the protected movement function');

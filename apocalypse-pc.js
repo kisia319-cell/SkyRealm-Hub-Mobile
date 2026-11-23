@@ -15,7 +15,7 @@
   `;
   document.head.appendChild(style);
   const hint = document.querySelector('.control-hint');
-  if (hint) hint.textContent = 'WASD / СТРЕЛКИ — движение  ·  E — действие  ·  I — рюкзак  ·  1–6 — быстрые предметы  ·  F5 — сохранить  ·  F / ПРОБЕЛ — удар  ·  F11 — полный экран  ·  ESC — меню';
+  if (hint) hint.textContent = 'WASD / СТРЕЛКИ — движение  ·  E — действие  ·  I — рюкзак  ·  1–6 — быстрые предметы  ·  F5 — сохранить  ·  F / ПРОБЕЛ — удар  ·  TAB — игроки  ·  F11 — полный экран  ·  ESC — меню';
   const connectPrimeHubSession = async () => {
     try {
       const session = await window.pywebview.api.get_primehub_auth();
