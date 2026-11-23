@@ -26,7 +26,7 @@ const expectedMove = [
 ].join('\n');
 assert.equal(game.match(/function move\(dt\)\{[\s\S]*?\n\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
 assert.ok(game.includes('runUpgrade:whole(saved.runUpgrade,0,0,3)') && game.includes('ammoUpgrade:whole(saved.ammoUpgrade,0,0,3)'), 'Both permanent upgrades must be capped at level 3');
-assert.ok(game.includes('function maxStamina(){return 100+state.runUpgrade*15;}') && game.includes('state.stamina-34*dt') && game.includes('state.stamina+(moving?17:27)*dt'), 'Sprint must drain stamina and recover it during normal movement/rest');
+assert.ok(game.includes('function maxStamina(){return 100+state.runUpgrade*15;}') && game.includes('state.stamina-34*dt') && game.includes('state.stamina+(moving?17:27)*(state.bodyTemp<20?.55:1)*dt'), 'Sprint must drain stamina and recover it during normal movement/rest');
 assert.ok(game.includes('move((sprintActive?dt*(1.5+state.runUpgrade*.12):dt)*(energyBoostUntil>now?1.22:1))'), 'Sprint and energy boost speed must be applied outside the protected movement function');
 assert.ok(game.includes('if(state.stamina<=0)sprintLocked=true') && game.includes('sprintLocked&&!sprintHeld&&state.stamina>=25'), 'Sprint exhaustion must require recovery before sprint can be enabled again');
 assert.ok(game.includes('const roads=[-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500]') && game.includes('for(const b of buildings)'), 'Player map must show roads and nearby buildings');
@@ -274,15 +274,17 @@ assert.ok(game.includes("function ensureDailyContract()") && game.includes("func
 assert.ok(game.includes("type==='horde'") && game.includes("eventId:id") && game.includes("event.type==='signal'"), 'Horde events must spawn a bounded group and support a clear-and-claim objective');
 assert.ok(game.includes("state.scannerLevel>0") && game.includes("const radioTower=buildings.find(b=>b.id==='radio_tower')") && game.includes("Сканер обнаружил"), 'Crafted radio scanner must find caches at the radio tower');
 assert.ok(game.includes("function moveZombiePathStep(") && game.includes("moveZombiePathStep(z,dx*direction,dy*direction,z.speed*dt)"), 'Infected must attempt alternate paths around obstacles');
-assert.ok(game.includes("function updateSpikeTraps(now){const coop=window.ApocalypseCoop;if(coop?.room&&!coop.isOwner())return;") && game.includes("kind:'spike-trap-built'") && coop.includes("apocalypse-protocol-1.2.9"), 'Co-op trap damage must be owner-authoritative and use the new protocol');
+assert.ok(game.includes("function updateSpikeTraps(now){const coop=window.ApocalypseCoop;if(coop?.room&&!coop.isOwner())return;") && game.includes("kind:'spike-trap-built'") && coop.includes("apocalypse-protocol-1.3.0"), 'Co-op trap damage must be owner-authoritative and use the new protocol');
 assert.ok(game.includes("prefs.infectedCap") && game.includes("/prefs.eventFrequency") && game.includes("prefs.autosaveSeconds*1000") && game.includes("prefs.autoSprint"), 'New settings must affect infected, event frequency, autosave and sprint behavior');
-assert.ok(html.includes('id="settingWeather"') && html.includes('id="settingInfectedCap"') && html.includes('id="settingEventFrequency"') && html.includes('id="settingAutosave"') && html.includes('id="settingAutoSprint"') && html.includes('id="settingsDefaults"'), 'All new Apocalypse settings controls must exist');
-assert.ok(pc.includes("def save_apocalypse_settings(self, payload)") && pc.includes("PRIMEHUB_APOCALYPSE_SETTINGS") && pc.includes("APOCALYPSE_SETTINGS_PATH"), 'Windows bridge must persist the shared PrimeHub settings profile');
+assert.ok(html.includes('id="settingWeather"') && html.includes('id="settingInfectedCap"') && html.includes('id="settingEventFrequency"') && html.includes('id="settingAutosave"') && html.includes('id="settingAutoSprint"') && html.includes('id="settingsDefaults"') && html.includes('id="settingSurvivalDifficulty"') && html.includes('id="settingRenderDistance"') && html.includes('id="settingEnemyHealth"') && html.includes('id="settingSurvivalHud"') && html.includes('id="infectionHud"') && html.includes('id="temperatureHud"'), 'Expanded survival and performance settings/HUD controls must exist');
+assert.ok(game.includes('function updateTemperature(dt,now)') && game.includes('state.infection>=65') && game.includes('function travelToWaypoint()') && game.includes('state.workbenchLevel++') && game.includes('state.vehicleRepaired=true') && game.includes("source:'safehouse-raid'") && game.includes('prefs.renderDistance') && game.includes('prefs.showEnemyHealth'), 'New infection, temperature, squad, crafting, transport, raid and rendering systems must be implemented');
+assert.ok(coop.includes('apocalypse-protocol-1.3.0') && game.includes('crewCount:state.crewCount') && game.includes('vehicleRepaired:state.vehicleRepaired'), 'Co-op must synchronize expanded shared settlement systems');
+assert.ok(pc.includes("def save_apocalypse_settings(self, payload)") && pc.includes("PRIMEHUB_APOCALYPSE_SETTINGS") && pc.includes("APOCALYPSE_SETTINGS_PATH") && pc.includes('"survivalDifficulty"') && pc.includes('"renderDistance"') && pc.includes('"showEnemyHealth"') && pc.includes('"showSurvivalHud"'), 'Windows bridge must persist and normalize the expanded PrimeHub settings profile');
 
 const quickbarHarness = makeHarness({
   skyrealm_apocalypse_mobile_v1: JSON.stringify({
     x: 440, y: 390, hp: 30, bandage: 2, food: 1, medInjector: 1,
-    energyDrink: 1, ammoCrate: 1, armorPlate: 1, worldClock: .3,
+    energyDrink: 1, ammoCrate: 1, armorPlate: 1, worldClock: .3, infection: 22, bodyTemp: 46, crewCount: 2, crewRole: 'medic', workbenchLevel: 2, weaponDurability: 63, antibiotics: 1, vehicleRepaired: true, fuel: 2,
     activeWaypoint: { name: 'Больница', x: 1200, y: 1600 },
     mapMarkers: [{ name: 'Больница', x: 1200, y: 1600 }]
   })
@@ -293,6 +295,12 @@ quickbarHarness.elements.get('menuPlay').click();
 quickbarHarness.elements.get('start').click();
 quickbarHarness.elements.get('journalOk').click();
 quickbarHarness.runFrame(1016);
+const expandedStats = quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats();
+assert.equal(expandedStats.infection, 22, 'The infection state must load from existing save data');
+assert.equal(expandedStats.crewCount, 2, 'The recruited squad must survive reloads');
+assert.equal(expandedStats.workbenchLevel, 2, 'Workbench progression must survive reloads');
+assert.equal(expandedStats.weaponDurability, 63, 'Weapon durability must survive reloads');
+assert.equal(expandedStats.vehicleRepaired, true, 'Vehicle restoration must survive reloads');
 quickbarHarness.elements.get('quickSlot1').click();
 assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().hp, 75, 'Clicking quick slot 1 should heal 45 HP');
 assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().bandage, 1, 'Clicking quick slot 1 should consume one bandage');
@@ -306,6 +314,9 @@ quickbarHarness.dispatchWindow('keydown', { code: 'F5', key: 'F5' });
 const quickbarSave = JSON.parse(quickbarHarness.store.get('skyrealm_apocalypse_mobile_v1'));
 assert.equal(quickbarSave.hp, 100, 'F5 must persist the latest health value');
 assert.equal(quickbarSave.activeWaypoint.name, 'Больница', 'The selected map waypoint must persist in the world save');
+assert.equal(quickbarSave.infection, 22, 'Infection progress must persist in the world save');
+assert.equal(quickbarSave.crewCount, 2, 'Squad size must persist in the world save');
+assert.equal(quickbarSave.vehicleRepaired, true, 'Vehicle repair state must persist in the world save');
 assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().activeWaypoint.name, 'Больница', 'The active waypoint must survive game startup');
 
-console.log('Apocalypse deep-audit tests passed: JS runtime boot/frame, corrupt saves, storage failure, HTML IDs/assets, map ground, safe respawn, co-op token refresh, PC port, and unchanged movement.');
+console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
