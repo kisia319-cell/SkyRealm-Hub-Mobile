@@ -70,7 +70,7 @@ assert.ok(game.includes("site.type==='signal'?'АВАРИЙНЫЙ МАЯК'") &&
 
 assert.ok(game.includes("Math.random()<.5") && game.includes("state.firearm") && game.includes("storeLoot"), 'Store firearm chance, pickup and persistence must be implemented');
 assert.ok(game.includes("drawBuildingInterior") && game.includes("visitedStores"), 'Buildings must have explorable interiors and saved visits');
-assert.ok(game.includes('function ground(){') && game.includes('const left=Math.floor((state.x-w/2-700)/46)*46,top=Math.floor((state.y-h/2-700)/46)*46;'), 'Textured ground tiles must be positioned relative to the camera');
+assert.ok(game.includes('function ground(){') && game.includes('const grassDetailPattern=') && game.includes('ctx.fillRect(-w/2-700,-h/2-700,w+1400,h+1400)'), 'Cached textured ground details must remain positioned relative to the camera');
 assert.ok(game.includes('function findSafeSpawn(') && game.includes('findSafeSpawn(state.x+150,state.y+110)'), 'Respawn must find a collision-free position');
 assert.ok(!/Math\.min\(9900,state\.[xy]\+/.test(game), 'Old 9,900 map clamp must not remain');
 assert.ok(game.includes('function enterSolo(){gameActive=false'), 'Intro dialogue must pause simulation');
