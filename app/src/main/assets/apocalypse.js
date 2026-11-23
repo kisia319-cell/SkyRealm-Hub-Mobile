@@ -58,7 +58,7 @@ let radioSignal=null,radioSignalNextAt=performance.now()+30000;
 let ambientEventNextAt=performance.now()+45000+Math.random()*35000;
 const randomEventSites=Array.isArray(saved.randomEventSites)?saved.randomEventSites.filter(v=>v&&['car','checkpoint','camp','gunfire','scream','convoy','quarantine','survivors','signal','horde'].includes(v.type)&&Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(-30):[];
 const primePrefs=window.PRIMEHUB_APOCALYPSE_SETTINGS&&typeof window.PRIMEHUB_APOCALYPSE_SETTINGS==='object'?window.PRIMEHUB_APOCALYPSE_SETTINGS:{};
-const prefs=(()=>{const raw={...read('skyrealm_apocalypse_settings_v1'),...primePrefs};return{effects:['low','balanced','high'].includes(raw.effects)?raw.effects:'high',joy:bounded(raw.joy,100,60,140),motion:raw.motion!==false,hints:raw.hints!==false,weather:raw.weather!==false,ambientAudio:raw.ambientAudio!==false,infectedCap:whole(raw.infectedCap,18,8,24),eventFrequency:bounded(raw.eventFrequency,1,.5,1.8),autosaveSeconds:whole(raw.autosaveSeconds,5,5,30),autoSprint:raw.autoSprint===true,showHydration:raw.showHydration!==false}}})();
+const prefs=(()=>{const raw={...read('skyrealm_apocalypse_settings_v1'),...primePrefs};return{effects:['low','balanced','high'].includes(raw.effects)?raw.effects:'high',joy:bounded(raw.joy,100,60,140),motion:raw.motion!==false,hints:raw.hints!==false,weather:raw.weather!==false,ambientAudio:raw.ambientAudio!==false,infectedCap:whole(raw.infectedCap,18,8,24),eventFrequency:bounded(raw.eventFrequency,1,.5,1.8),autosaveSeconds:whole(raw.autosaveSeconds,5,5,30),autoSprint:raw.autoSprint===true,showHydration:raw.showHydration!==false}})();
 // Deterministic, irregular forest placement. One tree per roughly 8 game blocks (256 world units).
 const trees=[];
 const worldProps=[
