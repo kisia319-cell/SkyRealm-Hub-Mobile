@@ -60,6 +60,13 @@ assert.ok(game.includes("function drawGeneratorField()") && game.includes("funct
 assert.ok(game.includes("armored:[190,32,17]") && game.includes("spitter:[54,48,7]") && game.includes("screecher:[72,50,6]"), 'Three special infected types must have independent combat stats');
 assert.ok(game.includes("z.kind==='spitter'&&d>=150&&d<=360") && game.includes("z.kind==='screecher'&&d<350") && game.includes("target.kind==='armored'?.62"), 'Special infected must use ranged attacks, summons and armor resistance');
 assert.ok(game.includes("wood:tile(") && game.includes("glass:tile(") && game.includes("rust:tile(") && game.includes("roof:tile(") && game.includes("gravel:tile("), 'Additional high-detail material textures must be generated');
+assert.ok(game.includes("id:'quarantine_prison'") && game.includes("id:'port_terminal'") && game.includes("id:'deep_research_lab'") && game.includes("id:'stone_quarry'"), 'Four additional explorable locations must exist');
+assert.ok(game.includes("crawler:[62,76,10]") && game.includes("bloater:[145,24,14]") && game.includes("lurker:[44,104,8]"), 'Three additional infected variants must have distinct combat stats');
+assert.ok(game.includes("'convoy','quarantine','survivors','signal'") && game.includes("event.type==='survivors'") && game.includes("event.type==='signal'"), 'New world events must spawn and provide interactive rewards');
+assert.ok(game.includes("const grassDetailPattern=") && game.includes("ctx.fillStyle=grassDetailPattern;") && !game.includes("for(let gy=top;gy<state.y+h/2+700;gy+=46)"), 'Ground micro-detail must be cached rather than redrawn as thousands of per-frame line calls');
+assert.ok(game.includes("if(now-lastExpansionUpdate>=250)") && game.includes("let lastExpansionUpdate=0"), 'Expensive exploration and ambient-event scans must be throttled independently of movement');
+assert.ok(game.includes("site.type==='signal'?'АВАРИЙНЫЙ МАЯК'") && game.includes("site.type==='quarantine'?'КАРАНТИН'"), 'New event markers must have distinct labels');
+
 
 assert.ok(game.includes("Math.random()<.5") && game.includes("state.firearm") && game.includes("storeLoot"), 'Store firearm chance, pickup and persistence must be implemented');
 assert.ok(game.includes("drawBuildingInterior") && game.includes("visitedStores"), 'Buildings must have explorable interiors and saved visits');
