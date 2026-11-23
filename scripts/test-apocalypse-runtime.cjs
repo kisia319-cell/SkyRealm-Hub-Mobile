@@ -268,7 +268,7 @@ assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.ma
 
 assert.ok(game.includes("hydration:bounded(saved.hydration,100,0,100)") && game.includes("function updateHydration(dt,now)") && game.includes("state.hydration=Math.min(100,state.hydration+45)"), 'Thirst must drain over time and clean water must restore hydration');
 assert.ok(game.includes("function updateWaterFilter(now)") && game.includes("state.cleanWater=Math.min(12,state.cleanWater+state.waterFilterLevel)"), 'Rainwater filter must collect and cap purified water');
-assert.ok(game.includes("function updateSpikeTraps(now)") && game.includes("z.hp-=46") && game.includes("function drawSpikeTraps()") && game.includes("spikeTraps,barricades"), 'Placed spike traps must render, damage infected and persist');
+assert.ok(game.includes("function updateSpikeTraps(now)") && game.includes("z.hp-=46") && game.includes("function drawSpikeTraps()") && game.includes("barricades,spikeTraps"), 'Placed spike traps must render, damage infected and persist');
 assert.ok(game.includes("function purchaseSafehouse()") && game.includes("state.safehouseLevel++") && game.includes("if(safeBonus){state.scrap+=safeBonus*2"), 'Safehouse upgrades must cost resources and generate daily supplies');
 assert.ok(game.includes("function ensureDailyContract()") && game.includes("function progressContract(kind") && game.includes("function claimDailyContract()") && game.includes("contractType=['wood','kills','salvage']"), 'Daily contracts must track actions, rotate by day and pay rewards');
 assert.ok(game.includes("type==='horde'") && game.includes("eventId:id") && game.includes("event.type==='signal'"), 'Horde events must spawn a bounded group and support a clear-and-claim objective');
