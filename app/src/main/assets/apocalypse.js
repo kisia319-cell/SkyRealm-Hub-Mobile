@@ -24,6 +24,7 @@ const state={
 };
 const savedWrecks=Array.isArray(saved.wrecks)?saved.wrecks:[];
 const mapMarkers=Array.isArray(saved.mapMarkers)?saved.mapMarkers.filter(v=>v&&typeof v.name==='string'&&Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,100).map(v=>({name:v.name.slice(0,36),x:bounded(v.x,0,WORLD_MIN,WORLD_MAX),y:bounded(v.y,0,WORLD_MIN,WORLD_MAX)})):[];
+let activeWaypoint=saved.activeWaypoint&&typeof saved.activeWaypoint.name==='string'&&Number.isFinite(saved.activeWaypoint.x)&&Number.isFinite(saved.activeWaypoint.y)?{name:saved.activeWaypoint.name.slice(0,36),x:bounded(saved.activeWaypoint.x,0,WORLD_MIN,WORLD_MAX),y:bounded(saved.activeWaypoint.y,0,WORLD_MIN,WORLD_MAX)}:null;
 let bonusLives=whole(saved.bonusLives,0,0,3),bonusLivesActive=saved.bonusLivesActive===true;
 const savedWorldClock=bounded(saved.worldClock,1/3,0,.999999);
 const playerName=(()=>{try{const direct=localStorage.getItem('skyrealm_username');if(typeof direct==='string'&&direct.trim())return direct.trim().slice(0,24);const user=read('skyrealm_hub_user');const name=String(user.username||'Выживший').trim();return name.slice(0,24)||'Выживший'}catch(_){return 'Выживший'}})();
@@ -137,7 +138,7 @@ function treeGridKey(x,y){return Math.floor(x/TREE_GRID_SIZE)+','+Math.floor(y/T
 for(const t of trees){const key=treeGridKey(t.x,t.y);if(!treeGrid.has(key))treeGrid.set(key,[]);treeGrid.get(key).push(t);}
 function nearbyTrees(x,y,range=100){const out=[],minX=Math.floor((x-range)/TREE_GRID_SIZE),maxX=Math.floor((x+range)/TREE_GRID_SIZE),minY=Math.floor((y-range)/TREE_GRID_SIZE),maxY=Math.floor((y+range)/TREE_GRID_SIZE);for(let gy=minY;gy<=maxY;gy++)for(let gx=minX;gx<=maxX;gx++){const cell=treeGrid.get(gx+','+gy);if(cell)for(const t of cell)if(Math.abs(t.x-x)<=range&&Math.abs(t.y-y)<=range)out.push(t);}return out;}
 const harvestedTrees=new Set(Array.isArray(saved.harvestedTrees)?saved.harvestedTrees:[]);trees.forEach((t,i)=>t.harvested=harvestedTrees.has(i));
-function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,worldClock,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],buildingLoot,buildingFloors,supplyDrop,mapMarkers,bonusLives,bonusLivesActive}));return true;}catch(_){return false;}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,worldClock,flashlight:!!saved.flashlight,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,foundCaches:[...foundCaches],discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],buildingLoot,buildingFloors,supplyDrop,mapMarkers,activeWaypoint,bonusLives,bonusLivesActive}));return true;}catch(_){return false;}}
 function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
 function rect(x,y,a,b,c){ctx.fillStyle=c;ctx.fillRect(x,y,a,b)}
 
@@ -518,8 +519,105 @@ function drawZombies(){
 function showDeath(){if(deathHandled)return;deathHandled=true;gameActive=false;sprintHeld=false;keys.clear();moveX=moveY=0;save();document.getElementById('deathDay').textContent='Ты продержался до '+state.day+' дня';document.getElementById('deathOverlay').classList.remove('hidden');}
 function respawn(){if(bonusLivesActive&&bonusLives<=0){toast('Три дополнительных возрождения уже использованы');return;}if(bonusLivesActive)bonusLives--;sprintHeld=false;state.hp=100;const safe=findSafeSpawn(state.x+150,state.y+110);state.x=safe.x;state.y=safe.y;deathHandled=false;respawnUntil=performance.now()+4000;document.getElementById('deathOverlay').classList.add('hidden');gameActive=true;save();toast('Ты вернулся. 4 секунды защиты.');}
 let lastActionUiUpdate=-Infinity;
-function updateActionButton(){if(time-lastActionUiUpdate<120)return;lastActionUiUpdate=time;const button=document.getElementById('action');if(!button)return;const touch=window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;if(!touch){if(button.dataset.actionLabel!=='desktop'){button.classList.remove('context-hidden');button.innerHTML='<span class="ico">⚒</span>Действие';button.dataset.actionLabel='desktop';}return;}let label='';if(Math.hypot(state.x-survivorCamp.bench.x,state.y-survivorCamp.bench.y)<105)label='Улучшения';else if(Math.hypot(state.x-survivorCamp.trader.x,state.y-survivorCamp.trader.y)<105)label='Торговец';else if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98)label='Радиосигнал';else if(buildings.some(b=>b.role==='loot'&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18))label='Обыскать / этаж';else if(Math.hypot(state.x-mark.x,state.y-mark.y)<75)label='Поговорить';else if(wrecks.some(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65))label='Обыскать';else if(nearbyTrees(state.x,state.y,55).some(t=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48))label='Собрать';if(button.dataset.actionLabel!==label){button.classList.toggle('context-hidden',!label);if(label)button.innerHTML='<span class="ico">⚒</span>'+label;button.dataset.actionLabel=label;}}
-function updateHud(){const now=performance.now();if(now-lastHudUpdate<125)return;lastHudUpdate=now;document.getElementById('health').textContent='♥ '+state.hp+' / 100';const staminaFill=document.getElementById('staminaFill'),staminaLabel=document.getElementById('staminaLabel');if(staminaFill)staminaFill.style.width=(state.stamina/maxStamina()*100)+'%';if(staminaLabel)staminaLabel.textContent=Math.ceil(state.stamina)+' / '+maxStamina();const sprintButton=document.getElementById('sprintButton');if(sprintButton){sprintButton.classList.toggle('sprinting',sprintActive);sprintButton.disabled=state.stamina<1||sprintLocked;}document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');const minutes=Math.floor(worldClock*1440),clock=document.getElementById('worldTime');if(clock)clock.textContent=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');updateActionButton();}
+function nearbyActionLabel(){
+ if(Math.hypot(state.x-survivorCamp.bench.x,state.y-survivorCamp.bench.y)<105)return 'Лавка улучшений';
+ if(Math.hypot(state.x-survivorCamp.trader.x,state.y-survivorCamp.trader.y)<105)return 'Торговец';
+ const lootBuilding=buildings.find(b=>b.role==='loot'&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18);
+ if(lootBuilding){
+  const floor=buildingFloors[lootBuilding.id]||1,roomY=lootBuilding.y+lootBuilding.h-250,cx=lootBuilding.x+lootBuilding.w/2,stairX=cx+lootBuilding.w*.29,lootX=cx-lootBuilding.w*.22,lootY=roomY+78,entry=buildingLoot[lootBuilding.id]?.[floor-1];
+  if(entry&&!entry.picked&&Math.hypot(state.x-lootX,state.y-lootY)<72)return 'Забрать предмет';
+  if(Math.hypot(state.x-stairX,state.y-lootY)<68)return 'Следующий этаж';
+  return 'Обыскать этаж';
+ }
+ const indoor=buildings.find(b=>b.role&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18);
+ if(indoor?.role==='store'){
+  const loot=storeLoot[indoor.id];
+  if(loot?.weapon&&!loot.picked&&Math.hypot(state.x-(indoor.x+indoor.w/2-72),state.y-(indoor.y+indoor.h-185+76))<72)return 'Подобрать оружие';
+ }
+ const shelter=buildings.find(b=>b.role==='shelter'&&state.x>b.x+18&&state.x<b.x+b.w-18&&state.y>b.y-b.floors*34+18&&state.y<b.y+b.h-18);
+ if(shelter&&!lootedShelters.has(shelter.id)&&Math.hypot(state.x-(shelter.x+shelter.w/2+72),state.y-(shelter.y+shelter.h-168))<82)return 'Забрать запасы';
+ const cacheIndex=explorationCaches.findIndex((p,i)=>!foundCaches.has(i)&&Math.hypot(state.x-p.x,state.y-p.y)<62);
+ if(cacheIndex>=0)return 'Обыскать тайник';
+ if(supplyDrop&&Math.hypot(state.x-supplyDrop.x,state.y-supplyDrop.y)<72)return 'Забрать поставку';
+ if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98)return 'Радиосигнал';
+ if(Math.hypot(state.x-mark.x,state.y-mark.y)<75)return 'Поговорить с Марком';
+ if(wrecks.some(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65))return 'Обыскать машину';
+ if(nearbyTrees(state.x,state.y,55).some(t=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48))return 'Собрать древесину';
+ return '';
+}
+function updateActionButton(){
+ if(time-lastActionUiUpdate<120)return;
+ lastActionUiUpdate=time;
+ const button=document.getElementById('action');if(!button)return;
+ const touch=window.matchMedia('(max-width: 700px), (pointer: coarse)').matches;
+ const label=nearbyActionLabel();
+ const text=label?'<span class="ico">⚒</span>'+label+(touch?'':' · E'):'<span class="ico">⚒</span>Действие · E';
+ button.classList.toggle('context-hidden',touch&&!label);
+ if(button.dataset.actionLabel!==text){button.innerHTML=text;button.dataset.actionLabel=text;}
+}
+function compassDirection(dx,dy){
+ const angle=(Math.atan2(dx,-dy)*180/Math.PI+360)%360;
+ return ['С','СВ','В','ЮВ','Ю','ЮЗ','З','СЗ'][Math.round(angle/45)%8];
+}
+function updateQuickbar(){
+ const slots=[
+  {icon:'🩹',name:'Аптечка',count:state.bandage},
+  {icon:'🥫',name:'Еда',count:state.food},
+  {icon:'💉',name:'Инъектор',count:state.medInjector},
+  {icon:'⚡',name:'Энергетик',count:state.energyDrink},
+  {icon:'📦',name:'Патроны',count:state.ammoCrate},
+  {icon:state.armorPlate>0?'🛡️':'🔧',name:state.armorPlate>0?'Броня':'Детали',count:state.armorPlate+state.weaponParts}
+ ];
+ for(let i=0;i<slots.length;i++){
+  const n=i+1,item=slots[i],button=document.getElementById('quickSlot'+n),icon=document.getElementById('quickSlot'+n+'Icon'),count=document.getElementById('quickSlot'+n+'Count'),name=document.getElementById('quickSlot'+n+'Name');
+  if(icon)icon.textContent=item.icon;if(count)count.textContent=String(item.count);if(name)name.textContent=item.name;
+  if(button){button.disabled=item.count<1;button.classList.toggle('empty',item.count<1);}
+ }
+}
+function updateConvenienceHud(){
+ const objective=document.getElementById('objectiveHud'),waypoint=document.getElementById('waypointHud'),threat=document.getElementById('threatHud');
+ if(objective){
+  if(radioSignal){
+   const d=Math.hypot(radioSignal.x-state.x,radioSignal.y-state.y);
+   objective.textContent='СОБЫТИЕ: радиосигнал · '+Math.round(d)+' м · '+compassDirection(radioSignal.x-state.x,radioSignal.y-state.y);
+  }else if(state.quest>=3&&state.dayReward!==state.day){
+   const d=Math.hypot(mark.x-state.x,mark.y-state.y);
+   objective.textContent='ЗАДАНИЕ: вернись к Марку за наградой · '+Math.round(d)+' м';
+  }else if(state.dayReward===state.day){
+   objective.textContent='ЗАДАНИЕ: помоги поселению завтра';
+  }else{
+   const nearest=wrecks.filter(v=>!v.done).reduce((best,v)=>{const d=Math.hypot(v.x-state.x,v.y-state.y);return !best||d<best.d?{d}:best;},null);
+   objective.textContent='ЗАДАНИЕ: детали для Марка · '+Math.min(3,state.quest)+'/3'+(nearest?' · машина '+Math.round(nearest.d)+' м':'');
+  }
+ }
+ if(waypoint){
+  if(activeWaypoint){
+   const dx=activeWaypoint.x-state.x,dy=activeWaypoint.y-state.y,d=Math.hypot(dx,dy);
+   waypoint.textContent=d<35?'ЦЕЛЬ: '+activeWaypoint.name+' · РЯДОМ':'ЦЕЛЬ: '+activeWaypoint.name+' · '+Math.round(d)+' м · '+compassDirection(dx,dy);
+  }else waypoint.textContent='ЦЕЛЬ: выбери метку на карте';
+ }
+ if(threat){
+  const close=zombies.map(z=>({z,d:Math.hypot(z.x-state.x,z.y-state.y)})).filter(v=>v.d<620);
+  if(close.length||state.hp<=30){
+   const nearest=close.reduce((a,b)=>!a||b.d<a.d?b:a,null);
+   threat.textContent=(state.hp<=30?'ЗДОРОВЬЕ НИЗКОЕ · '+state.hp+' HP':'УГРОЗА · '+close.length+' рядом')+(nearest?' · '+Math.round(nearest.d)+' м · '+compassDirection(nearest.z.x-state.x,nearest.z.y-state.y):'');
+   threat.classList.add('danger');
+  }else{threat.textContent='';threat.classList.remove('danger');}
+ }
+}
+function updateHud(){
+ const now=performance.now();if(now-lastHudUpdate<125)return;lastHudUpdate=now;
+ document.getElementById('health').textContent='♥ '+state.hp+' / 100';
+ const staminaFill=document.getElementById('staminaFill'),staminaLabel=document.getElementById('staminaLabel');
+ if(staminaFill)staminaFill.style.width=(state.stamina/maxStamina()*100)+'%';
+ if(staminaLabel)staminaLabel.textContent=Math.ceil(state.stamina)+' / '+maxStamina();
+ const sprintButton=document.getElementById('sprintButton');
+ if(sprintButton){sprintButton.classList.toggle('sprinting',sprintActive);sprintButton.disabled=state.stamina<1||sprintLocked;}
+ document.getElementById('day').textContent='День '+state.day+' · '+(worldClock>.62||worldClock<.08?'Ночь':'День');
+ const minutes=Math.floor(worldClock*1440),clock=document.getElementById('worldTime');
+ if(clock)clock.textContent=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
+ updateQuickbar();updateConvenienceHud();updateActionButton();
+}
 
 /* Apocalypse expansion 1.2.0 — exploration, supply drops and weather.
    This extension deliberately leaves move(), setupJoystick() and key handling untouched. */
@@ -658,12 +756,21 @@ function purchaseUpgrade(kind){
  state[field]++;if(kind==='run')state.stamina=Math.min(state.stamina,maxStamina());else state.ammo=Math.min(state.ammo,ammoCapacity());
  save();toast(kind==='run'?'Усилитель бега улучшен до уровня '+state.runUpgrade:'Запас патронов увеличен до уровня '+state.ammoUpgrade);openUpgradeBench();return true;
 }
+function restAtCamp(){
+ if(Math.hypot(state.x-survivorCamp.bench.x,state.y-survivorCamp.bench.y)>=105){toast('Передышка доступна только у лагеря');return false;}
+ if(state.food<1){toast('Для отдыха нужен хотя бы один паёк');return false;}
+ if(state.hp>=100&&state.stamina>=maxStamina()){toast('Ты уже полностью восстановился');return false;}
+ state.food--;const restored=Math.min(35,100-state.hp);state.hp=Math.min(100,state.hp+35);state.stamina=maxStamina();
+ const previousClock=worldClock;worldClock=(worldClock+10/1440)%1;if(worldClock<previousClock)advanceGameDay();
+ save();toast('Передышка завершена · +'+restored+' здоровья · выносливость восстановлена');openUpgradeBench();return true;
+}
 function openUpgradeBench(){
  const runCosts=['8 металла · 4 дерева · 3 крепежа','14 металла · 7 дерева · 6 крепежа','22 металла · 10 дерева · 9 крепежа'];
  const ammoCosts=['6 металла · 2 крепежа','12 металла · 5 крепежа','20 металла · 8 крепежа'];
  showPanel('Лавка улучшений','Только два постоянных улучшения. Усилитель бега повышает скорость и запас выносливости. Вместимость патронов: '+ammoCapacity()+'. Ресурсы: '+state.scrap+' металла, '+state.wood+' дерева, '+state.bolts+' крепежа.',[
   {icon:'🏃',name:'Усилитель бега · '+(state.runUpgrade>=3?'МАКСИМУМ':'следующий уровень: '+(state.runUpgrade+1)+' · '+runCosts[state.runUpgrade]),count:'Ур. '+state.runUpgrade+'/3',use:()=>purchaseUpgrade('run')},
-  {icon:'▣',name:'Запас патронов · '+(state.ammoUpgrade>=3?'МАКСИМУМ':'следующий уровень: '+(state.ammoUpgrade+1)+' · '+ammoCosts[state.ammoUpgrade]),count:state.ammo+'/'+ammoCapacity()+' патронов · ур. '+state.ammoUpgrade+'/3',use:()=>purchaseUpgrade('ammo')}
+  {icon:'▣',name:'Запас патронов · '+(state.ammoUpgrade>=3?'МАКСИМУМ':'следующий уровень: '+(state.ammoUpgrade+1)+' · '+ammoCosts[state.ammoUpgrade]),count:state.ammo+'/'+ammoCapacity()+' патронов · ур. '+state.ammoUpgrade+'/3',use:()=>purchaseUpgrade('ammo')},
+  {icon:'⛺',name:'Передышка · 1 паёк · +35 здоровья и вся выносливость',count:state.food+' пайков',use:restAtCamp}
  ]);
 }
 function tradeSupplies(kind){
@@ -723,7 +830,32 @@ function openWorkshop(){showPanel('Мастерская','Собирай дре�
 ]);}
 function showPanel(title,body,items){document.getElementById('panelTitle').textContent=String(title||'Хранилище').toUpperCase();document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot filled';let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent=typeof item.count==='string'?item.count:'×'+item.count;slot.append(art,name,count);if(item.use){slot.addEventListener('click',item.use)}box.append(slot)});document.getElementById('invHealth').textContent=state.hp;document.getElementById('invDay').textContent=state.day;document.getElementById('invSpeed').textContent=(wind>=.65?'82%':wind>=.3?'94%':'100%');document.getElementById('weight').textContent=(state.scrap*1.2+state.bandage*.2+state.food*.4).toFixed(1)+' / 40 кг';document.getElementById('panel').classList.remove('hidden')}
 function openMark(){if(state.quest>=3&&state.dayReward!==state.day){state.scrap=Math.max(0,state.scrap-3);state.bandage+=2;state.food++;state.dayReward=state.day;state.quest=0;wrecks.forEach(v=>{if(Math.random()<.6)v.done=false});save();showPanel('Марк · награда','Ты выполнил поручение. Забирай припасы — они пригодятся в дороге.',inventoryItems());return}let msg=state.dayReward===state.day?'Сегодня ты уже помог поселению. Отдохни, завтра будет новое поручение.':'Я Марк. Собери 3 детали с разбитых машин и возвращайся ко мне. За работу дам аптечки и еду. Сейчас собрано: '+state.quest+'/3.';showPanel('Марк · выживший',msg,[{icon:'⚙️',name:'Детали для задания',count:state.quest+'/3'},{icon:'🩹',name:'Награда: аптечки',count:'×2'},{icon:'🥫',name:'Награда: консервы',count:'×1'}])}
-function useNewLootItem(key){if((state[key]||0)<1){toast('Предмет отсутствует');return;}if(key==='medInjector'){if(state.hp>=100){toast('Здоровье уже полное');return;}state.medInjector--;state.hp=Math.min(100,state.hp+60);toast('Инъектор восстановил 60 здоровья');}else if(key==='energyDrink'){state.energyDrink--;state.stamina=maxStamina();energyBoostUntil=performance.now()+15000;toast('Энергетик: выносливость восстановлена, ускорение на 15 секунд');}else if(key==='armorPlate'){if(state.armorLevel>=5){toast('Броня уже максимального уровня');return;}state.armorPlate--;state.armorLevel=Math.min(5,state.armorLevel+1);toast('Броня усилена до уровня '+state.armorLevel);}else if(key==='ammoCrate'){if(state.ammo>=ammoCapacity()){toast('Боезапас уже заполнен');return;}state.ammoCrate--;const gained=Math.min(30,ammoCapacity()-state.ammo);state.ammo+=gained;toast('Получено патронов: '+gained);}else if(key==='weaponParts'){if(state.weaponLevel>=5){toast('Оружие уже максимального уровня');return;}state.weaponParts--;state.weaponLevel=Math.min(5,state.weaponLevel+1);toast('Уровень оружия повышен: '+state.weaponLevel);}else if(key==='electronicsPack'){state.electronicsPack--;state.scrap+=3;state.bolts+=4;state.radioFinds++;toast('Электроника разобрана: +3 металла, +4 крепежа');}save();updateHud();inventory();}
+function useNewLootItem(key,refreshInventory=true){if((state[key]||0)<1){toast('Предмет отсутствует');return;}if(key==='medInjector'){if(state.hp>=100){toast('Здоровье уже полное');return;}state.medInjector--;state.hp=Math.min(100,state.hp+60);toast('Инъектор восстановил 60 здоровья');}else if(key==='energyDrink'){state.energyDrink--;state.stamina=maxStamina();energyBoostUntil=performance.now()+15000;toast('Энергетик: выносливость восстановлена, ускорение на 15 секунд');}else if(key==='armorPlate'){if(state.armorLevel>=5){toast('Броня уже максимального уровня');return;}state.armorPlate--;state.armorLevel=Math.min(5,state.armorLevel+1);toast('Броня усилена до уровня '+state.armorLevel);}else if(key==='ammoCrate'){if(state.ammo>=ammoCapacity()){toast('Боезапас уже заполнен');return;}state.ammoCrate--;const gained=Math.min(30,ammoCapacity()-state.ammo);state.ammo+=gained;toast('Получено патронов: '+gained);}else if(key==='weaponParts'){if(state.weaponLevel>=5){toast('Оружие уже максимального уровня');return;}state.weaponParts--;state.weaponLevel=Math.min(5,state.weaponLevel+1);toast('Уровень оружия повышен: '+state.weaponLevel);}else if(key==='electronicsPack'){state.electronicsPack--;state.scrap+=3;state.bolts+=4;state.radioFinds++;toast('Электроника разобрана: +3 металла, +4 крепежа');}save();updateHud();if(refreshInventory)inventory();}
+function useQuickSlot(slot){
+ if(!gameActive)return false;
+ if(slot===1){
+  if(state.bandage<1){toast('Нет аптечек в быстром доступе');return false;}
+  if(state.hp>=100){toast('Здоровье уже полное');return false;}
+  state.bandage--;state.hp=Math.min(100,state.hp+45);triggerPlayerAction('heal',760);toast('Аптечка использована · +45 здоровья');
+ }else if(slot===2){
+  if(state.food<1){toast('Нет еды в быстром доступе');return false;}
+  if(state.hp>=100){toast('Здоровье уже полное');return false;}
+  state.food--;state.hp=Math.min(100,state.hp+15);triggerPlayerAction('heal',620);toast('Пайок использован · +15 здоровья');
+ }else if(slot===3)return useNewLootItem('medInjector',false);
+ else if(slot===4)return useNewLootItem('energyDrink',false);
+ else if(slot===5)return useNewLootItem('ammoCrate',false);
+ else if(slot===6){
+  if(state.armorPlate>0)return useNewLootItem('armorPlate',false);
+  if(state.weaponParts>0)return useNewLootItem('weaponParts',false);
+  toast('Нет бронепластин или деталей оружия');return false;
+ }else return false;
+ save();updateHud();return true;
+}
+function manualSave(){
+ const ok=save();
+ toast(ok?'Мир сохранён':'Не удалось сохранить мир. Проверь свободное место на устройстве.');
+ return ok;
+}
 function inventoryItems(){return [{icon:'⚙️',name:'Металлолом',count:state.scrap},{icon:'🔫',name:'Огнестрельное оружие',count:state.firearm||'нет'},{icon:'▣',name:'Патроны',count:state.ammo},{icon:'🪵',name:'Древесина',count:state.wood},{icon:'🔩',name:'Крепёж',count:state.bolts},{icon:'🗡️',name:'Самодельное копьё',count:state.weaponLevel?'ур. '+state.weaponLevel:0},{icon:'🛡️',name:'Усиленная броня',count:state.armorLevel?'надета':'нет'}, {icon:'🩹',name:'Аптечка',count:state.bandage,use:()=>{if(state.bandage<1){toast('Нет аптечек');return}if(state.hp>=100){toast('Здоровье уже полное');return}state.bandage--;state.hp=Math.min(100,state.hp+45);triggerPlayerAction('heal',760);save();updateHud();inventory()}},{icon:'🥫',name:'Консервы',count:state.food,use:()=>{if(state.food<1){toast('Нет еды');return}state.food--;state.hp=Math.min(100,state.hp+15);triggerPlayerAction('heal',620);save();updateHud();inventory()}},{icon:'🔦',name:'Фонарик',count:saved.flashlight?1:0},{icon:'💉',name:'Медицинский инъектор',count:state.medInjector,use:()=>useNewLootItem('medInjector')},{icon:'⚡',name:'Энергетик',count:state.energyDrink,use:()=>useNewLootItem('energyDrink')},{icon:'🛡️',name:'Бронепластина',count:state.armorPlate,use:()=>useNewLootItem('armorPlate')},{icon:'📦',name:'Ящик патронов',count:state.ammoCrate,use:()=>useNewLootItem('ammoCrate')},{icon:'🔧',name:'Детали оружия',count:state.weaponParts,use:()=>useNewLootItem('weaponParts')},{icon:'🔌',name:'Комплект электроники',count:state.electronicsPack,use:()=>useNewLootItem('electronicsPack')},{icon:'📡',name:'Найдено сигналов',count:state.radioFinds},{icon:'🤝',name:'Доверие выживших',count:state.survivorTrust}]}
 function inventory(){showPanel('Рюкзак','Снаряжение и найденные припасы. Задание Марка также отображается здесь.',inventoryItems())}
 function nearSegment(px,py,x1,y1,x2,y2,limit){
@@ -857,12 +989,26 @@ function drawPlayerMap(){
  m.fillStyle='#39a7ff';m.strokeStyle='#d9f0ff';m.lineWidth=4;m.beginPath();m.arc(mw/2,mh/2,11,0,Math.PI*2);m.fill();m.stroke();m.fillStyle='#d9f0ff';m.font='bold 13px system-ui';m.fillText('ТЫ',mw/2,mh/2+30);
 }
 let markerDraft=null;
-function openMarkerEditor(x,y,index=-1){markerDraft={x,y,index};const input=document.getElementById('markerNameInput'),remove=document.getElementById('markerDelete');input.value=index>=0?mapMarkers[index].name:'Метка '+(mapMarkers.length+1);remove.classList.toggle('hidden',index<0);document.getElementById('markerEditor').classList.remove('hidden');input.focus();input.select();}
+function openMarkerEditor(x,y,index=-1){markerDraft={x,y,index};const input=document.getElementById('markerNameInput'),remove=document.getElementById('markerDelete'),navigate=document.getElementById('markerNavigate');input.value=index>=0?mapMarkers[index].name:'Метка '+(mapMarkers.length+1);remove.classList.toggle('hidden',index<0);navigate.classList.toggle('hidden',index<0);document.getElementById('markerEditor').classList.remove('hidden');input.focus();input.select();}
 function closeMarkerEditor(){document.getElementById('markerEditor').classList.add('hidden');markerDraft=null;}
 function persistMapMarkers(){save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'map-markers',mapMarkers:mapMarkers.map(v=>({...v}))});}
-document.getElementById('markerSave').addEventListener('click',()=>{if(!markerDraft)return;const name=document.getElementById('markerNameInput').value.trim();if(!name){toast('Введи название метки');return;}if(markerDraft.index>=0&&mapMarkers[markerDraft.index])mapMarkers[markerDraft.index].name=name.slice(0,36);else{if(mapMarkers.length>=100){toast('Достигнут лимит 100 меток');return;}mapMarkers.push({name:name.slice(0,36),x:markerDraft.x,y:markerDraft.y});}persistMapMarkers();closeMarkerEditor();drawPlayerMap();});
-document.getElementById('markerDelete').addEventListener('click',()=>{if(!markerDraft||markerDraft.index<0)return;mapMarkers.splice(markerDraft.index,1);persistMapMarkers();closeMarkerEditor();drawPlayerMap();});
+document.getElementById('markerSave').addEventListener('click',()=>{
+ if(!markerDraft)return;
+ const name=document.getElementById('markerNameInput').value.trim();if(!name){toast('Введи название метки');return;}
+ if(markerDraft.index>=0&&mapMarkers[markerDraft.index])mapMarkers[markerDraft.index].name=name.slice(0,36);
+ else{if(mapMarkers.length>=100){toast('Достигнут лимит 100 меток');return;}mapMarkers.push({name:name.slice(0,36),x:markerDraft.x,y:markerDraft.y});}
+ const selected=markerDraft.index>=0?mapMarkers[markerDraft.index]:mapMarkers[mapMarkers.length-1];
+ activeWaypoint={name:selected.name,x:selected.x,y:selected.y};
+ persistMapMarkers();closeMarkerEditor();drawPlayerMap();updateHud();toast('Метка «'+activeWaypoint.name+'» установлена как цель');
+});
+document.getElementById('markerNavigate').addEventListener('click',()=>{
+ if(!markerDraft||markerDraft.index<0||!mapMarkers[markerDraft.index])return;
+ const selected=mapMarkers[markerDraft.index];activeWaypoint={name:selected.name,x:selected.x,y:selected.y};
+ save();closeMarkerEditor();drawPlayerMap();updateHud();toast('Маршрут проложен: '+activeWaypoint.name);
+});
+document.getElementById('markerDelete').addEventListener('click',()=>{if(!markerDraft||markerDraft.index<0)return;const removed=mapMarkers[markerDraft.index];if(activeWaypoint&&removed&&Math.hypot(activeWaypoint.x-removed.x,activeWaypoint.y-removed.y)<1)activeWaypoint=null;mapMarkers.splice(markerDraft.index,1);persistMapMarkers();closeMarkerEditor();drawPlayerMap();updateHud();});
 document.getElementById('markerCancel').addEventListener('click',closeMarkerEditor);
+document.getElementById('waypointClear').addEventListener('click',()=>{activeWaypoint=null;save();drawPlayerMap();updateHud();toast('Активная цель снята');});
 document.getElementById('playerMap').addEventListener('click',e=>{if(!document.getElementById('markerEditor').classList.contains('hidden'))return;const canvas=e.currentTarget,rect=canvas.getBoundingClientRect(),mw=canvas.width,mh=canvas.height,scale=Math.min(mw,mh)/(2600*2),x=Math.max(WORLD_MIN,Math.min(WORLD_MAX,state.x+(e.clientX-rect.left-rect.width/2)*(mw/rect.width)/scale)),y=Math.max(WORLD_MIN,Math.min(WORLD_MAX,state.y+(e.clientY-rect.top-rect.height/2)*(mh/rect.height)/scale));const existing=mapMarkers.findIndex(v=>Math.hypot(v.x-x,v.y-y)<Math.max(70,1/scale*18));openMarkerEditor(x,y,existing);});
 function openPlayerMap(){mapResumeGame=gameActive;gameActive=false;keys.clear();sprintHeld=false;moveX=moveY=0;joyPointer=null;const stick=document.getElementById('stick');if(stick)stick.style.transform='translate(0,0)';document.getElementById('playerMapOverlay').classList.remove('hidden');drawPlayerMap();}
 function closePlayerMap(){document.getElementById('playerMapOverlay').classList.add('hidden');const resume=mapResumeGame;mapResumeGame=false;if(resume){gameActive=true;focusGame();}}
@@ -888,12 +1034,14 @@ document.getElementById('mobileMoreInventory').onclick=()=>{closeMobileQuickMenu
 document.getElementById('mobileMoreWorkshop').onclick=()=>{closeMobileQuickMenu();openWorkshop()};
 document.getElementById('mobileMoreSettings').onclick=()=>{const resume=mobileQuickMenuResume;closeMobileQuickMenu(false);openSettings(resume)};
 document.getElementById('mobileMoreMenu').onclick=()=>{closeMobileQuickMenu(false);leaveToMenu()};
+document.getElementById('mobileMoreSave').onclick=()=>{manualSave();closeMobileQuickMenu();};
 document.getElementById('start').onclick=()=>{document.getElementById('dialogue').classList.add('hidden');ensureSafeSpawn(true);gameActive=true;focusGame();showJournalOnWorldEntry(true);};
 window.addEventListener('apocalypse-coop-enter',()=>{ensureSafeSpawn(true);gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.add('hidden');document.getElementById('coopOverlay').classList.add('hidden');focusGame();showJournalOnWorldEntry(true);});
 window.addEventListener('apocalypse-coop-version-mismatch',()=>{if(gameActive){leaveToMenu();toast('Кооператив остановлен: версии игры различаются.');}});
 window.addEventListener('apocalypse-coop-event',e=>{const p=e.detail,coop=window.ApocalypseCoop;if(!p||!coop||!coop.room)return;if(p.kind==='zombie-spawn'&&!coop.isOwner()&&Number.isFinite(p.x)&&Number.isFinite(p.y))spawnZombie(p.x,p.y,p.ztype||'night');if(p.kind==='zombie-hit'){const z=zombies.reduce((best,v)=>Math.hypot(v.x-p.x,v.y-p.y)<(best?Math.hypot(best.x-p.x,best.y-p.y):110)?v:best,null);if(z)z.hp-=Math.max(0,Number(p.damage)||0);}if(p.kind==='zombie-killed'){const i=zombies.findIndex(v=>Math.hypot(v.x-p.x,v.y-p.y)<110);if(i>=0)zombies.splice(i,1);}if(p.kind==='tree-harvested'){const i=Number(p.index);if(Number.isInteger(i)&&trees[i]){trees[i].harvested=true;harvestedTrees.add(i);save();}}if(p.kind==='map-markers'&&Array.isArray(p.mapMarkers)){const clean=p.mapMarkers.filter(v=>v&&typeof v.name==='string'&&Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,100).map(v=>({name:v.name.slice(0,36),x:Math.max(WORLD_MIN,Math.min(WORLD_MAX,v.x)),y:Math.max(WORLD_MIN,Math.min(WORLD_MAX,v.y))}));if(coop.isOwner()&&p.user_id!==coop.userId){mapMarkers.splice(0,mapMarkers.length,...clean);save();coop.send({kind:'map-markers',mapMarkers:clean});}else if(!coop.isOwner()&&p.user_id===coop.room.owner_id){mapMarkers.splice(0,mapMarkers.length,...clean);save();}}if(p.kind==='barricade-built'&&p.barricade&&Number.isFinite(p.barricade.x)&&Number.isFinite(p.barricade.y)){if(!barricades.some(b=>Math.hypot(b.x-p.barricade.x,b.y-p.barricade.y)<8)){barricades.push({x:p.barricade.x,y:p.barricade.y,angle:Number.isFinite(p.barricade.angle)?p.barricade.angle:0});save();}}if(Number.isFinite(p.worldClock)&&coop.room&&p.user_id===coop.room.owner_id&&!coop.isOwner())worldClock=p.worldClock;if(Number.isFinite(p.day)&&coop.room&&p.user_id===coop.room.owner_id&&!coop.isOwner())state.day=Math.max(1,p.day);if(p.kind==='world'&&!coop.isOwner()&&Array.isArray(p.mapMarkers)){mapMarkers.splice(0,mapMarkers.length,...p.mapMarkers.filter(v=>v&&typeof v.name==='string'&&Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,100).map(v=>({name:v.name.slice(0,36),x:Math.max(WORLD_MIN,Math.min(WORLD_MAX,v.x)),y:Math.max(WORLD_MIN,Math.min(WORLD_MAX,v.y))})));save();}if(p.kind==='world'&&!coop.isOwner()&&Array.isArray(p.wrecks)){p.wrecks.forEach((done,i)=>{if(wrecks[i])wrecks[i].done=!!done});state.quest=Math.max(0,Number(p.quest)||0);state.day=Math.max(1,Number(p.day)||1);if(Array.isArray(p.barricades)){barricades.splice(0,barricades.length,...p.barricades.filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(0,24));}if(Array.isArray(p.harvestedTrees)){harvestedTrees.clear();p.harvestedTrees.forEach(i=>{if(Number.isInteger(i)&&trees[i]){trees[i].harvested=true;harvestedTrees.add(i);}});}save();}if(p.kind==='wreck-request'&&coop.isOwner()){const remote=coop.getPlayers().find(v=>v.user_id===p.user_id),v=wrecks[Number(p.index)];if(remote&&v&&!v.done&&Math.hypot(remote.x-v.x,remote.y-v.y)<100){v.done=true;state.quest++;save();coop.send({kind:'wreck-claimed',index:Number(p.index),quest:state.quest,by:p.user_id});}}if(p.kind==='wreck-claimed'){const i=Number(p.index);if(wrecks[i])wrecks[i].done=true;state.quest=Math.max(0,Number(p.quest)||0);if(p.by===coop.userId)state.scrap++;save();toast('Общие детали: '+state.quest+'/3');}if(p.kind==='world-request'&&coop.isOwner())coop.send({kind:'world',...window.ApocalypseGame.getWorldState()});});
 applySettings();
 document.getElementById('action').onclick=interact;document.getElementById('rotateBuild').onclick=rotateBuild;document.getElementById('placeBuild').onclick=placeBarricade;document.getElementById('cancelBuild').onclick=()=>setBuildMode(false);document.getElementById('inventory').onclick=inventory;document.getElementById('craft').onclick=openWorkshop;document.getElementById('attackTouch').onclick=attack;document.getElementById('panelClose').onclick=()=>document.getElementById('panel').classList.add('hidden');
+for(let i=1;i<=6;i++)document.getElementById('quickSlot'+i).onclick=()=>useQuickSlot(i);
 document.getElementById('exit').onclick=exitGame;
 const KEY_BY_CODE={KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',KeyE:'e',KeyI:'i',ArrowUp:'ArrowUp',ArrowDown:'ArrowDown',ArrowLeft:'ArrowLeft',ArrowRight:'ArrowRight'};
 const KEY_BY_LAYOUT={'ц':'w','ф':'a','ы':'s','в':'d','е':'e','ш':'i'};
@@ -911,6 +1059,7 @@ async function toggleApocalypseFullscreen(){
 window.addEventListener('keydown',e=>{
  if(document.activeElement===document.getElementById('apocChatInput')){if(e.key==='Escape'){e.preventDefault();document.getElementById('apocChatInput').blur();document.body.classList.remove('apoc-chat-open');}return;}
  if(e.code==='F11'||e.key==='F11'){e.preventDefault();e.stopPropagation();toggleApocalypseFullscreen();return;}
+ if(e.code==='F5'||e.key==='F5'){e.preventDefault();manualSave();return;}
  if(e.code==='ShiftLeft'||e.code==='ShiftRight'){if(gameActive){sprintHeld=true;e.preventDefault();}return;}
  const k=keyFromEvent(e);
  if(!gameActive){
@@ -926,6 +1075,7 @@ window.addEventListener('keydown',e=>{
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','f'].includes(k))e.preventDefault();
  if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){keys.add(k);focusGame();return;}
  if(e.repeat)return;
+ if(k>='1'&&k<='6'){e.preventDefault();useQuickSlot(Number(k));return;}
  if(k==='y'){e.preventDefault();document.body.classList.add('apoc-chat-open');document.getElementById('apocChatInput')?.focus();return;}
  if(buildMode){if(k==='r'){e.preventDefault();rotateBuild();return;}if(k==='Enter'){e.preventDefault();placeBarricade();return;}if(k==='Escape'){e.preventDefault();setBuildMode(false);return;}}
  if(k==='m')openPlayerMap();
@@ -973,5 +1123,5 @@ if(chatInput){chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.pre
 if(mobileChat)mobileChat.addEventListener('click',()=>{document.body.classList.add('apoc-chat-open');chatInput?.focus();});
 window.addEventListener('apocalypse-coop-event',e=>{const p=e.detail,coop=window.ApocalypseCoop;if(!p||!coop)return;if(p.kind==='chat-message'&&p.user_id!==coop.userId)appendChat(p.name||'Игрок',String(p.message||'').slice(0,220));if(p.kind==='admin-command'&&p.user_id===coop.room?.owner_id&&p.target_user_id===coop.userId){if(p.action==='kill'){state.hp=0;showDeath();}else if(p.action==='healB'){bonusLives=3;bonusLivesActive=true;save();toast('Владелец выдал 3 дополнительных возрождения');}else if(p.action==='tp'&&Number.isFinite(p.x)&&Number.isFinite(p.y)){state.x=Math.max(WORLD_MIN,Math.min(WORLD_MAX,p.x));state.y=Math.max(WORLD_MIN,Math.min(WORLD_MAX,p.y));save();toast('Владелец телепортировал тебя');}}});
 
-window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getDayReward:()=>state.dayReward,getClock:()=>worldClock,getMovementStats:()=>({stamina:state.stamina,maxStamina:maxStamina(),runUpgrade:state.runUpgrade,sprinting:sprintActive}),getUpgradeStats:()=>({run:state.runUpgrade,ammo:state.ammoUpgrade,ammoCapacity:ammoCapacity(),ammo:state.ammo}),getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,mapMarkers:mapMarkers.map(v=>({...v})),barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();save();requestAnimationFrame(loop);
+window.ApocalypseGame=Object.freeze({getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getDayReward:()=>state.dayReward,getClock:()=>worldClock,getMovementStats:()=>({stamina:state.stamina,maxStamina:maxStamina(),runUpgrade:state.runUpgrade,sprinting:sprintActive}),getUpgradeStats:()=>({run:state.runUpgrade,ammo:state.ammoUpgrade,ammoCapacity:ammoCapacity(),ammo:state.ammo}),getConvenienceStats:()=>({bandage:state.bandage,food:state.food,medInjector:state.medInjector,energyDrink:state.energyDrink,ammoCrate:state.ammoCrate,armorPlate:state.armorPlate,weaponParts:state.weaponParts,activeWaypoint:activeWaypoint?{...activeWaypoint}:null}),getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,mapMarkers:mapMarkers.map(v=>({...v})),activeWaypoint:activeWaypoint?{...activeWaypoint}:null,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();save();requestAnimationFrame(loop);
 })();
