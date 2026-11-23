@@ -502,7 +502,7 @@ function updateZombies(dt,now){
  }
  for(let i=acidProjectiles.length-1;i>=0;i--){const p=acidProjectiles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt*1000;if(Math.hypot(state.x-p.x,state.y-p.y)<21){acidProjectiles.splice(i,1);if(now>respawnUntil){state.hp=Math.max(0,state.hp-9);state.stamina=Math.max(0,state.stamina-10);triggerPlayerAction('hurt',420);toast('Кислота плевуна: -9 здоровья');if(state.hp<=0)showDeath();save();}continue;}if(p.life<=0||blocked(p.x,p.y))acidProjectiles.splice(i,1);}
  updateSpikeTraps(now);
- if(generatorOnline&&(!coop?.room||coop.isOwner())&&now-generatorLastPulse>2300){generatorLastPulse=now;for(let i=zombies.length-1;i>=0;i--){const z=zombies[i];if(Math.hypot(z.x-generatorConsole.x,z.y-generatorConsole.y)<320){z.hp-=12;z.shockedUntil=now+420;if(z.hp<=0){zombies.splice(i,1);state.scrap++;if(coop?.room?.status==='running')coop.send({kind:'zombie-killed',x:z.x,y:z.y});}}}}
+ if(generatorOnline&&(!coop?.room||coop.isOwner())&&now-generatorLastPulse>2300){generatorLastPulse=now;for(let i=zombies.length-1;i>=0;i--){const z=zombies[i];if(Math.hypot(z.x-generatorConsole.x,z.y-generatorConsole.y)<320){z.hp-=12;z.shockedUntil=now+420;if(z.hp<=0){zombies.splice(i,1);progressContract('kills',1);if(z.eventId){const horde=randomEventSites.find(v=>v.id===z.eventId);if(horde){horde.remaining=Math.max(0,(Number(horde.remaining)||0)-1);if(coop?.room?.status==='running')coop.send({kind:'horde-progress',eventId:horde.id,remaining:horde.remaining});}}state.scrap++;if(coop?.room?.status==='running')coop.send({kind:'zombie-killed',x:z.x,y:z.y});}}}}
 }
 function drawZombies(){
  const now=performance.now();
