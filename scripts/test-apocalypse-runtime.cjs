@@ -132,6 +132,7 @@ function makeHarness(seed = {}, failWrites = false) {
   const ctx2d = new Proxy({
     createPattern() { return {}; },
     createRadialGradient() { return gradient; },
+    createLinearGradient() { return gradient; },
     setTransform() {}
   }, {
     get(target, key) {
