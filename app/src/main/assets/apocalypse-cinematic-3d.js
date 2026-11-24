@@ -120,7 +120,8 @@ function cameraForCrash(t){
  if(t<11){const q=smooth((t-7)/4);return{eye:[mix(4,-3,q),mix(3,2.2,q),mix(8,4,q)],target:[-4,1.5,-1]};}
  const q=smooth((t-11)/5);return{eye:[mix(-3,1,q),mix(2.2,2.7,q),mix(4,6,q)],target:[0,1.5,0]};
 }
-\nfunction renderCrash(t){
+
+function renderCrash(t){
  gl.clearColor(.025,.035,.031,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  const approach=smooth(t/10),impact=smooth((t-7.2)/2.4),cam=[mix(-18,-5,approach)+Math.sin(t*.7)*.35,mix(12,5,approach),mix(27,13,approach)];
  const target=[0,1.1,0];VP=mul(perspective(Math.PI/3.2,W/H,.1,150),view(cam,target));
