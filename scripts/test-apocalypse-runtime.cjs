@@ -344,4 +344,27 @@ assert.ok(game.includes("spawnCampfireUntil=Math.max(Date.now(),spawnCampfireUnt
 assert.ok(game.includes("fireDistance<spawnCampfireRadius()") && game.includes("spawnCampfireRadius()+18"), 'Infected must be expelled beyond the active campfire protection radius');
 assert.ok(html.includes('id="spawnFirePanel"') && html.includes('id="spawnFireFeed"') && html.includes('id="spawnFireUpgrade"') && html.includes('id="spawnFireFill"'), 'The campfire fuel slider and feed/upgrade controls must be present');
 
+
+const campfireHarness = makeHarness({
+  skyrealm_apocalypse_mobile_v1: JSON.stringify({
+    x: 440, y: 390, wood: 6, spawnCampfireLevel: 1,
+    spawnCampfireUntil: Date.now() + 180000
+  })
+});
+vm.runInNewContext(game, campfireHarness.sandbox, { filename: 'apocalypse.js' });
+campfireHarness.runFrame(1000);
+campfireHarness.elements.get('menuPlay').click();
+campfireHarness.elements.get('start').click();
+campfireHarness.elements.get('journalOk').click();
+campfireHarness.runFrame(1016);
+assert.equal(campfireHarness.elements.get('spawnFirePanel').classList.contains('hidden'), false, 'Campfire controls must appear when the player is at spawn');
+campfireHarness.elements.get('spawnFireFeed').click();
+let campfireSave = JSON.parse(campfireHarness.store.get('skyrealm_apocalypse_mobile_v1'));
+assert.equal(campfireSave.wood, 5, 'Feeding the campfire must consume one wood');
+assert.ok(campfireSave.spawnCampfireUntil > Date.now() + 170000, 'Feeding the campfire must add three minutes of real time');
+campfireHarness.elements.get('spawnFireUpgrade').click();
+campfireSave = JSON.parse(campfireHarness.store.get('skyrealm_apocalypse_mobile_v1'));
+assert.equal(campfireSave.spawnCampfireLevel, 2, 'Campfire upgrade must persist the next level');
+assert.equal(campfireSave.wood, 0, 'The first campfire upgrade must consume five wood');
+
 console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
