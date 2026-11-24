@@ -121,8 +121,8 @@ body.menu-open .quickbar-hud,body.menu-open .convenience-hud,body.quick-menu-ope
 @media(max-width:600px){.control-hint{font-size:9px;max-width:calc(100vw - 170px);white-space:normal}}
 .build-controls{position:absolute;z-index:12;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(540px,calc(100vw - 24px));padding:9px 11px;border:1px solid #d8c58b99;border-radius:14px;background:#101a14eF;box-shadow:0 8px 28px #000b;display:grid;gap:7px;pointer-events:auto}.build-status{text-align:center;font-size:11px;font-weight:950;letter-spacing:1px;color:#a7f0bd}.build-actions{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}.build-actions .btn{flex:1;min-width:105px;padding:10px 9px;font-size:11px}.build-actions .build-confirm{background:linear-gradient(120deg,#e3d09c,#9eae82);color:#172016;border-color:#f0dda9}.build-status:empty{display:none}@media(max-width:560px){.build-controls{top:86px;bottom:auto;width:calc(100vw - 18px);padding:7px}.build-actions{gap:5px}.build-actions .btn{min-width:0;padding:12px 7px;font-size:10px}.attack-touch{bottom:185px}}
 
-/* Focused touch-first HUD: only contextual actions stay visible while playing. */
-#action.context-hidden{display:none!important}
+/* Touch-first HUD: the action control stays available while playing. */
+#action.context-hidden{display:flex!important}
 .mobile-label{display:none}
 .mobile-quick-menu{position:absolute;inset:0;z-index:28;display:flex;align-items:flex-end;justify-content:center;padding:0;touch-action:manipulation}
 .mobile-more-backdrop{position:absolute;inset:0;background:#050a08b8;backdrop-filter:blur(4px)}
@@ -150,6 +150,7 @@ body.menu-open .quickbar-hud,body.menu-open .convenience-hud,body.quick-menu-ope
  #pauseMenu .mobile-label{display:block}
  #craft,#exit{display:none!important}
  #action:not(.context-hidden){width:auto;min-width:90px;max-width:112px;padding:5px 9px;border-radius:15px;font-size:10px;flex-direction:row;gap:4px}
+ #action{position:fixed!important;right:14px!important;bottom:calc(env(safe-area-inset-bottom) + 162px)!important;z-index:24!important;min-width:106px!important;max-width:126px!important;height:48px!important;padding:5px 9px!important;border-radius:15px!important;background:linear-gradient(145deg,#806c3d,#3a3020)!important;border:1px solid #e3c783!important;box-shadow:0 5px 20px #000b,0 0 0 2px #e3c78322!important;color:#fff1c9!important;font-size:10px!important;display:flex!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important;pointer-events:auto!important}
  #action .ico{font-size:16px}
  #inventory{font-size:9px}
  .attack-touch{right:13px;bottom:max(91px,calc(env(safe-area-inset-bottom) + 91px));width:58px;height:58px;font-size:10px}
