@@ -8,8 +8,8 @@ function shader(type,source){const s=gl.createShader(type);gl.shaderSource(s,sou
 function mesh(data){let p=gl.createBuffer(),n=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,p);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data.p),gl.STATIC_DRAW);gl.bindBuffer(gl.ARRAY_BUFFER,n);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data.n),gl.STATIC_DRAW);return{p,n,count:data.p.length/3}}
 function cube(){let p=[],n=[],f=[[[0,0,1],[[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]]],[[0,0,-1],[[.5,-.5,-.5],[-.5,-.5,-.5],[-.5,.5,-.5],[.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5]]],[[1,0,0],[[.5,-.5,.5],[.5,-.5,-.5],[.5,.5,-.5],[.5,-.5,.5],[.5,.5,-.5],[.5,.5,.5]]],[[-1,0,0],[[-.5,-.5,-.5],[-.5,-.5,.5],[-.5,.5,.5],[-.5,-.5,-.5],[-.5,.5,.5],[-.5,.5,-.5]]],[[0,1,0],[[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5],[-.5,.5,.5],[.5,.5,-.5],[-.5,.5,-.5]]],[[0,-1,0],[[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5]]]];for(let face of f)for(let v of face[1]){p.push(...v);n.push(...face[0])}return{p,n}}
 function sphere(){let p=[],n=[],lat=18,lon=24;for(let y=0;y<lat;y++)for(let x=0;x<lon;x++){let a=y*Math.PI/lat,b=(y+1)*Math.PI/lat,c=x*2*Math.PI/lon,d=(x+1)*2*Math.PI/lon,v=(u,w)=>[Math.sin(u)*Math.cos(w),Math.cos(u),Math.sin(u)*Math.sin(w)];for(let q of [v(a,c),v(b,c),v(b,d),v(a,c),v(b,d),v(a,d)]){p.push(...q);n.push(...q)}}return{p,n}}
-function cylinder(){let p=[],n=[],steps=12;for(let i=0;i<steps;i++){let a=i*2*Math.PI/steps,b=(i+1)*2*Math.PI/steps,A=[Math.cos(a),-.5,Math.sin(a)],B=[Math.cos(b),-.5,Math.sin(b)],C=[Math.cos(b),.5,Math.sin(b)],D=[Math.cos(a),.5,Math.sin(a)],na=[Math.cos(a),0,Math.sin(a)],nb=[Math.cos(b),0,Math.sin(b)];for(let [v,k] of [[A,na],[B,nb],[C,nb],[A,na],[C,nb],[D,na]]){p.push(...v);n.push(...k)}}return{p,n}}
-function init(){if(failed)return false;canvas=$('cine3D');if(!canvas)return false;try{gl=canvas.getContext('webgl',{alpha:false,antialias:!mobile(),depth:true,powerPreference:'low-power'})||canvas.getContext('experimental-webgl');if(!gl)throw Error('WebGL недоступен');program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,VS));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,FS));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);for(let k of ['p','n'])program[k]=gl.getAttribLocation(program,k);for(let k of ['mvp','model','color','light','fog','uTime'])program[k]=gl.getUniformLocation(program,k);meshes={cube:mesh(cube()),sphere:mesh(sphere()),cylinder:mesh(cylinder())};gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);$('introCinematic').classList.add('webgl-active');return true}catch(e){failed=true;console.warn('3D cinematic fallback',e);return false}}
+function cylinder(){let p=[],n=[],steps=12;for(let i=0;i<steps;i++){let a=i*2*Math.PI/steps,b=(i+1)*2*Math.PI/steps,A=[Math.cos(a),-.5,Math.sin(a)],B=[Math.cos(b),-.5,Math.sin(b)],C=[Math.cos(b),.5,Math.sin(b)],D=[Math.cos(a),.5,Math.sin(a)],na=[Math.cos(a),0,Math.sin(a)],nb=[Math.cos(b),0,Math.sin(b)];for(let [v,k] of [[A,na],[B,nb],[C,nb],[A,na],[C,nb],[D,na]]){p.push(...v);n.push(...k)}}return{p,n}}\nfunction organicLimb(){const p=[],n=[],rings=14,steps=16;for(let j=0;j<rings;j++){const v0=j/(rings-1),v1=(j+1)/(rings-1),r0=.018+.205*Math.pow(Math.max(0,Math.sin(Math.PI*v0)),.62),r1=.018+.205*Math.pow(Math.max(0,Math.sin(Math.PI*v1)),.62);for(let i=0;i<steps;i++){const a=i*2*Math.PI/steps,b=(i+1)*2*Math.PI/steps;for(const [v,ang,r] of [[v0,a,r0],[v1,a,r1],[v1,b,r1],[v0,a,r0],[v1,b,r1],[v0,b,r0]]){const yy=v-.5,nn=[Math.cos(ang),.18*Math.cos(Math.PI*v),Math.sin(ang)],nl=Math.hypot(...nn)||1;p.push(Math.cos(ang)*r,yy,Math.sin(ang)*r);n.push(nn[0]/nl,nn[1]/nl,nn[2]/nl)}}}return{p,n}}
+function init(){if(failed)return false;canvas=$('cine3D');if(!canvas)return false;try{gl=canvas.getContext('webgl',{alpha:false,antialias:!mobile(),depth:true,powerPreference:'low-power'})||canvas.getContext('experimental-webgl');if(!gl)throw Error('WebGL недоступен');program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,VS));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,FS));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);for(let k of ['p','n'])program[k]=gl.getAttribLocation(program,k);for(let k of ['mvp','model','color','light','fog','uTime'])program[k]=gl.getUniformLocation(program,k);meshes={cube:mesh(cube()),sphere:mesh(sphere()),cylinder:mesh(cylinder()),organic:mesh(organicLimb())};gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);$('introCinematic').classList.add('webgl-active');return true}catch(e){failed=true;console.warn('3D cinematic fallback',e);return false}}
 const I=()=>[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
 function mul(a,b){let o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
 function tr(x,y,z){let m=I();m[12]=x;m[13]=y;m[14]=z;return m}
@@ -30,9 +30,9 @@ let seed=177;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/42949
 const city=[];for(let i=0;i<(mobile()?24:40);i++){let side=i%2?1:-1;city.push({x:side*(9+rnd()*34),z:-18-Math.floor(i/2)*8,h:4+rnd()*17,w:3+rnd()*6,d:3+rnd()*5,light:rnd()})}
 function helicopter(t,crash){let x=mix(-20,2,crash),y=mix(13,2,crash),z=mix(-5,1,crash),tilt=mix(-.1,.9,crash),rot=t*24;draw('sphere',model(x,y,z,2.2,.68,.9,tilt,.1,0),[.25,.32,.29]);ball(x+1.3,y+.02,z+.1,.85,.55,.7,[.32,.43,.4],tilt);ball(x+1.62,y+.06,z+.12,.5,.38,.53,[.09,.23,.26],tilt);box(x-2.4,y+.05,z,2.3,.18,.2,[.23,.28,.25],tilt);box(x-3.5,y+.3,z,.7,.12,.16,[.38,.4,.33],tilt);tube(x-.15,y+.83,z,.11,.48,.11,[.47,.48,.4]);box(x-.15,y+1.1,z,5,.06,.26,[.65,.63,.52],rot);box(x-.15,y+1.1,z,5,.06,.26,[.65,.63,.52],rot+Math.PI/2);tube(x-3.6,y+.45,z,.07,.35,.07,[.45,.48,.4],Math.PI/2);box(x-3.6,y+.45,z,.08,1.2,.08,[.55,.56,.47],rot*1.6);for(let d of [-1,1])tube(x+d,y-.55,z,.055,.72,.055,[.14,.17,.16],d*.22)}
 
-function limb(x,y,z,sx,sy,sz,c,angle=0){ball(x,y,z,sx,sy,sz,c,angle)}
+function limb(x,y,z,sx,sy,sz,c,angle=0){draw('organic',model(x,y,z,sx*2.15,sy*2.0,sz*2.15,0,0,angle),c)}
 function drawZombie(x,y,z,t,variant=0,scale=1,phase=0){
- const gait=Math.sin(t*5.1+phase),swing=Math.sin(t*5.1+phase+.8),skin=variant===1?[.29,.35,.29]:variant===2?[.39,.34,.27]:[.31,.37,.32],cloth=variant===1?[.13,.19,.17]:variant===2?[.23,.14,.12]:[.12,.16,.15],dark=[.055,.07,.062];
+ const id=Math.max(0,Math.min(3,Math.round(phase/1.7))),approach=smooth(clamp((t-(4.5+id*.55))/4.6,0,1)),jumpProgress=clamp((t-(6.2+id*.48))/1.15,0,1),jump=Math.sin(jumpProgress*Math.PI)*1.9,land=smooth(clamp((t-(7.45+id*.48))/.55,0,1)),side=x>=0?1:-1,zside=z>=0?1:-1;\n x=mix(x,side*1.25,approach);z=mix(z,zside*4.6,approach);y+=jump+land*.82;\n const gait=Math.sin(t*5.1+phase)*(1-approach*.72),swing=Math.sin(t*5.1+phase+.8),reach=approach*.8,skin=variant===1?[.29,.35,.29]:variant===2?[.39,.34,.27]:[.31,.37,.32],cloth=variant===1?[.13,.19,.17]:variant===2?[.23,.14,.12]:[.12,.16,.15],dark=[.055,.07,.062];
  const Y=y;
  // torn trousers, boots and independently swinging legs
  limb(x-.19*scale,Y+.48*scale,z,.17*scale,.42*scale,.19*scale,cloth,gait*.18);
@@ -49,10 +49,10 @@ function drawZombie(x,y,z,t,variant=0,scale=1,phase=0){
  // collar, shoulder joints, forearms and clawed fingers
  ball(x-.38*scale,Y+1.35*scale,z,.19*scale,.2*scale,.2*scale,cloth);
  ball(x+.38*scale,Y+1.35*scale,z,.19*scale,.2*scale,.2*scale,cloth);
- limb(x-.48*scale,Y+1.08*scale,z,gait*.02+.14*scale,.38*scale,.15*scale,skin,-.62+swing*.24);
- limb(x+.48*scale,Y+1.08*scale,z,.15*scale,.38*scale,.15*scale,skin,.62-gait*.24);
- limb(x-.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,-.3+swing*.16);
- limb(x+.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,.3-gait*.16);
+ limb(x-.48*scale,Y+1.08*scale,z,gait*.02+.14*scale,.38*scale,.15*scale,skin,-.62+swing*.24-reach);
+ limb(x+.48*scale,Y+1.08*scale,z,.15*scale,.38*scale,.15*scale,skin,.62-gait*.24+reach);
+ limb(x-.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,-.3+swing*.16-reach*.45);
+ limb(x+.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,.3-gait*.16+reach*.45);
  for(let f=0;f<3;f++){ball(x-.65*scale+(f-1)*.055*scale,Y+.59*scale,z+.07*scale,.035*scale,.12*scale,.035*scale,skin,-.25);ball(x+.65*scale+(f-1)*.055*scale,Y+.59*scale,z+.07*scale,.035*scale,.12*scale,.035*scale,skin,.25)}
  // neck, skull, ears, jaw and messy hair
  tube(x,Y+1.48*scale,z,.11*scale,.22*scale,.11*scale,skin);
@@ -147,7 +147,7 @@ function renderCrash(t){
  gl.depthMask(true);gl.disable(gl.BLEND);
  const pulse=.65+.35*Math.sin(t*8);tube(-5,1.4,-1,.07,.8,.07,[.38,.4,.31]);ball(-5,2.25,-1,.2,.2,.2,[1,.16,.045],0,pulse);
  // Two distant infected silhouettes approach the wreck through the fog.
- for(let i=0;i<4;i++){const side=i%2?1:-1,x=side*(7+Math.max(0,t-5)*.55),z=-10+Math.floor(i/2)*5,y=.05;drawZombie(x,y,z,t,i%3,.92+i*.045,i*1.7);}
+ for(let i=0;i<4;i++){const side=i%2?1:-1,x=side*(8+Math.max(0,t-4)*.35),z=i<2?-10:10,y=.05;drawZombie(x,y,z,t,i%3,.92+i*.045,i*1.7);}
  if(t>7.4){const flash=Math.max(0,1-Math.abs(t-7.55)*2.5);if(flash>.02){gl.clearColor(.35*flash,.17*flash,.045*flash,1);gl.clear(gl.COLOR_BUFFER_BIT);}}
 }
 function render(t){sceneClock=t;if(activeScene==='crash'){renderCrash(t);return;}gl.clearColor(.018,.031,.034,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let shot=cameraForIntro(t);VP=mul(perspective(Math.PI/3.2,W/H,.1,190),view(shot.eye,shot.target));gl.uniform3f(program.light,-.4,.9,.25);gl.uniform3f(program.fog,.018,.031,.034);
@@ -169,20 +169,11 @@ gl.depthMask(true);gl.disable(gl.BLEND);
 if(t>9.5){for(let i=0;i<3;i++){const z=-5+i*4;drawZombie(-5+i*4,.05,z,t,i%3,.88+i*.06,i*2.2)}}if(t>10){let flash=Math.max(0,1-Math.abs(t-10.1)*2);if(flash>.02){gl.clearColor(.25*flash,.16*flash,.08*flash,1);gl.clear(gl.COLOR_BUFFER_BIT)}}
 }
 
-let voiceTimers=[];
-function stopRadioDialogue(){voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(_){}}
-function radioDialogue(lines){
- stopRadioDialogue();if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window))return;
- const schedule=(line,delay)=>{const id=setTimeout(()=>{try{
-  const u=new SpeechSynthesisUtterance(line);u.lang='ru-RU';u.rate=.84;u.pitch=.78;u.volume=.92;
-  const voices=window.speechSynthesis.getVoices()||[];
-  const ru=voices.filter(v=>/^ru(-|_)/i.test(v.lang));
-  const male=ru.find(v=>/pavel|yuri|dmitry|dmitri|male|русск|russian/i.test(v.name))||ru[0];
-  if(male)u.voice=male;window.speechSynthesis.speak(u);
- }catch(e){console.warn('radio voice unavailable',e)}},delay*1000);voiceTimers.push(id)};
- lines.forEach(([at,line])=>schedule(line,at));
-}
-
+let voiceTimers=[],publishedPlayers=[];
+const publishedSfx={zombieWalk:'https://sfxmint.com/dl/zombie-groan-04.mp3',zombieAttack:'https://sfxmint.com/dl/zombie-groan-01.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
+function stopRadioDialogue(){voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];publishedPlayers.forEach(a=>{try{a.pause();a.currentTime=0}catch(_){}});publishedPlayers=[]}
+function radioDialogue(kind){stopRadioDialogue();const sequence=kind==='crash'?[[.35,publishedSfx.impact,.8],[1.8,publishedSfx.zombieWalk,.42],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.85],[10.4,publishedSfx.zombieAttack,.72],[13.1,publishedSfx.zombieWalk,.45]]:[[.25,publishedSfx.helicopter,.58],[4.2,publishedSfx.helicopter,.62],[8.8,publishedSfx.impact,.85],[11.5,publishedSfx.zombieWalk,.42]];
+ const schedule=(url,delay,volume)=>{const id=setTimeout(()=>{try{const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('published cinematic sound unavailable',e));publishedPlayers.push(a)}catch(e){console.warn('published cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};sequence.forEach(([at,url,volume])=>schedule(url,at,volume));}
 function audioStart(){audioStop();try{let AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audio=new AC();let master=audio.createGain();master.gain.value=.26;master.connect(audio.destination);audioNodes.push(master);audio.resume();
 let osc=(freq,type,volume,when,duration,endFreq)=>{let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,when);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),when+duration);g.gain.setValueAtTime(.0001,when);g.gain.exponentialRampToValueAtTime(volume,when+.08);g.gain.setValueAtTime(volume,when+Math.max(.1,duration-.2));g.gain.exponentialRampToValueAtTime(.0001,when+duration);o.connect(g);g.connect(master);o.start(when);o.stop(when+duration+.04);audioNodes.push(o,g)};
 let now=audio.currentTime;osc(58,'sawtooth',.055,now,15.5,38);osc(92,'triangle',.035,now,15,48);osc(340,'sine',.028,now+3.1,1.4,190);osc(720,'sine',.035,now+3.8,.18,500);osc(720,'sine',.035,now+4.2,.18,500);osc(110,'sawtooth',.075,now+8.8,2.1,42);osc(44,'sine',.16,now+9.5,2.4,25);osc(880,'sine',.035,now+11.3,.25,620);osc(660,'sine',.035,now+12,.35,430);osc(330,'triangle',.04,now+13.4,1.4,220);
@@ -191,10 +182,10 @@ let buffer=audio.createBuffer(1,audio.sampleRate*2,audio.sampleRate),data=buffer
  for(let k=0;k<7;k++){const at=now+.45+k*2.15;osc(1550,'sine',.018,at,.055,780);osc(940,'square',.009,at+.09,.035,520)}
  const hiss=audio.createBufferSource(),hp=audio.createBiquadFilter(),hg=audio.createGain();let hb=audio.createBuffer(1,audio.sampleRate*.8,audio.sampleRate),hd=hb.getChannelData(0);for(let i=0;i<hd.length;i++)hd[i]=(Math.random()*2-1)*.45;hiss.buffer=hb;hiss.loop=true;hp.type='highpass';hp.frequency.value=1800;hg.gain.value=.008;hiss.connect(hp);hp.connect(hg);hg.connect(master);hiss.start(now);hiss.stop(now+16);audioNodes.push(hiss,hp,hg);
 }catch(e){console.warn('cinematic audio unavailable',e)}}
-function audioStop(){if(audio){try{audioNodes.forEach(n=>{try{if(n.stop)n.stop()}catch(_){}});audio.close()}catch(_){}}audio=null;audioNodes=[]}
+function audioStop(){stopRadioDialogue();if(audio){try{audioNodes.forEach(n=>{try{if(n.stop)n.stop()}catch(_){}});audio.close()}catch(_){}}audio=null;audioNodes=[]}
 function tick(now){if(mode==='idle')return;if(now-last<(mobile()?40:25)){raf=requestAnimationFrame(tick);return}last=now;resize();let t=Math.min(16,(now-started)/1000);render(t);if(t>=16){stop();return}raf=requestAnimationFrame(tick)}
-function play(){init();activeScene='intro';mode='intro';started=performance.now();last=0;audioStart();radioDialogue([[1.2,'Диспетчер, это борт семнадцать. Мы теряем высоту. Повторяю, теряем высоту.'],[4.3,'Вижу огни внизу... управление не отвечает!'],[7.2,'Мэйдэй! Мэйдэй! Кто-нибудь, ответьте!'],[11.4,'Чёрт... двигатель горит. Приготовиться к удару!']]);if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
-function playCrash(){init();activeScene='crash';mode='crash';started=performance.now();last=0;audioStart();radioDialogue([[.8,'Это поисковая группа. Мы нашли обломки.'],[4.2,'Маяк всё ещё передаёт сигнал...'],[7.7,'Подождите. В тумане кто-то движется.'],[11.5,'Назад! Их слишком много! Срочно отходим!']]);if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
+function play(){init();activeScene='intro';mode='intro';started=performance.now();last=0;audioStart();radioDialogue('intro');if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
+function playCrash(){init();activeScene='crash';mode='crash';started=performance.now();last=0;audioStart();radioDialogue('crash');if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
 function stop(){mode='idle';if(raf)cancelAnimationFrame(raf);raf=0;stopRadioDialogue();audioStop()}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});window.addEventListener('resize',resize,{passive:true});
 window.ApocalypseCinematic3D=Object.freeze({play,playCrash,stop,available:()=>!!gl});
