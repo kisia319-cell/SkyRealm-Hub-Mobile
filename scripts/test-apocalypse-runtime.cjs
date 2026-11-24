@@ -9,7 +9,7 @@ const html = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.htm
 const game = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.js'), 'utf8');
 const coop = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-coop.js'), 'utf8');
 const pc = fs.readFileSync(path.join(root, 'apocalypse_pc.py'), 'utf8');
-const cinematic3d = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-cinematic-3d.js'), 'utf8');
+const cinematic3d = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-cinematic-3d.js'), 'utf8');\nconst workflow = fs.readFileSync(path.join(root, '.github/workflows/build-apocalypse-pc.yml'), 'utf8');
 new vm.Script(cinematic3d, { filename: 'apocalypse-cinematic-3d.js' });
 
 new vm.Script(game, { filename: 'apocalypse.js' });
@@ -36,7 +36,7 @@ assert.ok(html.includes('id="cine3D"') && html.includes('apocalypse-cinematic-3d
 assert.ok(cinematic3d.includes('function renderCrash(t)') && cinematic3d.includes('playCrash'), 'A separate 3D airplane-crash cinematic must be available');
 assert.ok(game.includes('function startCrashSiteCinematic()') && game.includes('startCrashSiteCinematic();return;') && game.includes('activateBlackBox();'), 'Pressing E at the active crash site must play the second cinematic before the black-box encounter');
 assert.ok(game.includes('setTimeout(finish,16000)') && game.includes('ApocalypseCinematic3D?.play()') && game.includes('ApocalypseCinematic3D?.stop()'), 'Opening cinematic must play, stop on skip, and finish after sixteen seconds');
-assert.ok(pc.includes('apocalypse-cinematic-3d.js') && wf.includes('apocalypse-cinematic-3d.js;apocalypse'), 'Windows EXE must bundle the WebGL cinematic module');
+assert.ok(pc.includes('apocalypse-cinematic-3d.js') && workflow.includes('apocalypse-cinematic-3d.js;apocalypse'), 'Windows EXE must bundle the WebGL cinematic module');
 assert.ok(game.includes('Math.hypot(nx-state.x,ny-state.y)>=3200') && game.includes('d=3500+(i%7)*115'), 'New crash mission coordinates must be at least 100 32px blocks from the player spawn');
 assert.ok(game.includes('starterKnifeSpawnVersion') && game.includes('x:state.x+96,y:state.y-24'), 'Starter knife position must migrate once without resetting picked knives');
 assert.ok(html.includes('body.apoc-chat-open .apoc-chat{top:32px!important}') && html.includes('#inventory{transform:translateY(8px)}'), 'Mobile chat and inventory must use the requested vertical positions');
