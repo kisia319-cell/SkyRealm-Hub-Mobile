@@ -9,7 +9,7 @@ on:
       - "app/src/main/assets/apocalypse.html"
       - "app/src/main/assets/apocalypse.js"
       - "app/src/main/assets/apocalypse-coop.js"
-      - "app/src/main/assets/apocalypse-changelog.js"
+      - "app/src/main/assets/apocalypse-changelog.js"\n      - "app/src/main/assets/apocalypse-cinematic-3d.js"
       - "scripts/validate-apocalypse-changelog.cjs"
       - "scripts/test-apocalypse-runtime.cjs"
       - ".github/workflows/build-apocalypse-pc.yml"
@@ -93,7 +93,7 @@ jobs:
           $bytes = [System.IO.File]::ReadAllBytes("dist/SkyRealmApocalypse.exe")
           if ($bytes.Length -lt 1000000 -or $bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "Output is not a valid Windows executable" }
           $listing = python -m PyInstaller.utils.cliutils.archive_viewer -l -b "dist/SkyRealmApocalypse.exe" 2>&1 | Out-String
-          foreach ($asset in @("apocalypse.html", "apocalypse.js", "apocalypse-coop.js", "apocalypse-pc.js", "apocalypse-changelog.js", "WebView2Loader.dll")) {
+          foreach ($asset in @("apocalypse.html", "apocalypse.js", "apocalypse-coop.js", "apocalypse-pc.js", "apocalypse-changelog.js", "apocalypse-cinematic-3d.js", "WebView2Loader.dll")) {
             if (-not $listing.Contains($asset)) { throw "EXE is missing bundled mobile asset: $asset" }
           }
 
