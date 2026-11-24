@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.5.2"
+APP_VERSION = "apocalypse-pc-v1.5.3"
 APOCALYPSE_SETTINGS_PATH = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PrimeHub" / "apocalypse-settings.json"
 
 
@@ -162,7 +162,7 @@ def show_error(message: str) -> None:
 
 def main() -> int:
     asset_dir = resource_path("apocalypse.html").parent
-    for filename in ("apocalypse.html", "apocalypse.js", "apocalypse-coop.js", "apocalypse-pc.js", "apocalypse-changelog.js"):
+    for filename in ("apocalypse.html", "apocalypse.js", "apocalypse-coop.js", "apocalypse-pc.js", "apocalypse-changelog.js", "apocalypse-cinematic-3d.js"):
         if not (asset_dir / filename).is_file():
             raise FileNotFoundError(f"Missing bundled Apocalypse asset: {filename}")
 
