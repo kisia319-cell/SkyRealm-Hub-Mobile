@@ -9,7 +9,8 @@ const html = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.htm
 const game = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.js'), 'utf8');
 const coop = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-coop.js'), 'utf8');
 const pc = fs.readFileSync(path.join(root, 'apocalypse_pc.py'), 'utf8');
-const cinematic3d = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-cinematic-3d.js'), 'utf8');\nconst workflow = fs.readFileSync(path.join(root, '.github/workflows/build-apocalypse-pc.yml'), 'utf8');
+const cinematic3d = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-cinematic-3d.js'), 'utf8');
+const workflow = fs.readFileSync(path.join(root, '.github/workflows/build-apocalypse-pc.yml'), 'utf8');
 new vm.Script(cinematic3d, { filename: 'apocalypse-cinematic-3d.js' });
 
 new vm.Script(game, { filename: 'apocalypse.js' });
