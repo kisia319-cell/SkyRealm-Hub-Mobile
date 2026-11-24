@@ -32,9 +32,11 @@ const city=[];for(let i=0;i<(mobile()?24:40);i++){let side=i%2?1:-1;city.push({x
 function helicopter(t,crash){let x=mix(-20,2,crash),y=mix(13,2,crash),z=mix(-5,1,crash),tilt=mix(-.1,.9,crash),rot=t*24;draw('sphere',model(x,y,z,2.2,.68,.9,tilt,.1,0),[.25,.32,.29]);ball(x+1.3,y+.02,z+.1,.85,.55,.7,[.32,.43,.4],tilt);ball(x+1.62,y+.06,z+.12,.5,.38,.53,[.09,.23,.26],tilt);box(x-2.4,y+.05,z,2.3,.18,.2,[.23,.28,.25],tilt);box(x-3.5,y+.3,z,.7,.12,.16,[.38,.4,.33],tilt);tube(x-.15,y+.83,z,.11,.48,.11,[.47,.48,.4]);box(x-.15,y+1.1,z,5,.06,.26,[.65,.63,.52],rot);box(x-.15,y+1.1,z,5,.06,.26,[.65,.63,.52],rot+Math.PI/2);tube(x-3.6,y+.45,z,.07,.35,.07,[.45,.48,.4],Math.PI/2);box(x-3.6,y+.45,z,.08,1.2,.08,[.55,.56,.47],rot*1.6);for(let d of [-1,1])tube(x+d,y-.55,z,.055,.72,.055,[.14,.17,.16],d*.22)}
 
 function limb(x,y,z,sx,sy,sz,c,angle=0){draw('organic',model(x,y,z,sx*2.15,sy*2.0,sz*2.15,0,0,angle),c)}
-function drawZombie(x,y,z,t,variant=0,scale=1,phase=0){
+function drawZombie(x,y,z,t,variant=0,scale=1,phase=0,targetX=null,targetZ=null){
  const id=Math.max(0,Math.min(3,Math.round(phase/1.7))),approach=smooth(clamp((t-(4.5+id*.55))/4.6,0,1)),jumpProgress=clamp((t-(6.2+id*.48))/1.15,0,1),jump=Math.sin(jumpProgress*Math.PI)*1.9,crouch=smooth(clamp((t-(5.35+id*.48))/.35,0,1))*(1-smooth(clamp((t-(6.02+id*.48))/.25,0,1))),land=smooth(clamp((t-(7.45+id*.48))/.55,0,1)),side=x>=0?1:-1,zside=z>=0?1:-1;
- x=mix(x,side*1.25,approach);z=mix(z,zside*4.6,approach);y+=jump+land*.82-crouch*.22;
+ const slotX=targetX===null?side*(1.55+(id%2)*1.15):targetX;
+ const slotZ=targetZ===null?zside*(3.7+Math.floor(id/2)*1.35):targetZ;
+ x=mix(x,slotX,approach);z=mix(z,slotZ,approach);y+=jump+land*.82-crouch*.22;
  const gait=Math.sin(t*5.1+phase)*(1-approach*.72),swing=Math.sin(t*5.1+phase+.8),reach=approach*.8,skin=variant===1?[.29,.35,.29]:variant===2?[.39,.34,.27]:[.31,.37,.32],cloth=variant===1?[.13,.19,.17]:variant===2?[.23,.14,.12]:[.12,.16,.15],dark=[.055,.07,.062];
  const Y=y+Math.abs(gait)*.045;
  // torn trousers, boots and independently swinging legs
@@ -149,8 +151,22 @@ function renderCrash(t){
  for(let i=0;i<15;i++){const a=i*2.4+t*1.2,r=.5+((t+i*.37)%2.8)*.38;ball(1.4+Math.cos(a)*r,.6+((t+i*.37)%2.8),Math.sin(a)*r,.055,.08,.055,[1,.32,.055]);}
  gl.depthMask(true);gl.disable(gl.BLEND);
  const pulse=.65+.35*Math.sin(t*8);tube(-5,1.4,-1,.07,.8,.07,[.38,.4,.31]);ball(-5,2.25,-1,.2,.2,.2,[1,.16,.045],0,pulse);
- // Two distant infected silhouettes approach the wreck through the fog.
- for(let i=0;i<4;i++){const side=i%2?1:-1,x=side*(8+Math.max(0,t-4)*.35),z=i<2?-10:10,y=.05;drawZombie(x,y,z,t,i%3,.92+i*.045,i*1.7);}
+ // Pilot forces the jammed side door, stumbles out, then is surrounded.
+ drawPilot(t);
+ const crowdTargets=[[-4.65,3.15],[-2.8,5.15],[-.9,3.35],[.95,5.25]];
+ for(let i=0;i<4;i++){
+  const side=i%2?1:-1,x=side*(9+Math.max(0,t-4)*.22),z=i<2?-11:11,y=.05;
+  const [tx,tz]=crowdTargets[i];
+  drawZombie(x,y,z,t,i%3,.9+i*.035,i*1.7,tx,tz);
+ }
+ // Non-graphic attack staging: bodies close in, camera dips, then the image cuts
+ // to smoke and radio static rather than showing explicit gore.
+ if(t>12.7){
+  const fade=smooth(clamp((t-13.4)/1.8,0,1));
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+  for(let i=0;i<7;i++){const a=i*2.4+t*.12;ball(-2.7+Math.cos(a)*(.55+fade*.35),.15+fade*.5,4.1+Math.sin(a)*(.55+fade*.35),.42,.58,.38,[.08,.11,.09],a,.72);}
+  gl.depthMask(true);gl.disable(gl.BLEND);
+ }
  if(t>7.4){const flash=Math.max(0,1-Math.abs(t-7.55)*2.5);if(flash>.02){gl.clearColor(.35*flash,.17*flash,.045*flash,1);gl.clear(gl.COLOR_BUFFER_BIT);}}
 }
 function render(t){sceneClock=t;if(activeScene==='crash'){renderCrash(t);return;}gl.clearColor(.018,.031,.034,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let shot=cameraForIntro(t);VP=mul(perspective(Math.PI/3.2,W/H,.1,190),view(shot.eye,shot.target));gl.uniform3f(program.light,-.4,.9,.25);gl.uniform3f(program.fog,.018,.031,.034);
@@ -172,11 +188,43 @@ gl.depthMask(true);gl.disable(gl.BLEND);
 if(t>9.5){for(let i=0;i<3;i++){const z=-5+i*4;drawZombie(-5+i*4,.05,z,t,i%3,.88+i*.06,i*2.2)}}if(t>10){let flash=Math.max(0,1-Math.abs(t-10.1)*2);if(flash>.02){gl.clearColor(.25*flash,.16*flash,.08*flash,1);gl.clear(gl.COLOR_BUFFER_BIT)}}
 }
 
-let voiceTimers=[],publishedPlayers=[];
+let voiceTimers=[],publishedPlayers=[],speechTimers=[];
 const publishedSfx={zombieWalk:'https://sfxmint.com/dl/zombie-groan-04.mp3',zombieAttack:'https://sfxmint.com/dl/zombie-groan-01.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
-function stopRadioDialogue(){voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];publishedPlayers.forEach(a=>{try{a.pause();a.currentTime=0}catch(_){}});publishedPlayers=[]}
-function radioDialogue(kind){stopRadioDialogue();const sequence=kind==='crash'?[[.35,publishedSfx.impact,.8],[1.8,publishedSfx.zombieWalk,.42],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.85],[10.4,publishedSfx.zombieAttack,.72],[13.1,publishedSfx.zombieWalk,.45]]:[[.25,publishedSfx.helicopter,.58],[4.2,publishedSfx.helicopter,.62],[8.8,publishedSfx.impact,.85],[11.5,publishedSfx.zombieWalk,.42]];
- const schedule=(url,delay,volume)=>{const id=setTimeout(()=>{try{const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('published cinematic sound unavailable',e));publishedPlayers.push(a)}catch(e){console.warn('published cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};sequence.forEach(([at,url,volume])=>schedule(url,at,volume));}
+function stopRadioDialogue(){
+ voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];
+ speechTimers.forEach(id=>clearTimeout(id));speechTimers=[];
+ publishedPlayers.forEach(a=>{try{a.pause();a.currentTime=0}catch(_){}});publishedPlayers=[];
+ try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(_){}
+}
+function speakRadio(line,rate=1,pitch=1){
+ if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance)return;
+ try{
+  const u=new SpeechSynthesisUtterance(line);u.lang='ru-RU';u.rate=rate;u.pitch=pitch;u.volume=.92;
+  const voices=window.speechSynthesis.getVoices()||[];
+  const ru=voices.find(v=>/^ru(-|_)/i.test(v.lang))||voices.find(v=>/russian|рус/i.test(v.name));
+  if(ru)u.voice=ru;
+  window.speechSynthesis.speak(u);
+ }catch(e){console.warn('Russian cinematic voice unavailable',e)}
+}
+function scheduleSpeech(line,at,rate=1,pitch=1){
+ const id=setTimeout(()=>speakRadio(line,rate,pitch),at*1000);speechTimers.push(id);
+}
+function radioDialogue(kind){
+ stopRadioDialogue();
+ const sequence=kind==='crash'
+ ?[[.35,publishedSfx.impact,.8],[1.8,publishedSfx.zombieWalk,.42],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.85],[10.4,publishedSfx.zombieAttack,.72],[13.1,publishedSfx.zombieWalk,.45]]
+ :[[.25,publishedSfx.helicopter,.58],[4.2,publishedSfx.helicopter,.62],[8.8,publishedSfx.impact,.85],[11.5,publishedSfx.zombieWalk,.42]];
+ const schedule=(url,delay,volume)=>{const id=setTimeout(()=>{try{const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('published cinematic sound unavailable',e));publishedPlayers.push(a)}catch(e){console.warn('published cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};
+ sequence.forEach(([at,url,volume])=>schedule(url,at,volume));
+ const lines=kind==='crash'
+ ?[[.7,'Диспетчер, ответьте! У нас отказ двигателя!'],[3.8,'Маяк вижу… высота падает!'],[7.9,'Есть кто-нибудь?! Я выбираюсь!'],[9.9,'Нет! Не подходите! А-а-а!'],[12.1,'Помогите! Они здесь!']]
+ :[[.65,'База, это борт семь. Над городом нет связи.'],[4.1,'Повторяю, вижу движение на улицах…'],[7.5,'Что это было?! Нас задело!'],[10.7,'Мы падаем! Приготовиться к удару!'],[13.1,'Они идут сюда…']];
+ lines.forEach(([at,line])=>scheduleSpeech(line,at,kind==='crash'&&at>9?.94:1,kind==='crash'&&at>9?1.22:0.94));
+ if(kind==='crash'){
+  scheduleSpeech('А-а-а! Отстаньте!',11.15,.82,1.45);
+  scheduleSpeech('Гр-р-р…',13.45,.72,.55);
+ }
+}
 function audioStart(){audioStop();try{let AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audio=new AC();let master=audio.createGain();master.gain.value=.26;master.connect(audio.destination);audioNodes.push(master);audio.resume();
 let osc=(freq,type,volume,when,duration,endFreq)=>{let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,when);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),when+duration);g.gain.setValueAtTime(.0001,when);g.gain.exponentialRampToValueAtTime(volume,when+.08);g.gain.setValueAtTime(volume,when+Math.max(.1,duration-.2));g.gain.exponentialRampToValueAtTime(.0001,when+duration);o.connect(g);g.connect(master);o.start(when);o.stop(when+duration+.04);audioNodes.push(o,g)};
 let now=audio.currentTime;osc(58,'sawtooth',.055,now,15.5,38);osc(92,'triangle',.035,now,15,48);osc(340,'sine',.028,now+3.1,1.4,190);osc(720,'sine',.035,now+3.8,.18,500);osc(720,'sine',.035,now+4.2,.18,500);osc(110,'sawtooth',.075,now+8.8,2.1,42);osc(44,'sine',.16,now+9.5,2.4,25);osc(880,'sine',.035,now+11.3,.25,620);osc(660,'sine',.035,now+12,.35,430);osc(330,'triangle',.04,now+13.4,1.4,220);
