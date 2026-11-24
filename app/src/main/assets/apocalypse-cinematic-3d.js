@@ -167,16 +167,33 @@ if(t>4&&t<11){box(-3,5,-7,1.8,.035,.035,[.95,.72,.36],Math.sin(t*2)*.5);box(-3,5
 gl.depthMask(true);gl.disable(gl.BLEND);
 if(t>9.5){for(let i=0;i<3;i++){const z=-5+i*4;drawZombie(-5+i*4,.05,z,t,i%3,.88+i*.06,i*2.2)}}if(t>10){let flash=Math.max(0,1-Math.abs(t-10.1)*2);if(flash>.02){gl.clearColor(.25*flash,.16*flash,.08*flash,1);gl.clear(gl.COLOR_BUFFER_BIT)}}
 }
-function audioStart(){audioStop();try{let AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audio=new AC();let master=audio.createGain();master.gain.value=.26;master.connect(audio.destination);audioNodes.push(master);audio.resume();
+
+let voiceTimers=[];
+function stopRadioDialogue(){voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(_){}}
+function radioDialogue(lines){
+ stopRadioDialogue();if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window))return;
+ const schedule=(line,delay)=>{const id=setTimeout(()=>{try{
+  const u=new SpeechSynthesisUtterance(line);u.lang='ru-RU';u.rate=.84;u.pitch=.78;u.volume=.92;
+  const voices=window.speechSynthesis.getVoices()||[];
+  const ru=voices.filter(v=>/^ru(-|_)/i.test(v.lang));
+  const male=ru.find(v=>/pavel|yuri|dmitry|dmitri|male|русск|russian/i.test(v.name))||ru[0];
+  if(male)u.voice=male;window.speechSynthesis.speak(u);
+ }catch(e){console.warn('radio voice unavailable',e)}},delay*1000);voiceTimers.push(id)};
+ lines.forEach(([at,line])=>schedule(line,at));
+}
+\nfunction audioStart(){audioStop();try{let AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audio=new AC();let master=audio.createGain();master.gain.value=.26;master.connect(audio.destination);audioNodes.push(master);audio.resume();
 let osc=(freq,type,volume,when,duration,endFreq)=>{let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,when);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),when+duration);g.gain.setValueAtTime(.0001,when);g.gain.exponentialRampToValueAtTime(volume,when+.08);g.gain.setValueAtTime(volume,when+Math.max(.1,duration-.2));g.gain.exponentialRampToValueAtTime(.0001,when+duration);o.connect(g);g.connect(master);o.start(when);o.stop(when+duration+.04);audioNodes.push(o,g)};
 let now=audio.currentTime;osc(58,'sawtooth',.055,now,15.5,38);osc(92,'triangle',.035,now,15,48);osc(340,'sine',.028,now+3.1,1.4,190);osc(720,'sine',.035,now+3.8,.18,500);osc(720,'sine',.035,now+4.2,.18,500);osc(110,'sawtooth',.075,now+8.8,2.1,42);osc(44,'sine',.16,now+9.5,2.4,25);osc(880,'sine',.035,now+11.3,.25,620);osc(660,'sine',.035,now+12,.35,430);osc(330,'triangle',.04,now+13.4,1.4,220);
 let buffer=audio.createBuffer(1,audio.sampleRate*2,audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.7;let noise=audio.createBufferSource(),filter=audio.createBiquadFilter(),ng=audio.createGain();noise.buffer=buffer;noise.loop=true;filter.type='lowpass';filter.frequency.value=600;ng.gain.setValueAtTime(.0001,now);ng.gain.linearRampToValueAtTime(.025,now+2);ng.gain.setValueAtTime(.025,now+15);ng.gain.linearRampToValueAtTime(.0001,now+16);noise.connect(filter);filter.connect(ng);ng.connect(master);noise.start(now);noise.stop(now+16.1);audioNodes.push(noise,filter,ng);
+ // Radio squelch bursts, short carrier dropouts and emergency beeps under the dialogue.
+ for(let k=0;k<7;k++){const at=now+.45+k*2.15;osc(1550,'sine',.018,at,.055,780);osc(940,'square',.009,at+.09,.035,520)}
+ const hiss=audio.createBufferSource(),hp=audio.createBiquadFilter(),hg=audio.createGain();let hb=audio.createBuffer(1,audio.sampleRate*.8,audio.sampleRate),hd=hb.getChannelData(0);for(let i=0;i<hd.length;i++)hd[i]=(Math.random()*2-1)*.45;hiss.buffer=hb;hiss.loop=true;hp.type='highpass';hp.frequency.value=1800;hg.gain.value=.008;hiss.connect(hp);hp.connect(hg);hg.connect(master);hiss.start(now);hiss.stop(now+16);audioNodes.push(hiss,hp,hg);
 }catch(e){console.warn('cinematic audio unavailable',e)}}
 function audioStop(){if(audio){try{audioNodes.forEach(n=>{try{if(n.stop)n.stop()}catch(_){}});audio.close()}catch(_){}}audio=null;audioNodes=[]}
 function tick(now){if(mode==='idle')return;if(now-last<(mobile()?40:25)){raf=requestAnimationFrame(tick);return}last=now;resize();let t=Math.min(16,(now-started)/1000);render(t);if(t>=16){stop();return}raf=requestAnimationFrame(tick)}
-function play(){init();activeScene='intro';mode='intro';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
-function playCrash(){init();activeScene='crash';mode='crash';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
-function stop(){mode='idle';if(raf)cancelAnimationFrame(raf);raf=0;audioStop()}
+function play(){init();activeScene='intro';mode='intro';started=performance.now();last=0;audioStart();radioDialogue([[1.2,'Диспетчер, это борт семнадцать. Мы теряем высоту. Повторяю, теряем высоту.'],[4.3,'Вижу огни внизу... управление не отвечает!'],[7.2,'Мэйдэй! Мэйдэй! Кто-нибудь, ответьте!'],[11.4,'Чёрт... двигатель горит. Приготовиться к удару!']]);if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
+function playCrash(){init();activeScene='crash';mode='crash';started=performance.now();last=0;audioStart();radioDialogue([[.8,'Это поисковая группа. Мы нашли обломки.'],[4.2,'Маяк всё ещё передаёт сигнал...'],[7.7,'Подождите. В тумане кто-то движется.'],[11.5,'Назад! Их слишком много! Срочно отходим!']]);if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
+function stop(){mode='idle';if(raf)cancelAnimationFrame(raf);raf=0;stopRadioDialogue();audioStop()}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});window.addEventListener('resize',resize,{passive:true});
 window.ApocalypseCinematic3D=Object.freeze({play,playCrash,stop,available:()=>!!gl});
 })();
