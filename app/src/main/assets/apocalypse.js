@@ -225,6 +225,8 @@ function ground(){
  rect(-w/2-700,-h/2-700,w+1400,h+1400,'#657452');
  ctx.save();ctx.globalAlpha=.68;ctx.fillStyle=surfaceTextures.grass;ctx.fillRect(-w/2-700,-h/2-700,w+1400,h+1400);ctx.restore();
  ctx.save();ctx.globalAlpha=.72;ctx.fillStyle=grassDetailPattern;ctx.fillRect(-w/2-700,-h/2-700,w+1400,h+1400);ctx.restore();
+ // A subtle uniform base tint prevents distant ground from looking darker than the spawn area.
+ ctx.save();ctx.globalAlpha=.38;ctx.fillStyle='#657452';ctx.fillRect(-w/2-700,-h/2-700,w+1400,h+1400);ctx.restore();
  const roads=[-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500];
  for(const y of roads){
   rect(WORLD_MIN,y-70,WORLD_MAX-WORLD_MIN,140,'#77776a');ctx.save();ctx.globalAlpha=.28;ctx.fillStyle=surfaceTextures.concrete;ctx.fillRect(WORLD_MIN,y-70,WORLD_MAX-WORLD_MIN,140);ctx.restore();
