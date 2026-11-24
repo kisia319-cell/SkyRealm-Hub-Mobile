@@ -9,6 +9,8 @@ const html = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.htm
 const game = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.js'), 'utf8');
 const coop = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-coop.js'), 'utf8');
 const pc = fs.readFileSync(path.join(root, 'apocalypse_pc.py'), 'utf8');
+const cinematic3d = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-cinematic-3d.js'), 'utf8');
+new vm.Script(cinematic3d, { filename: 'apocalypse-cinematic-3d.js' });
 
 new vm.Script(game, { filename: 'apocalypse.js' });
 new vm.Script(coop, { filename: 'apocalypse-coop.js' });
@@ -30,6 +32,10 @@ assert.ok(game.includes('requestedViewScale') && game.includes('Math.min(request
 assert.ok(game.includes('function drawRivers()') && game.includes('Array.from({length:60}') && game.includes('foundShelterCaches'), 'Rivers and 60 persistent searchable shelters must be present');
 assert.ok(game.includes('function updateRain(dt,now)') && game.includes('state.hydration>=10'), 'Acid rain damage and thirst sprint lock must be active');
 assert.ok(html.includes('id="settingMaxFps"') && html.includes('radar-button') && html.includes('dialogue-open'), 'FPS settings, radar and intro HUD hiding must exist');
+assert.ok(html.includes('id="cine3D"') && html.includes('apocalypse-cinematic-3d.js') && html.includes('cineProgress 16s'), '16-second WebGL cinematic canvas and progress timeline must be wired');
+assert.ok(game.includes('setTimeout(finish,16000)') && game.includes('ApocalypseCinematic3D?.play()') && game.includes('ApocalypseCinematic3D?.stop()'), 'Cinematic must play, stop on skip, and finish after sixteen seconds');
+assert.ok(game.includes('Math.hypot(nx-state.x,ny-state.y)>=3200') && game.includes('d=3500+(i%7)*115'), 'New crash mission coordinates must be at least 100 32px blocks from the player spawn');
+assert.ok(game.includes('starterKnifeSpawnVersion') && game.includes('x:state.x+96,y:state.y-24'), 'Starter knife position must migrate once without resetting picked knives');
 assert.ok(html.includes('body.apoc-chat-open .apoc-chat{top:32px!important}') && html.includes('#inventory{transform:translateY(8px)}'), 'Mobile chat and inventory must use the requested vertical positions');
 assert.ok(html.includes('.convenience-hud{left:auto!important;right:8px!important;top:50%!important') && html.includes('.sprint-button{left:auto!important;right:82px!important'), 'Radio/objective HUD and sprint must stay on the right on narrow phones');
 assert.ok(html.includes('.menu-panel{max-height:88dvh!important') && html.includes('.storage{width:96vw!important;height:88dvh!important'), 'Mobile menu and inventory panels must be compact');
