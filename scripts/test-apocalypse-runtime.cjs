@@ -26,8 +26,10 @@ const expectedMove = [
 "  let len=Math.hypot(dx,dy);",
 "  if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}",
 "}"
-].join('\n');
-assert.equal(game.match(/function move\(dt\)\{[\s\S]*?\n\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
+].join('
+');
+assert.equal(game.match(/function move\(dt\)\{[\s\S]*?
+\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
 assert.ok(game.includes("const isAndroidDevice=/Android/i.test(typeof navigator!=='undefined'?(navigator.userAgent||''):'')") && game.includes('isAndroidDevice?1.2:1.7') && game.includes('now-lastMobileDrawAt>=1000/prefs.maxFps'), 'Android-only render resolution and frame-rate limits must not change PC settings');
 assert.ok(game.includes('requestedViewScale') && game.includes('Math.min(requestedViewScale,.9):requestedViewScale'), 'Only Android must use the shorter object render distance');
 assert.ok(game.includes('function drawRivers()') && game.includes('Array.from({length:60}') && game.includes('foundShelterCaches'), 'Rivers and 60 persistent searchable shelters must be present');
@@ -36,7 +38,8 @@ assert.ok(html.includes('id="settingMaxFps"') && html.includes('radar-button') &
 assert.ok(html.includes('id="cine3D"') && html.includes('apocalypse-cinematic-3d.js') && html.includes('cineProgress 16s'), '16-second WebGL cinematic canvas and progress timeline must be wired');
 assert.ok(cinematic3d.includes('function renderCrash(t)') && cinematic3d.includes('playCrash'), 'A separate 3D airplane-crash cinematic must be available');
 assert.ok(cinematic3d.includes('function drawZombie(') && cinematic3d.includes('function drawHelicopter(') && cinematic3d.includes('cameraForIntro') && cinematic3d.includes('cameraForCrash'), 'Both cinematics must use articulated detailed 3D characters, a fully detailed helicopter and multiple camera shots');
-assert.ok(cinematic3d.includes('radioDialogue(') && !cinematic3d.includes('speechSynthesis') && cinematic3d.includes('publishedSfx') && cinematic3d.includes('zombie-groan-01.mp3') && cinematic3d.includes('helicopter-10.mp3') && cinematic3d.includes('footsteps-gravel-39.mp3') && cinematic3d.includes('Radio squelch bursts'), 'Cinematics must use published licensed zombie, footstep, rotor and impact audio instead of system speech');\nassert.ok(cinematic3d.includes('function organicLimb()') && cinematic3d.includes("draw('organic'") && cinematic3d.includes('jumpProgress') && cinematic3d.includes('reach=approach'), 'Zombies must use opaque tapered anatomy and animate a leap, landing and reaching attack on the aircraft');
+assert.ok(cinematic3d.includes('radioDialogue(') && !cinematic3d.includes('speechSynthesis') && cinematic3d.includes('publishedSfx') && cinematic3d.includes('zombie-groan-01.mp3') && cinematic3d.includes('helicopter-10.mp3') && cinematic3d.includes('footsteps-gravel-39.mp3') && cinematic3d.includes('Radio squelch bursts'), 'Cinematics must use published licensed zombie, footstep, rotor and impact audio instead of system speech');
+assert.ok(cinematic3d.includes('function organicLimb()') && cinematic3d.includes("draw('organic'") && cinematic3d.includes('jumpProgress') && cinematic3d.includes('reach=approach'), 'Zombies must use opaque tapered anatomy and animate a leap, landing and reaching attack on the aircraft');
 assert.ok(game.includes('function startCrashSiteCinematic()') && game.includes('startCrashSiteCinematic();return;') && game.includes('activateBlackBox();'), 'Pressing E at the active crash site must play the second cinematic before the black-box encounter');
 assert.ok(game.includes('setTimeout(finish,16000)') && game.includes('ApocalypseCinematic3D?.play()') && game.includes('ApocalypseCinematic3D?.stop()'), 'Opening cinematic must play, stop on skip, and finish after sixteen seconds');
 assert.ok(pc.includes('apocalypse-cinematic-3d.js') && workflow.includes('apocalypse-cinematic-3d.js;apocalypse'), 'Windows EXE must bundle the WebGL cinematic module');
