@@ -272,6 +272,71 @@ body.menu-open .quickbar-hud,body.menu-open .convenience-hud,body.quick-menu-ope
  .status{max-width:calc(100vw - 142px)!important}
  .storage-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
+
+/* Eight-second Apocalypse opening sequence and save-slot manager */
+#introCinematic{position:absolute;inset:0;z-index:60;overflow:hidden;background:#05090b;color:#f4ead1;display:grid;place-items:center}
+#introCinematic.hidden{display:none!important}
+.cine-world{position:absolute;inset:-8%;transform:scale(1.12);background:linear-gradient(180deg,#101d2a 0%,#49524b 48%,#171c18 100%);overflow:hidden}
+.cine-world:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0b1624aa 0%,transparent 35%,#080b0be8 100%),repeating-linear-gradient(105deg,transparent 0 90px,#d9d1b522 91px 93px,transparent 94px 170px);opacity:.7}
+.cine-moon{position:absolute;top:12%;right:17%;width:clamp(70px,12vw,150px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 40% 38%,#fff1c9,#d5a36c 46%,#8e624c 70%,transparent 72%);box-shadow:0 0 65px #e3b77a77}
+.cine-city{position:absolute;bottom:14%;left:-5%;right:-5%;height:42%;display:flex;align-items:end;gap:2.2%;filter:drop-shadow(0 8px 10px #000)}
+.cine-city i{display:block;flex:1;height:var(--h);background:linear-gradient(90deg,#111a1b,#35403b 50%,#111719);border-top:2px solid #8a866c55;position:relative}
+.cine-city i:after{content:"";position:absolute;inset:12px 8px;background:repeating-linear-gradient(0deg,transparent 0 17px,#f0b66c77 18px 21px),repeating-linear-gradient(90deg,transparent 0 17px,#d6d2a344 18px 21px);opacity:.55}
+.cine-ridge{position:absolute;bottom:12%;left:-10%;width:120%;height:28%;background:linear-gradient(160deg,#29372e,#0a100e 70%);clip-path:polygon(0 55%,12% 20%,26% 62%,42% 8%,56% 58%,73% 17%,89% 64%,100% 34%,100% 100%,0 100%)}
+.cine-heli{position:absolute;top:27%;left:52%;width:190px;height:70px;transform:rotate(-9deg);filter:drop-shadow(0 12px 9px #000);z-index:3}
+.cine-heli-body{position:absolute;left:28px;top:22px;width:112px;height:38px;border-radius:55% 45% 38% 42%;background:linear-gradient(180deg,#69736b,#222c29 65%,#101615);border:2px solid #a4a18a66}
+.cine-heli-body:before{content:"";position:absolute;left:18px;top:5px;width:38px;height:18px;border-radius:50% 50% 8px 8px;background:#a8c1bb88;border:2px solid #b5c5bb}
+.cine-heli-tail{position:absolute;left:126px;top:31px;width:55px;height:7px;background:#343f3a;transform:skewX(-30deg)}
+.cine-rotor{position:absolute;left:48px;top:17px;width:125px;height:3px;background:#d7d0b6;transform-origin:50% 50%;box-shadow:0 0 10px #fff4c7;animation:cineRotor .12s linear infinite}
+.cine-searchlight{position:absolute;left:92px;top:58px;width:280px;height:250px;background:linear-gradient(180deg,#f6e5b366,#f6e5b300);clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);transform:rotate(-7deg);transform-origin:top;filter:blur(4px);opacity:.7}
+.cine-fire{position:absolute;bottom:14%;left:62%;width:120px;height:90px;background:radial-gradient(ellipse,#fff0a5 0%,#fa762e 23%,#a42d17aa 50%,transparent 72%);filter:blur(6px);animation:cineFire .28s ease-in-out infinite alternate;z-index:4}
+.cine-smoke{position:absolute;bottom:18%;left:62%;width:130px;height:320px;background:radial-gradient(ellipse at 50% 75%,#141c1bbd 0%,#222b28a8 28%,transparent 70%);filter:blur(12px);transform-origin:bottom;animation:cineSmoke 2.6s ease-in-out infinite alternate;z-index:3}
+.cine-ash{position:absolute;inset:0;background-image:radial-gradient(circle,#e9c98b 0 1px,transparent 2px),radial-gradient(circle,#d9d4c1 0 1px,transparent 2px);background-size:83px 101px,137px 163px;background-position:0 0,40px 60px;animation:cineAsh 5s linear infinite;opacity:.5}
+.cine-vignette{position:absolute;inset:0;box-shadow:inset 0 0 180px 55px #000d;background:linear-gradient(0deg,#050807 0%,transparent 30%,transparent 70%,#05080788 100%)}
+.cine-copy{position:absolute;z-index:8;left:7%;right:7%;bottom:9%;text-align:left;text-shadow:0 3px 14px #000;opacity:0;transform:translateY(22px)}
+.cine-copy small{color:#d9bb80;font:900 10px ui-monospace,monospace;letter-spacing:4px}
+.cine-copy h2{font-size:clamp(25px,5vw,52px);letter-spacing:2px;line-height:1.02;margin:9px 0;color:#f5e8c9}
+.cine-copy p{font-size:clamp(11px,1.6vw,15px);color:#d1d2c4;letter-spacing:1px;margin:0}
+.cine-timeline{position:absolute;z-index:9;left:7%;right:7%;top:7px;height:2px;background:#ffffff25}
+.cine-timeline:after{content:"";display:block;height:100%;width:0;background:#e9c98b;box-shadow:0 0 12px #e9c98b;animation:cineProgress 8s linear forwards}
+.cine-brand{position:absolute;z-index:9;top:5%;left:7%;font:900 9px ui-monospace,monospace;letter-spacing:3px;color:#e6d4ad99}
+#cinematicSkip{position:absolute;z-index:12;right:18px;bottom:18px;border:1px solid #e6d4ad66;border-radius:30px;padding:9px 16px;background:#0b1110b8;color:#f3e6c8;font-size:10px;letter-spacing:1px}
+.cinematic-play .cine-world{animation:cineCamera 8s cubic-bezier(.2,.65,.25,1) both}
+.cinematic-play .cine-heli{animation:cineHeli 8s ease-in-out both}
+.cinematic-play .cine-fire{animation:cineFire .28s ease-in-out infinite alternate,cineBlast 8s ease both}
+.cinematic-play .cine-copy{animation:cineCaptions 8s ease both}
+.cinematic-play .cine-copy.one{animation-delay:0s}.cinematic-play .cine-copy.two{animation-delay:0s}
+@keyframes cineCamera{0%{transform:scale(1.35) translate(7%,8%)}25%{transform:scale(1.15) translate(-3%,2%)}55%{transform:scale(1.55) translate(-12%,-5%)}100%{transform:scale(1.2) translate(0,-3%)}}
+@keyframes cineHeli{0%{left:65%;top:15%;transform:rotate(-4deg)}28%{left:52%;top:28%;transform:rotate(4deg)}50%{left:44%;top:37%;transform:rotate(22deg)}67%{left:60%;top:48%;transform:rotate(70deg)}100%{left:62%;top:48%;transform:rotate(70deg);opacity:.2}}
+@keyframes cineRotor{to{transform:rotate(360deg)}}
+@keyframes cineFire{from{transform:scale(.82) skewX(-4deg);opacity:.72}to{transform:scale(1.18) skewX(5deg);opacity:1}}
+@keyframes cineSmoke{from{transform:scale(.75) translateY(12px);opacity:.3}to{transform:scale(1.4) translateY(-45px);opacity:.9}}
+@keyframes cineAsh{to{background-position:0 240px,40px 370px}}
+@keyframes cineProgress{to{width:100%}}
+@keyframes cineCaptions{0%,8%{opacity:0;transform:translateY(22px)}13%,24%{opacity:1;transform:none}29%,100%{opacity:0;transform:translateY(-10px)}}
+#worldManager{position:absolute;inset:0;z-index:12;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(ellipse at 50% 10%,#42534488,#080d0cf5 75%);backdrop-filter:blur(10px)}
+#worldManager.hidden{display:none!important}
+.world-manager-panel{width:min(650px,100%);max-height:92dvh;overflow:auto;padding:clamp(17px,4vw,30px);border:1px solid #b8a57577;border-radius:20px;background:linear-gradient(145deg,#202d24,#101914 72%);box-shadow:0 24px 90px #000d}
+.world-manager-kicker{font:900 9px ui-monospace,monospace;letter-spacing:3px;color:#c7b27e}
+.world-manager-panel h2{font-size:clamp(23px,5vw,34px);color:#f1dfb8;margin:8px 0 3px}
+.world-manager-sub{font-size:11px;color:#aeb8a8;margin:0 0 17px}
+.world-create{display:flex;gap:8px;margin:0 0 16px}
+.world-create input{min-width:0;flex:1;padding:12px;border:1px solid #8c987777;border-radius:10px;background:#0c1410;color:#f3ead6;font-size:13px}
+.world-create button,.world-play{border:1px solid #e1c78d;border-radius:10px;padding:10px 14px;background:linear-gradient(120deg,#e5d09a,#a7b58a);color:#172017;font-size:11px;font-weight:900}
+.world-list{display:grid;gap:8px;max-height:48dvh;overflow:auto}
+.world-card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border:1px solid #b9b18b33;border-radius:12px;background:#0d1511cc;animation:worldCardIn .35s ease both}
+.world-card.selected{border-color:#d6bb7d88;background:#293629}
+.world-card-info{display:flex;min-width:0;flex-direction:column;gap:4px}.world-card-info b{overflow-wrap:anywhere;color:#f1e5c8;font-size:13px}.world-card-info small{color:#9ca995;font-size:9px;letter-spacing:.8px}
+.world-card-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.world-small{border:1px solid #78836b77;border-radius:8px;padding:8px 9px;background:#1c2920;color:#e6dfc9;font-size:10px}.world-small.danger{border-color:#a55e5266;color:#e6a99c}
+.world-empty{padding:22px;text-align:center;border:1px dashed #8c987766;border-radius:12px;color:#b8c0ad;font-size:12px}
+.world-manager-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+.world-manager-footer small{color:#82907f;font-size:9px}
+#worldManagerBack{border:1px solid #8c987777;border-radius:9px;padding:10px 15px;background:#1b281e;color:#e6dfc9;font-size:11px}
+@keyframes worldCardIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@media(max-width:560px){.world-create{flex-direction:column}.world-create button{min-height:42px}.world-card{align-items:flex-start;flex-direction:column}.world-card-actions{width:100%;justify-content:flex-start}.world-play{flex:1}.cine-copy{bottom:14%}.cine-heli{scale:.72}}
+@media(prefers-reduced-motion:reduce){.cine-ash,.cine-rotor{animation:none!important}}
+
 </style></head><body class="menu-open">
 <canvas id="world" tabindex="0" aria-label="Игровой мир"></canvas><div class="hud"><div class="status"><div class="statusline"><span class="dot"></span><span>ПОСЕЛЕНИЕ · СЕКТОР 01</span></div><div class="stats"><span id="health">♥ 100 / 100</span><span id="weather">Ветер · тихий</span></div><div class="clock" id="worldTime">08:00</div><div class="day" id="day">День 1 · Утро</div><div class="stamina-caption"><span>ВЫНОСЛИВОСТЬ</span><span id="staminaLabel">100 / 100</span></div><div class="stamina-track"><div id="staminaFill" class="stamina-fill"></div></div><div class="hydration-caption" id="hydrationHud"><span>ВОДА</span><span id="hydrationLabel">100 / 100</span></div><div class="stamina-track hydration-track"><div id="hydrationFill" class="hydration-fill"></div></div><div class="survival-caption" id="infectionHud"><span>ИНФЕКЦИЯ</span><span id="infectionLabel">0%</span></div><div class="stamina-track survival-track"><div id="infectionFill" class="infection-fill"></div></div><div class="survival-caption" id="temperatureHud"><span>ТЕМПЕРАТУРА</span><span id="temperatureLabel">72%</span></div><div class="stamina-track survival-track"><div id="temperatureFill" class="temperature-fill"></div></div></div></div><button class="btn map-button radar-button" id="mapButton" type="button" aria-label="Открыть радар и карту"><span class="radar-sweep"></span><span class="radar-label">РАДАР</span></button><button class="btn sprint-button" id="sprintButton" type="button">БЕГ</button>
 <div class="control-hint">WASD / СТРЕЛКИ · E — ДЕЙСТВИЕ · 1–6 — БЫСТРЫЕ ПРЕДМЕТЫ · F5 — СОХРАНИТЬ · F / ПРОБЕЛ — УДАР · TAB — ИГРОКИ · Y — ЧАТ</div><div class="joy" id="joy"><div class="stick" id="stick"></div></div><div class="bottom"><button class="btn" id="pauseMenu"><span class="ico">☰</span><span class="desktop-label">Меню</span><span class="mobile-label">Ещё</span></button><button class="btn" id="action"><span class="ico">⚒</span>Действие</button><button class="btn" id="inventory"><span class="ico">▣</span>Рюкзак</button><button class="btn" id="craft"><span class="ico">⚒</span>Мастерская</button><button class="btn" id="exit">↩</button></div><button class="btn attack-touch" id="attackTouch" aria-label="Удар">УДАР</button>
@@ -292,6 +357,14 @@ body.menu-open .quickbar-hud,body.menu-open .convenience-hud,body.quick-menu-ope
 <div class="overlay hidden" id="dialogue"><div class="dialog"><h2>Поселение выживших</h2><p>Мир изменился. Исследуй окрестности, собирай полезные вещи и помогай тем, кто ещё остался в живых. Найди Марка — у него есть первое поручение.</p><button class="btn" id="start">Начать выживание</button></div></div>
 <div class="overlay hidden death-overlay" id="deathOverlay"><div class="dialog death-dialog"><div class="death-mark">✕</div><div class="death-kicker">СВЯЗЬ С ВЫЖИВШИМ ПОТЕРЯНА</div><h2>ТЫ ПОГИБ</h2><p id="deathDay">Ты продержался до 1 дня</p><div class="death-divider"></div><button class="menu-action primary" id="deathRespawn">↻　ВОЗРОДИТЬСЯ</button><button class="menu-action" id="deathMenu">☰　В ГЛАВНОЕ МЕНЮ</button></div></div>
 <div class="overlay hidden storage-overlay" id="panel"><div class="storage"><button class="close storage-close" id="panelClose">✕</button><div class="storage-top">РЮКЗАК / <span id="panelTitle">ХРАНИЛИЩЕ</span><small>ЛИЧНЫЕ ВЕЩИ · СНАРЯЖЕНИЕ</small></div><div class="storage-main"><div id="panelText" style="font-size:11px;color:#9ba8bc;margin:0 0 9px"></div><div id="items" class="storage-grid"></div></div><aside class="storage-side"><div class="side-title">ВЫЖИВШИЙ</div><div class="portrait"><div class="portrait-art">🧑🏻‍🚀</div></div><div class="stats-card"><div>ЗДОРОВЬЕ <strong id="invHealth">100</strong></div><div>ЗАЩИТА <strong>+0</strong></div><div>СКОРОСТЬ <strong id="invSpeed">100%</strong></div><div>ДЕНЬ <strong id="invDay">1</strong></div></div><div class="weight" id="weight">0 / 40 кг</div></aside><div class="hotbar" id="hotbar"><div class="hotbar-caption">БЫСТРЫЕ ПРЕДМЕТЫ · СЛОТЫ 1–6 · НАЖМИ В ИГРЕ ИЛИ ИСПОЛЬЗУЙ КЛАВИШИ</div></div></div></div>
+<section id="introCinematic" class="hidden" aria-label="Вступительная сцена">
+ <div class="cine-world"><div class="cine-moon"></div><div class="cine-city"><i style="--h:38%"></i><i style="--h:62%"></i><i style="--h:45%"></i><i style="--h:82%"></i><i style="--h:54%"></i><i style="--h:70%"></i><i style="--h:42%"></i><i style="--h:60%"></i><i style="--h:35%"></i></div><div class="cine-ridge"></div><div class="cine-heli"><div class="cine-heli-tail"></div><div class="cine-heli-body"></div><div class="cine-rotor"></div></div><div class="cine-searchlight"></div><div class="cine-smoke"></div><div class="cine-fire"></div><div class="cine-ash"></div><div class="cine-vignette"></div></div>
+ <div class="cine-timeline"></div><div class="cine-brand">SKYREALM STUDIOS　/　FIELD RECORDING 01</div>
+ <div class="cine-copy"><small>00:00:01 · ПОСЛЕДНИЕ ЧАСЫ</small><h2>ГОРОД ЗАМОЛЧАЛ</h2><p>Связь оборвалась. Улицы опустели. Никто не ответил на сигнал.</p></div>
+ <div class="cine-copy two"><small>EMERGENCY TRANSMISSION · 91.4 MHz</small><h2>НОЧЬ НЕ ЗАКОНЧИЛАСЬ</h2><p>Вертолёт падает за горизонтом. Где-то ещё горит аварийный маяк…</p></div>
+ <button id="cinematicSkip" type="button">ПРОПУСТИТЬ　›</button>
+</section>
+<section id="worldManager" class="hidden" aria-label="Выбор игрового мира"><div class="world-manager-panel"><div class="world-manager-kicker">APOCALYPSE · ЛИЧНЫЕ СОХРАНЕНИЯ</div><h2>Твои миры</h2><p class="world-manager-sub">Создавай отдельные истории, возвращайся к сохранениям или удаляй ненужные миры.</p><div class="world-create"><input id="newWorldName" maxlength="32" autocomplete="off" placeholder="Название нового мира"><button id="createWorldButton" type="button">＋ СОЗДАТЬ МИР</button></div><div id="worldList" class="world-list"></div><div class="world-manager-footer"><small id="worldCount">0 / 30 миров</small><button id="worldManagerBack" type="button">← НАЗАД</button></div></div></section>
 <section id="mainMenu" aria-label="Главное меню Apocalypse"><div class="menu-panel"><div class="menu-kicker">НОВАЯ ЭРА ВЫЖИВАНИЯ</div><div class="menu-title">APOCALYPSE<span>THE WORLD HAS FALLEN</span></div><div class="menu-caption">Мир изменился. Твоя история только начинается.</div><div class="menu-actions"><button class="menu-action primary" id="menuPlay">▶　ИГРАТЬ</button><button class="menu-action" id="menuSettings">⚙　НАСТРОЙКИ</button><button class="menu-action" id="menuCoop">♧　CO-OP</button><button class="menu-action" id="menuJournal">▤　ЖУРНАЛ ОБНОВЛЕНИЙ</button><button class="menu-action menu-exit" id="menuExit">⏻　ВЫЙТИ ИЗ ИГРЫ</button></div><div class="menu-footer">SECTOR 01　·　SURVIVE TOGETHER</div></div></section>
 <section id="updateJournal" class="apoc-modal hidden" aria-label="Журнал обновлений"><div class="apoc-dialog journal-dialog"><header class="journal-head"><div class="journal-kicker">APOCALYPSE · DEV LOG</div><h2>Журнал обновлений</h2><div class="journal-version">ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ · <span id="journalVersion">ЗАГРУЗКА</span></div><button class="journal-close" id="journalX" aria-label="Закрыть журнал">✕</button></header><div class="journal-body"><p class="journal-intro" id="journalIntro">Загружаем подробности обновления…</p><div id="journalEntries" aria-live="polite"></div></div><footer class="journal-foot"><small>Журнал можно открыть повторно через главное меню.</small><button class="journal-ok" id="journalOk">ПОНЯТНО</button></footer></div></section><section id="settingsOverlay" class="apoc-modal hidden"><div class="apoc-dialog settings-dialog"><button class="apoc-close" data-close="settingsOverlay">✕</button><h2>Настройки Apocalypse</h2><p>Все параметры применяются к текущему миру и сохраняются на устройстве. Качество текстур и разрешение рендера не снижаются.</p>
 <div class="apoc-section-title">ГРАФИКА И ПОГОДА</div>
