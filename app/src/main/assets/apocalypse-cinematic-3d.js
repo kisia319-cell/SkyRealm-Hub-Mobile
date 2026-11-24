@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),mobile=()=>/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
-let canvas,gl,program,meshes={},raf=0,mode='idle',started=0,last=0,audio=null,audioNodes=[],failed=false;
+let canvas,gl,program,meshes={},raf=0,mode='idle',activeScene='intro',started=0,last=0,audio=null,audioNodes=[],failed=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t,smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
 const VS='attribute vec3 p;attribute vec3 n;uniform mat4 mvp;uniform mat4 model;uniform vec3 light;varying float shade;varying float depth;void main(){vec4 q=mvp*vec4(p,1.0);gl_Position=q;vec3 nn=normalize(mat3(model)*n);shade=.28+.72*max(dot(nn,normalize(light)),0.0);depth=q.w;}';
 const FS='precision mediump float;uniform vec4 color;uniform vec3 fog;varying float shade;varying float depth;void main(){float f=smoothstep(55.0,145.0,depth);gl_FragColor=vec4(mix(color.rgb*shade,fog,f),color.a);}';
@@ -29,7 +29,36 @@ const tube=(x,y,z,sx,sy,sz,c,rz=0)=>draw('cylinder',model(x,y,z,sx,sy,sz,0,0,rz)
 let seed=177;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
 const city=[];for(let i=0;i<(mobile()?24:40);i++){let side=i%2?1:-1;city.push({x:side*(9+rnd()*34),z:-18-Math.floor(i/2)*8,h:4+rnd()*17,w:3+rnd()*6,d:3+rnd()*5,light:rnd()})}
 function helicopter(t,crash){let x=mix(-20,2,crash),y=mix(13,2,crash),z=mix(-5,1,crash),tilt=mix(-.1,.9,crash),rot=t*24;draw('sphere',model(x,y,z,2.2,.68,.9,tilt,.1,0),[.25,.32,.29]);ball(x+1.3,y+.02,z+.1,.85,.55,.7,[.32,.43,.4],tilt);ball(x+1.62,y+.06,z+.12,.5,.38,.53,[.09,.23,.26],tilt);box(x-2.4,y+.05,z,2.3,.18,.2,[.23,.28,.25],tilt);box(x-3.5,y+.3,z,.7,.12,.16,[.38,.4,.33],tilt);tube(x-.15,y+.83,z,.11,.48,.11,[.47,.48,.4]);box(x-.15,y+1.1,z,5,.06,.26,[.65,.63,.52],rot);box(x-.15,y+1.1,z,5,.06,.26,[.65,.63,.52],rot+Math.PI/2);tube(x-3.6,y+.45,z,.07,.35,.07,[.45,.48,.4],Math.PI/2);box(x-3.6,y+.45,z,.08,1.2,.08,[.55,.56,.47],rot*1.6);for(let d of [-1,1])tube(x+d,y-.55,z,.055,.72,.055,[.14,.17,.16],d*.22)}
-function render(t){gl.clearColor(.018,.031,.034,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let scene=t<3?'flyover':t<6?'signal':t<10?'failure':t<13?'impact':'aftermath';let cam,target;if(scene==='flyover'){cam=[Math.sin(t*.2)*8,15,32-t*3];target=[0,2,-25]}else if(scene==='signal'){cam=[-13,8,17];target=[0,3,-5]}else if(scene==='failure'){cam=[-7+(t-6)*2,7,15-(t-6)*3];target=[1,2,-1]}else if(scene==='impact'){cam=[7,4,12-(t-10)*2];target=[2,1,0]}else{cam=[4,3,9];target=[2,1,0]}VP=mul(perspective(Math.PI/3.1,W/H,.1,190),view(cam,target));gl.uniform3f(program.light,-.4,.9,.25);gl.uniform3f(program.fog,.018,.031,.034);
+function renderCrash(t){
+ gl.clearColor(.025,.035,.031,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ const approach=smooth(t/10),impact=smooth((t-7.2)/2.4),cam=[mix(-18,-5,approach)+Math.sin(t*.7)*.35,mix(12,5,approach),mix(27,13,approach)];
+ const target=[0,1.1,0];VP=mul(perspective(Math.PI/3.2,W/H,.1,150),view(cam,target));
+ gl.uniform3f(program.light,-.45,.88,.22);gl.uniform3f(program.fog,.025,.035,.031);
+ box(0,-.5,0,110,.8,110,[.105,.13,.105]);
+ for(let i=0;i<15;i++){const x=(i%5-2)*13,z=(Math.floor(i/5)-1)*15;ball(x,-.1,z,2.5,.6,3,[.13,.16,.13]);}
+ // A crashed fixed-wing aircraft, not the helicopter from the opening sequence.
+ box(0,1.15,0,8.8,1.05,1.55,[.29,.34,.31],-.17);
+ ball(4.15,1.3,.05,1.35,.78,.78,[.39,.45,.4],-.17);
+ box(-.25,1.15,-.25,2.2,.48,1.1,[.18,.22,.2],-.25);
+ box(-.2,1.05,0,3.2,.22,17,[.35,.39,.34],-.12);
+ box(-3.75,1.2,0,1.35,.22,4.4,[.28,.31,.28],-.45);
+ box(-4.35,2.2,0,.45,2.4,.48,[.26,.3,.27],-.4);
+ box(-4.7,1.15,0,2.8,.18,.55,[.36,.39,.32],-.12);
+ // Torn wing, broken tail and exposed engine.
+ box(1.6,.85,-5.2,2.2,.18,5.2,[.2,.24,.21],.34);
+ tube(3.25,1.2,-.2,.48,1.1,.48,[.16,.19,.17],Math.PI/2);
+ ball(3.25,1.2,-.2,.52,.55,.52,[.08,.1,.09]);
+ // Flickering fire, drifting smoke and sparks around the fuselage.
+ gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+ for(let i=0;i<9;i++){const age=(t*.42+i*.29)%3.2,a=i*2.15+age*.65;ball(1.7+Math.cos(a)*(.45+age*.4),.8+age*1.4,Math.sin(a)*(.5+age*.3),.28+age*.25,.42+age*.35,.28+age*.25,[.17,.19,.17],0,.72-age*.13);}
+ for(let i=0;i<15;i++){const a=i*2.4+t*1.2,r=.5+((t+i*.37)%2.8)*.38;ball(1.4+Math.cos(a)*r,.6+((t+i*.37)%2.8),Math.sin(a)*r,.055,.08,.055,[1,.32,.055]);}
+ gl.depthMask(true);gl.disable(gl.BLEND);
+ const pulse=.65+.35*Math.sin(t*8);tube(-5,1.4,-1,.07,.8,.07,[.38,.4,.31]);ball(-5,2.25,-1,.2,.2,.2,[1,.16,.045],0,pulse);
+ // Two distant infected silhouettes approach the wreck through the fog.
+ for(let i=0;i<2;i++){const x=(i?1:-1)*(7+Math.max(0,t-5)*.28),z=-8+i*3,y=.75;ball(x,y+.62,z,.34,.48,.3,[.055,.07,.06]);ball(x,y+1.22,z,.25,.25,.25,[.09,.12,.1]);}
+ if(t>7.4){const flash=Math.max(0,1-Math.abs(t-7.55)*2.5);if(flash>.02){gl.clearColor(.35*flash,.17*flash,.045*flash,1);gl.clear(gl.COLOR_BUFFER_BIT);}}
+}
+function render(t){if(activeScene==='crash'){renderCrash(t);return;}gl.clearColor(.018,.031,.034,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let scene=t<3?'flyover':t<6?'signal':t<10?'failure':t<13?'impact':'aftermath';let cam,target;if(scene==='flyover'){cam=[Math.sin(t*.2)*8,15,32-t*3];target=[0,2,-25]}else if(scene==='signal'){cam=[-13,8,17];target=[0,3,-5]}else if(scene==='failure'){cam=[-7+(t-6)*2,7,15-(t-6)*3];target=[1,2,-1]}else if(scene==='impact'){cam=[7,4,12-(t-10)*2];target=[2,1,0]}else{cam=[4,3,9];target=[2,1,0]}VP=mul(perspective(Math.PI/3.1,W/H,.1,190),view(cam,target));gl.uniform3f(program.light,-.4,.9,.25);gl.uniform3f(program.fog,.018,.031,.034);
 box(0,-.55,-35,180,.7,180,[.12,.16,.13]);box(0,-.12,0,10,.08,180,[.07,.08,.075]);for(let z=-85;z<35;z+=10)box(0,-.06,z,.13,.025,4,[.57,.48,.3]);
 for(let i=0;i<city.length;i++){let b=city[i];box(b.x,b.h/2-.3,b.z,b.w,b.h,b.d,i%4===0?[.19,.22,.2]:[.105,.14,.13]);box(b.x,b.h+.1,b.z,b.w*.72,.2,b.d*.72,[.23,.25,.2]);for(let r=0;r<Math.min(mobile()?2:5,Math.floor(b.h/3));r++)for(let c=0;c<(mobile()?1:2);c++)if((r+c+i)%3){box(b.x+(c?1:-1)*b.w*.2,1+r*2.5,b.z+b.d/2+.02,.38,.6,.03,b.light>.68?[.86,.55,.25]:[.32,.4,.34])}}
 for(let i=0;i<9;i++){let x=-42+i*10;draw('sphere',model(x,1.8,-88+(i%3)*4,12,9,13,0,0,0),[.055,.1,.09])}
@@ -54,8 +83,8 @@ let buffer=audio.createBuffer(1,audio.sampleRate*2,audio.sampleRate),data=buffer
 }catch(e){console.warn('cinematic audio unavailable',e)}}
 function audioStop(){if(audio){try{audioNodes.forEach(n=>{try{if(n.stop)n.stop()}catch(_){}});audio.close()}catch(_){}}audio=null;audioNodes=[]}
 function tick(now){if(mode==='idle')return;if(now-last<(mobile()?40:25)){raf=requestAnimationFrame(tick);return}last=now;resize();let t=Math.min(16,(now-started)/1000);render(t);if(t>=16){stop();return}raf=requestAnimationFrame(tick)}
-function play(){init();mode='intro';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
+function play(){init();activeScene='intro';mode='intro';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}\nfunction playCrash(){init();activeScene='crash';mode='crash';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
 function stop(){mode='idle';if(raf)cancelAnimationFrame(raf);raf=0;audioStop()}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});window.addEventListener('resize',resize,{passive:true});
-window.ApocalypseCinematic3D=Object.freeze({play,stop,available:()=>!!gl});
+window.ApocalypseCinematic3D=Object.freeze({play,playCrash,stop,available:()=>!!gl});
 })();
