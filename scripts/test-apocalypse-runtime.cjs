@@ -352,7 +352,6 @@ const campfireHarness = makeHarness({
   })
 });
 vm.runInNewContext(game, campfireHarness.sandbox, { filename: 'apocalypse.js' });
-campfireHarness.runFrame(1000);
 campfireHarness.elements.get('menuPlay').click();
 campfireHarness.elements.get('start').click();
 campfireHarness.elements.get('journalOk').click();
