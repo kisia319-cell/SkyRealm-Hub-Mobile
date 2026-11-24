@@ -95,7 +95,7 @@ const worldProps=[
  {id:'south_market_1',type:'stall',x:15100,y:22100,w:118,h:70},{id:'west_pump_1',type:'pump',x:-10900,y:4200,w:94,h:50},{id:'west_tent_1',type:'tent',x:-6400,y:22000,w:90,h:66}
 ];
 let lastSignalMission=saved.lastSignalMission&&typeof saved.lastSignalMission==='object'&&Number.isFinite(saved.lastSignalMission.x)&&Number.isFinite(saved.lastSignalMission.y)?{status:['briefing','active','completed'].includes(saved.lastSignalMission.status)?saved.lastSignalMission.status:'briefing',stage:Math.max(0,Math.min(2,Number(saved.lastSignalMission.stage)||0)),x:bounded(saved.lastSignalMission.x,0,WORLD_MIN+100,WORLD_MAX-100),y:bounded(saved.lastSignalMission.y,0,WORLD_MIN+100,WORLD_MAX-100)}:null;
-if(lastSignalMission&&lastSignalMission.status==='briefing'&&Math.hypot(lastSignalMission.x-state.x,lastSignalMission.y-state.y)<3200){const a=.91,d=3600;lastSignalMission.x=Math.max(WORLD_MIN+180,Math.min(WORLD_MAX-180,state.x+Math.cos(a)*d));lastSignalMission.y=Math.max(WORLD_MIN+180,Math.min(WORLD_MAX-180,state.y+Math.sin(a)*d));}\nif(lastSignalMission)worldProps.push({id:'last_signal_crash',type:'crash_site',x:lastSignalMission.x,y:lastSignalMission.y,w:190,h:132});
+if(lastSignalMission&&lastSignalMission.status==='briefing'&&Math.hypot(lastSignalMission.x-state.x,lastSignalMission.y-state.y)<3200){const dx=state.x<WORLD_MAX-3800?3600:-3600,dy=state.y<WORLD_MAX-900?-650:650;lastSignalMission.x=state.x+dx;lastSignalMission.y=state.y+dy;}\nif(lastSignalMission)worldProps.push({id:'last_signal_crash',type:'crash_site',x:lastSignalMission.x,y:lastSignalMission.y,w:190,h:132});
 
 for(const site of randomEventSites){if(['car','checkpoint','camp','convoy','quarantine','survivors'].includes(site.type)){const type=site.type==='car'||site.type==='convoy'?'wrecked_car':site.type==='checkpoint'||site.type==='quarantine'?'barrier':'tent';worldProps.push({id:site.id||'saved_'+randomEventSites.indexOf(site),type,x:site.x,y:site.y,w:type==='wrecked_car'?112:type==='barrier'?138:96,h:type==='wrecked_car'?58:type==='barrier'?36:70});}}
 const survivorCamp={bench:{x:1850,y:650},trader:{x:2010,y:650}};
@@ -1331,7 +1331,7 @@ function showJournalOnWorldEntry(resumeGame=true){
 function beginLastSignalEvent(){
  if(!lastSignalMission){
   let x=state.x+760,y=state.y-520,found=false;
-  for(let i=0;i<28;i++){const a=i*.91,d=3500+(i%7)*115,nx=Math.max(WORLD_MIN+180,Math.min(WORLD_MAX-180,state.x+Math.cos(a)*d)),ny=Math.max(WORLD_MIN+180,Math.min(WORLD_MAX-180,state.y+Math.sin(a)*d));if(!blocked(nx,ny)&&!insideBuilding(nx,ny)&&worldProps.every(p=>Math.hypot(nx-p.x,ny-p.y)>260)&&buildings.every(b=>Math.hypot(nx-(b.x+b.w/2),ny-(b.y+b.h/2))>Math.max(b.w,b.h)+190)){x=nx;y=ny;found=true;break;}}
+  for(let i=0;i<28;i++){const a=i*.91,d=3500+(i%7)*115,nx=Math.max(WORLD_MIN+180,Math.min(WORLD_MAX-180,state.x+Math.cos(a)*d)),ny=Math.max(WORLD_MIN+180,Math.min(WORLD_MAX-180,state.y+Math.sin(a)*d));if(Math.hypot(nx-state.x,ny-state.y)>=3200&&!blocked(nx,ny)&&!insideBuilding(nx,ny)&&worldProps.every(p=>Math.hypot(nx-p.x,ny-p.y)>260)&&buildings.every(b=>Math.hypot(nx-(b.x+b.w/2),ny-(b.y+b.h/2))>Math.max(b.w,b.h)+190)){x=nx;y=ny;found=true;break;}}
   if(!found){const dir=state.x<WORLD_MAX-3900?1:-1;x=Math.max(WORLD_MIN+200,Math.min(WORLD_MAX-200,state.x+dir*3600));y=Math.max(WORLD_MIN+200,Math.min(WORLD_MAX-200,state.y-700));}
   lastSignalMission={status:'briefing',stage:0,x,y};worldProps.push({id:'last_signal_crash',type:'crash_site',x,y,w:190,h:132});save();
  }
