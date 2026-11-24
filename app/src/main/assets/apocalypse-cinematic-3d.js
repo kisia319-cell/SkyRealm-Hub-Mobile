@@ -83,7 +83,8 @@ let buffer=audio.createBuffer(1,audio.sampleRate*2,audio.sampleRate),data=buffer
 }catch(e){console.warn('cinematic audio unavailable',e)}}
 function audioStop(){if(audio){try{audioNodes.forEach(n=>{try{if(n.stop)n.stop()}catch(_){}});audio.close()}catch(_){}}audio=null;audioNodes=[]}
 function tick(now){if(mode==='idle')return;if(now-last<(mobile()?40:25)){raf=requestAnimationFrame(tick);return}last=now;resize();let t=Math.min(16,(now-started)/1000);render(t);if(t>=16){stop();return}raf=requestAnimationFrame(tick)}
-function play(){init();activeScene='intro';mode='intro';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}\nfunction playCrash(){init();activeScene='crash';mode='crash';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
+function play(){init();activeScene='intro';mode='intro';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
+function playCrash(){init();activeScene='crash';mode='crash';started=performance.now();last=0;audioStart();if(raf)cancelAnimationFrame(raf);if(gl)raf=requestAnimationFrame(tick);return !!gl}
 function stop(){mode='idle';if(raf)cancelAnimationFrame(raf);raf=0;audioStop()}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});window.addEventListener('resize',resize,{passive:true});
 window.ApocalypseCinematic3D=Object.freeze({play,playCrash,stop,available:()=>!!gl});
