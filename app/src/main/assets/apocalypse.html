@@ -198,6 +198,56 @@ body.menu-open .quickbar-hud,body.menu-open .convenience-hud,body.quick-menu-ope
 @media(max-width:700px){.convenience-hud{left:auto;right:7px;top:50%;transform:translateY(-50%);width:min(190px,38vw)}.apoc-dialog{padding:14px;max-height:86dvh}.storage{transform:translateY(10px)}}
 @keyframes radarSweep{to{transform:rotate(360deg)}}
 .map-button{position:absolute;z-index:14;right:18px;top:50%;transform:translateY(-50%);width:62px;height:62px;border-radius:50%;padding:0;background:radial-gradient(circle,#315943,#14271d 70%);border:1px solid #78c89a;box-shadow:0 0 18px #55d59a44;display:grid;place-items:center;font-size:9px;letter-spacing:.5px}.radar-sweep{position:absolute;inset:6px;border:1px solid #75d9a8;border-radius:50%;background:conic-gradient(from 0deg,#4edb9b66,transparent 72%);animation:radarSweep 3s linear infinite}.radar-label{position:relative;z-index:1;font-weight:900}@media(max-width:700px){.radar-button{width:46px;height:46px;right:12px}}
+
+/* Follow-up polish 1.6.6: compact mobile controls and consistent HUD placement. */
+.hud{left:40px}
+.status{min-width:224px;padding:8px 13px}
+.statusline{letter-spacing:.8px}
+.stats{margin-top:4px}
+.clock{margin-top:3px;font-size:16px}
+.day{margin-top:2px;font-size:11px}
+.stamina-caption,.hydration-caption,.survival-caption{margin-top:2px}
+.stamina-track{height:5px}
+#inventory{transform:translateY(8px)}
+.convenience-hud{left:auto!important;right:12px!important;top:50%!important;transform:translateY(-50%)!important}
+@media(max-width:700px),(pointer:coarse){
+ .hud{left:20px!important}
+ .status{min-width:166px!important;max-width:calc(100vw - 152px)!important;padding:5px 11px!important}
+ .statusline{font-size:9px;letter-spacing:.55px;gap:5px}
+ .stats{margin-top:3px!important;font-size:10px}
+ .clock{margin-top:2px!important;font-size:14px}
+ .day{margin-top:1px!important;font-size:9px}
+ .stamina-caption,.hydration-caption,.survival-caption{margin-top:2px;font-size:8px}
+ .stamina-track{height:4px}
+ #inventory{transform:translateY(8px)}
+ .convenience-hud{left:auto!important;right:8px!important;top:50%!important;transform:translateY(-50%)!important;width:min(190px,38vw)!important}
+ body.apoc-chat-open .apoc-chat{top:32px!important}
+ .sprint-button{left:auto!important;right:82px!important;bottom:max(13px,env(safe-area-inset-bottom))!important;width:58px!important;height:48px!important}
+ .menu-panel{max-height:88dvh!important;padding:16px 14px!important;gap:8px!important}
+ .menu-actions{gap:6px!important}
+ .menu-action{min-height:40px!important;padding:8px 11px!important;font-size:11px!important}
+ .dialog,.apoc-dialog,.marker-editor-card{max-height:82dvh!important;padding:12px!important}
+ .dialog h2,.apoc-dialog h2{font-size:18px}
+ .dialog p,.apoc-dialog p{font-size:12px;line-height:1.4}
+ .storage{width:96vw!important;height:88dvh!important;max-height:88dvh!important;border-radius:12px!important;transform:none!important}
+ .storage-top{padding:8px 40px 7px!important}
+ .storage-main{padding:6px 8px!important}
+ .storage-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+ .slot{min-height:66px!important}
+ .slot .art{font-size:23px!important}
+ .slot b{font-size:8px!important;margin-top:2px!important}
+ .storage-side{padding:6px 5px!important;gap:5px!important}
+ .portrait{height:82px!important}
+ .portrait-art{font-size:48px!important}
+ .stats-card{font-size:8px!important;padding:4px!important;line-height:1.45!important}
+ .weight{font-size:12px!important;padding:5px!important}
+ .apoc-chat{width:calc(94vw - 30px)!important}
+}
+@media(max-width:380px){
+ .sprint-button{left:auto!important;right:82px!important;bottom:max(13px,env(safe-area-inset-bottom))!important}
+ .status{max-width:calc(100vw - 142px)!important}
+ .storage-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
 </style></head><body class="menu-open">
 <canvas id="world" tabindex="0" aria-label="Игровой мир"></canvas><div class="hud"><div class="status"><div class="statusline"><span class="dot"></span><span>ПОСЕЛЕНИЕ · СЕКТОР 01</span></div><div class="stats"><span id="health">♥ 100 / 100</span><span id="weather">Ветер · тихий</span></div><div class="clock" id="worldTime">08:00</div><div class="day" id="day">День 1 · Утро</div><div class="stamina-caption"><span>ВЫНОСЛИВОСТЬ</span><span id="staminaLabel">100 / 100</span></div><div class="stamina-track"><div id="staminaFill" class="stamina-fill"></div></div><div class="hydration-caption" id="hydrationHud"><span>ВОДА</span><span id="hydrationLabel">100 / 100</span></div><div class="stamina-track hydration-track"><div id="hydrationFill" class="hydration-fill"></div></div><div class="survival-caption" id="infectionHud"><span>ИНФЕКЦИЯ</span><span id="infectionLabel">0%</span></div><div class="stamina-track survival-track"><div id="infectionFill" class="infection-fill"></div></div><div class="survival-caption" id="temperatureHud"><span>ТЕМПЕРАТУРА</span><span id="temperatureLabel">72%</span></div><div class="stamina-track survival-track"><div id="temperatureFill" class="temperature-fill"></div></div></div></div><button class="btn map-button radar-button" id="mapButton" type="button" aria-label="Открыть радар и карту"><span class="radar-sweep"></span><span class="radar-label">РАДАР</span></button><button class="btn sprint-button" id="sprintButton" type="button">БЕГ</button>
 <div class="control-hint">WASD / СТРЕЛКИ · E — ДЕЙСТВИЕ · 1–6 — БЫСТРЫЕ ПРЕДМЕТЫ · F5 — СОХРАНИТЬ · F / ПРОБЕЛ — УДАР · TAB — ИГРОКИ · Y — ЧАТ</div><div class="joy" id="joy"><div class="stick" id="stick"></div></div><div class="bottom"><button class="btn" id="pauseMenu"><span class="ico">☰</span><span class="desktop-label">Меню</span><span class="mobile-label">Ещё</span></button><button class="btn" id="action"><span class="ico">⚒</span>Действие</button><button class="btn" id="inventory"><span class="ico">▣</span>Рюкзак</button><button class="btn" id="craft"><span class="ico">⚒</span>Мастерская</button><button class="btn" id="exit">↩</button></div><button class="btn attack-touch" id="attackTouch" aria-label="Удар">УДАР</button>
