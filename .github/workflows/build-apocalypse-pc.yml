@@ -53,6 +53,7 @@ jobs:
           node --check app/src/main/assets/apocalypse.js
           node --check app/src/main/assets/apocalypse-coop.js
           node --check app/src/main/assets/apocalypse-changelog.js
+          node --check app/src/main/assets/apocalypse-cinematic-3d.js
           node scripts/validate-apocalypse-changelog.cjs
           node scripts/test-apocalypse-runtime.cjs
           python -m py_compile apocalypse_pc.py
