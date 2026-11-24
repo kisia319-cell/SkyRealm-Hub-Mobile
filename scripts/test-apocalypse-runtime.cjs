@@ -30,6 +30,10 @@ assert.ok(game.includes('requestedViewScale') && game.includes('Math.min(request
 assert.ok(game.includes('function drawRivers()') && game.includes('Array.from({length:60}') && game.includes('foundShelterCaches'), 'Rivers and 60 persistent searchable shelters must be present');
 assert.ok(game.includes('function updateRain(dt,now)') && game.includes('state.hydration>=10'), 'Acid rain damage and thirst sprint lock must be active');
 assert.ok(html.includes('id="settingMaxFps"') && html.includes('radar-button') && html.includes('dialogue-open'), 'FPS settings, radar and intro HUD hiding must exist');
+assert.ok(html.includes('body.apoc-chat-open .apoc-chat{top:32px!important}') && html.includes('#inventory{transform:translateY(8px)}'), 'Mobile chat and inventory must use the requested vertical positions');
+assert.ok(html.includes('.convenience-hud{left:auto!important;right:8px!important;top:50%!important') && html.includes('.sprint-button{left:auto!important;right:82px!important'), 'Radio/objective HUD and sprint must stay on the right on narrow phones');
+assert.ok(html.includes('.menu-panel{max-height:88dvh!important') && html.includes('.storage{width:96vw!important;height:88dvh!important'), 'Mobile menu and inventory panels must be compact');
+assert.ok(game.includes("ctx.globalAlpha=.38;ctx.fillStyle='#657452'"), 'Ground must receive a consistent base tint across the map');
 assert.ok(game.includes('mapRange=2600') && game.includes("playerMapCanvas.addEventListener('pointerdown'") && game.includes("playerMapCanvas.addEventListener('wheel'"), 'Full map must support drag panning and zooming');
 assert.ok(game.includes("b.id==='water_treatment'&&state.waterFilterLevel<1") && game.includes('state.hydration<10'), 'Water filters must be lootable in buildings and low thirst must disable sprint');
 assert.ok(game.includes('function drawResidentialInteriorDetails(') && game.includes('drawResidentialInteriorDetails(id,variant,floor)'), 'Residential interiors must receive the added home furnishing pass');
