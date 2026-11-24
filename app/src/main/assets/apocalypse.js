@@ -1330,7 +1330,7 @@ function beginLastSignalEvent(){
  }
  if(lastSignalMission.status==='completed')return;
  if(lastSignalMission.status==='briefing'){
-  gameActive=false;keys.clear();moveX=moveY=0;document.getElementById('lastSignalIntro')?.classList.remove('hidden');
+  const journalOpen=!document.getElementById('updateJournal')?.classList.contains('hidden');if(!journalOpen)gameActive=false;keys.clear();moveX=moveY=0;document.getElementById('lastSignalIntro')?.classList.remove('hidden');
  }else if(lastSignalMission.status==='active'){
   activeWaypoint={name:'Маяк бедствия',x:lastSignalMission.x,y:lastSignalMission.y};save();
  }
@@ -1338,7 +1338,7 @@ function beginLastSignalEvent(){
 function acceptLastSignal(){
  if(!lastSignalMission)return;
  lastSignalMission.status='active';activeWaypoint={name:'Маяк бедствия',x:lastSignalMission.x,y:lastSignalMission.y};
- document.getElementById('lastSignalIntro')?.classList.add('hidden');gameActive=true;focusGame();save();toast('Координаты приняты · смотри на радар и компас');
+ document.getElementById('lastSignalIntro')?.classList.add('hidden');const journalOpen=!document.getElementById('updateJournal')?.classList.contains('hidden');gameActive=!journalOpen;if(gameActive)focusGame();save();toast('Координаты приняты · смотри на радар и компас');
 }
 function enterSolo(){gameActive=false;keys.clear();moveX=moveY=0;document.body.classList.remove('menu-open');document.body.classList.add('dialogue-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.remove('hidden');focusGame();}
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.getElementById('settingMaxFps').value=String(prefs.maxFps);document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;document.getElementById('settingWeather').checked=!!prefs.weather;document.getElementById('settingAmbientAudio').checked=!!prefs.ambientAudio;document.getElementById('settingInfectedCap').value=String(prefs.infectedCap);document.getElementById('settingEventFrequency').value=String(prefs.eventFrequency);document.getElementById('settingAutosave').value=String(prefs.autosaveSeconds);document.getElementById('settingAutoSprint').checked=!!prefs.autoSprint;document.getElementById('settingHydration').checked=!!prefs.showHydration;document.getElementById('settingSurvivalDifficulty').value=prefs.survivalDifficulty;document.getElementById('settingRenderDistance').value=prefs.renderDistance;document.getElementById('settingEnemyHealth').checked=!!prefs.showEnemyHealth;document.getElementById('settingSurvivalHud').checked=!!prefs.showSurvivalHud;}
@@ -1414,7 +1414,7 @@ document.getElementById('mobileMoreWorkshop').onclick=()=>{closeMobileQuickMenu(
 document.getElementById('mobileMoreSettings').onclick=()=>{const resume=mobileQuickMenuResume;closeMobileQuickMenu(false);openSettings(resume)};
 document.getElementById('mobileMoreMenu').onclick=()=>{closeMobileQuickMenu(false);leaveToMenu()};
 document.getElementById('mobileMoreSave').onclick=()=>{manualSave();closeMobileQuickMenu();};
-document.getElementById('start').onclick=()=>{document.getElementById('dialogue').classList.add('hidden');document.body.classList.remove('dialogue-open');ensureSafeSpawn(true);gameActive=true;focusGame();beginLastSignalEvent();showJournalOnWorldEntry(true);};
+document.getElementById('start').onclick=()=>{document.getElementById('dialogue').classList.add('hidden');document.body.classList.remove('dialogue-open');ensureSafeSpawn(true);gameActive=true;focusGame();showJournalOnWorldEntry(true);beginLastSignalEvent();};
 document.getElementById('lastSignalAccept')?.addEventListener('click',acceptLastSignal);
 window.addEventListener('apocalypse-coop-enter',()=>{ensureSafeSpawn(true);gameActive=true;document.body.classList.remove('menu-open');document.getElementById('mainMenu').classList.add('menu-out');document.getElementById('dialogue').classList.add('hidden');document.body.classList.remove('dialogue-open');document.getElementById('coopOverlay').classList.add('hidden');focusGame();showJournalOnWorldEntry(true);});
 window.addEventListener('apocalypse-coop-version-mismatch',()=>{if(gameActive){leaveToMenu();toast('Кооператив остановлен: версии игры различаются.');}});
