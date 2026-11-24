@@ -1120,11 +1120,7 @@ function openTrader(){
 function interact(){
  if(!gameActive)return;triggerPlayerAction('interact',460);if(activeInterior){interactInterior();return;}if(nearSpawnCampfire()){feedSpawnCampfire();return;}
  if(lastSignalMission&&lastSignalMission.status==='active'&&Math.hypot(state.x-lastSignalMission.x,state.y-lastSignalMission.y)<145){
-  if(lastSignalMission.stage===0){
-   lastSignalMission.stage=1;const offsets=[[-105,-35],[105,-20],[-25,105],[62,92]],kinds=['brute','runner','runner','stalker'];
-   for(let i=0;i<offsets.length;i++)spawnZombie(lastSignalMission.x+offsets[i][0],lastSignalMission.y+offsets[i][1],kinds[i],'last_signal_guard');
-   save();toast('Чёрный ящик активирован! Заражённые услышали сигнал — держи оборону!');return;
-  }
+  if(lastSignalMission.stage===0){startCrashSiteCinematic();return;}
   if(lastSignalMission.stage===1){
    const remaining=zombies.filter(z=>z.eventId==='last_signal_guard').length;
    if(remaining){toast('Сначала зачисти место крушения · осталось заражённых: '+remaining);return;}
@@ -1386,6 +1382,31 @@ function startIntroCinematic(){
  let ended=false;const finish=()=>{if(ended)return;ended=true;clearTimeout(timer);window.ApocalypseCinematic3D?.stop();scene.classList.add('hidden');scene.classList.remove('cinematic-play');enterSolo();};
  const timer=setTimeout(finish,16000);window.ApocalypseCinematic3D?.play();const skip=document.getElementById('cinematicSkip');if(skip)skip.onclick=()=>{clearTimeout(timer);finish();};
 }
+let crashCinematicRunning=false;
+function startCrashSiteCinematic(){
+ if(crashCinematicRunning||!lastSignalMission||lastSignalMission.status!=='active'||lastSignalMission.stage!==0)return;
+ const scene=document.getElementById('introCinematic');if(!scene){activateBlackBox();return;}
+ crashCinematicRunning=true;gameActive=false;keys.clear();moveX=moveY=0;
+ const captions=[...scene.querySelectorAll('.cine-copy')],original=captions.map(node=>node.innerHTML);
+ const lines=[
+  ['00:00:01 · МЕСТО ПАДЕНИЯ','САМОЛЁТ НЕ ДОЛЕТЕЛ','Камера приближается к искорёженным обломкам среди дыма и искр.'],
+  ['00:00:04 · ЧЁРНЫЙ ЯЩИК','СИГНАЛ ЕЩЁ ИДЁТ','Под обшивкой мигает аварийный маяк. Внутри осталась последняя запись пилота.'],
+  ['00:00:09 · ДВИЖЕНИЕ В ТУМАНЕ','ОНИ УСЛЫШАЛИ','Из темноты выходят заражённые. Шум передатчика привёл их прямо к месту падения.'],
+  ['00:00:13 · ПЕРЕХОД К БОЮ','ЗАЩИТИ ОБЛОМКИ','Открой чёрный ящик, переживи атаку и узнай, кто отправил сигнал.']
+ ];
+ captions.forEach((node,i)=>{const v=lines[i]||lines[0];node.innerHTML='<small>'+v[0]+'</small><h2>'+v[1]+'</h2><p>'+v[2]+'</p>';});
+ document.body.classList.remove('menu-open');scene.classList.remove('hidden');scene.classList.remove('cinematic-play');void scene.offsetWidth;scene.classList.add('cinematic-play');
+ let ended=false;const finish=()=>{if(ended)return;ended=true;clearTimeout(timer);window.ApocalypseCinematic3D?.stop();scene.classList.add('hidden');scene.classList.remove('cinematic-play');captions.forEach((node,i)=>node.innerHTML=original[i]);crashCinematicRunning=false;activateBlackBox();};
+ const timer=setTimeout(finish,16000);if(window.ApocalypseCinematic3D?.playCrash)window.ApocalypseCinematic3D.playCrash();else window.ApocalypseCinematic3D?.play();
+ const skip=document.getElementById('cinematicSkip');if(skip)skip.onclick=()=>{clearTimeout(timer);finish();};
+}
+function activateBlackBox(){
+ if(!lastSignalMission||lastSignalMission.status!=='active'||lastSignalMission.stage!==0)return;
+ lastSignalMission.stage=1;const offsets=[[-105,-35],[105,-20],[-25,105],[62,92]],kinds=['brute','runner','runner','stalker'];
+ for(let i=0;i<offsets.length;i++)spawnZombie(lastSignalMission.x+offsets[i][0],lastSignalMission.y+offsets[i][1],kinds[i],'last_signal_guard');
+ gameActive=true;focusGame();save();toast('Чёрный ящик активирован! Заражённые услышали сигнал — держи оборону!');
+}
+
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.getElementById('settingMaxFps').value=String(prefs.maxFps);document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;document.getElementById('settingWeather').checked=!!prefs.weather;document.getElementById('settingAmbientAudio').checked=!!prefs.ambientAudio;document.getElementById('settingInfectedCap').value=String(prefs.infectedCap);document.getElementById('settingEventFrequency').value=String(prefs.eventFrequency);document.getElementById('settingAutosave').value=String(prefs.autosaveSeconds);document.getElementById('settingAutoSprint').checked=!!prefs.autoSprint;document.getElementById('settingHydration').checked=!!prefs.showHydration;document.getElementById('settingSurvivalDifficulty').value=prefs.survivalDifficulty;document.getElementById('settingRenderDistance').value=prefs.renderDistance;document.getElementById('settingEnemyHealth').checked=!!prefs.showEnemyHealth;document.getElementById('settingSurvivalHud').checked=!!prefs.showSurvivalHud;}
 function drawPlayerMap(){
  const overlay=document.getElementById('playerMapOverlay');if(!overlay||overlay.classList.contains('hidden'))return;
