@@ -43,6 +43,7 @@ const savedWorldClock=bounded(saved.worldClock,1/3,0,.999999);
 const playerName=(()=>{try{const direct=localStorage.getItem('skyrealm_username');if(typeof direct==='string'&&direct.trim())return direct.trim().slice(0,24);const user=read('skyrealm_hub_user');const name=String(user.username||'Выживший').trim();return name.slice(0,24)||'Выживший'}catch(_){return 'Выживший'}})();
 const mark={x:610,y:400};
 // Spawn protection fire: one wood fuels three real-world minutes; each upgrade expands its safe radius.
+// Its position is initialized from the same deterministic safe-spawn search used by the player.
 const spawnCampfire={x:440,y:390};
 let spawnCampfireLevel=whole(saved.spawnCampfireLevel,1,1,10);
 let spawnCampfireUntil=Number.isFinite(saved.spawnCampfireUntil)?Math.max(0,saved.spawnCampfireUntil):Date.now()+180000;
