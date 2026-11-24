@@ -338,4 +338,10 @@ assert.equal(quickbarSave.crewCount, 2, 'Squad size must persist in the world sa
 assert.equal(quickbarSave.vehicleRepaired, true, 'Vehicle repair state must persist in the world save');
 assert.equal(quickbarHarness.sandbox.window.ApocalypseGame.getConvenienceStats().activeWaypoint.name, 'Больница', 'The active waypoint must survive game startup');
 
+
+assert.ok(game.includes("const spawnCampfire={x:440,y:390}") && game.includes("const spawnCampfireRadius=()=>((30+(spawnCampfireLevel-1)*10)*32)"), 'A level-one protective campfire must be anchored at spawn with a 30-block radius and +10 blocks per level');
+assert.ok(game.includes("spawnCampfireUntil=Math.max(Date.now(),spawnCampfireUntil)+180000") && game.includes("spawnCampfireUpgradeCost=()=>spawnCampfireLevel*5"), 'One wood must add three real-time minutes and upgrade wood costs must increase by level');
+assert.ok(game.includes("fireDistance<spawnCampfireRadius()") && game.includes("spawnCampfireRadius()+18"), 'Infected must be expelled beyond the active campfire protection radius');
+assert.ok(html.includes('id="spawnFirePanel"') && html.includes('id="spawnFireFeed"') && html.includes('id="spawnFireUpgrade"') && html.includes('id="spawnFireFill"'), 'The campfire fuel slider and feed/upgrade controls must be present');
+
 console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
