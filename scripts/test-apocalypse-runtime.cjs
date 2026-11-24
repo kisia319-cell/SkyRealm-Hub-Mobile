@@ -26,8 +26,7 @@ const expectedMove = [
 "  let len=Math.hypot(dx,dy);",
 "  if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}",
 "}"
-].join('
-');
+].join('\n');
 assert.equal(game.match(/function move\(dt\)\{[\s\S]*?
 \}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
 assert.ok(game.includes("const isAndroidDevice=/Android/i.test(typeof navigator!=='undefined'?(navigator.userAgent||''):'')") && game.includes('isAndroidDevice?1.2:1.7') && game.includes('now-lastMobileDrawAt>=1000/prefs.maxFps'), 'Android-only render resolution and frame-rate limits must not change PC settings');
