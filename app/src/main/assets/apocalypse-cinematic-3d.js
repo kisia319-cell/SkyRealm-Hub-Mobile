@@ -36,7 +36,8 @@ function drawZombie(x,y,z,t,variant=0,scale=1,phase=0,targetX=null,targetZ=null)
  const id=Math.max(0,Math.min(3,Math.round(phase/1.7))),approach=smooth(clamp((t-(4.5+id*.55))/4.6,0,1)),jumpProgress=clamp((t-(6.2+id*.48))/1.15,0,1),jump=Math.sin(jumpProgress*Math.PI)*1.9,crouch=smooth(clamp((t-(5.35+id*.48))/.35,0,1))*(1-smooth(clamp((t-(6.02+id*.48))/.25,0,1))),land=smooth(clamp((t-(7.45+id*.48))/.55,0,1)),side=x>=0?1:-1,zside=z>=0?1:-1;
  const slotX=targetX===null?side*(1.55+(id%2)*1.15):targetX;
  const slotZ=targetZ===null?zside*(3.7+Math.floor(id/2)*1.35):targetZ;
- x=mix(x,slotX,approach);z=mix(z,slotZ,approach);y+=jump+land*.82-crouch*.22;
+ const landingBounce=Math.sin(clamp((t-(7.35+id*.48))/.55,0,1)*Math.PI)*.16;
+ x=mix(x,slotX,approach);z=mix(z,slotZ,approach);y+=jump+landingBounce-crouch*.22;
  const gait=Math.sin(t*5.1+phase)*(1-approach*.72),swing=Math.sin(t*5.1+phase+.8),reach=approach*.8,skin=variant===1?[.29,.35,.29]:variant===2?[.39,.34,.27]:[.31,.37,.32],cloth=variant===1?[.13,.19,.17]:variant===2?[.23,.14,.12]:[.12,.16,.15],dark=[.055,.07,.062];
  const Y=y+Math.abs(gait)*.045;
  // torn trousers, boots and independently swinging legs
