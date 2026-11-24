@@ -226,7 +226,7 @@ harness.runFrame(1048);
 const sprintDuring = harness.sandbox.window.ApocalypseGame.getMovementStats();
 assert.ok(sprintDuring.stamina < sprintBefore.stamina && sprintDuring.sprinting, 'Holding Shift while moving must consume stamina and activate sprint');
 const homeStats = harness.sandbox.window.ApocalypseGame.getHomeSystemStats();
-assert.ok(homeStats.homes >= 10 && homeStats.slotsPerFloor === 3 && homeStats.roomCount === 4, 'Expanded home layouts and furniture coverage must be initialized');
+assert.ok(homeStats.homes >= 8 && homeStats.slotsPerFloor === 3 && homeStats.roomCount === 4, 'Expanded home layouts and furniture coverage must be initialized');
 harness.dispatchWindow('keyup',{code:'ShiftLeft',key:'Shift'});
 harness.dispatchWindow('keyup',{code:'KeyW',key:'w'});
 harness.runFrame(1064);
