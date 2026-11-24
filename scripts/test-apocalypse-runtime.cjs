@@ -225,6 +225,8 @@ harness.dispatchWindow('keydown',{code:'KeyW',key:'w'});
 harness.runFrame(1048);
 const sprintDuring = harness.sandbox.window.ApocalypseGame.getMovementStats();
 assert.ok(sprintDuring.stamina < sprintBefore.stamina && sprintDuring.sprinting, 'Holding Shift while moving must consume stamina and activate sprint');
+const homeStats = harness.sandbox.window.ApocalypseGame.getHomeSystemStats();
+assert.ok(homeStats.homes >= 8 && homeStats.slotsPerFloor === 3 && homeStats.roomCount === 4, 'Expanded home layouts and furniture coverage must be initialized');
 harness.dispatchWindow('keyup',{code:'ShiftLeft',key:'Shift'});
 harness.dispatchWindow('keyup',{code:'KeyW',key:'w'});
 harness.runFrame(1064);
@@ -368,5 +370,13 @@ campfireHarness.elements.get('spawnFireUpgrade').click();
 campfireSave = JSON.parse(campfireHarness.store.get('skyrealm_apocalypse_mobile_v1'));
 assert.equal(campfireSave.spawnCampfireLevel, 2, 'Campfire upgrade must persist the next level');
 assert.equal(campfireSave.wood, 0, 'The first campfire upgrade must consume five wood');
+
+
+assert.ok(game.includes("function drawHomeRoomPartitions(id)") && game.includes("'ГОСТИНАЯ'") && game.includes("'КУХНЯ'") && game.includes("'СПАЛЬНЯ'") && game.includes("'КЛАДОВАЯ'"), 'Enterable homes must render four connected, named rooms');
+assert.ok(game.includes("const homeFurnitureSlots=") && game.includes("homeFurnitureLoot") && game.includes("slot.picked=true"), 'Home furniture must provide searchable, persistent loot');
+assert.ok(game.includes("homeRestedDay[b.id]===state.day") && game.includes("state.hp=Math.min(100,state.hp+25)"), 'Beds must restore health once per in-game day and persist rest usage');
+assert.ok(game.includes("homeWorkbenchDay[b.id]===state.day") && game.includes("state.weaponDurability+35"), 'Home workbenches must repair weapon durability with resources and a daily limit');
+assert.ok(game.includes("homeRadioDay[b.id]===state.day") && game.includes("activeWaypoint={name:'Радиосигнал · припасы'"), 'Home radios must reveal a nearby unsearched supply cache and save its waypoint');
+assert.ok(game.includes("homeFurnitureLoot,homeRestedDay,homeWorkbenchDay,homeRadioDay"), 'Home furniture, rest, repair and radio progress must persist in existing saves');
 
 console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
