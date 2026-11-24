@@ -126,6 +126,28 @@ function cameraForCrash(t){
  const q=smooth((t-11)/5);return{eye:[mix(-3,1,q),mix(2.2,2.7,q),mix(4,6,q)],target:[0,1.5,0]};
 }
 
+function drawPilot(t){
+ const run=smooth(clamp((t-9.0)/1.25,0,1)),stumble=smooth(clamp((t-10.65)/.55,0,1)),down=smooth(clamp((t-11.35)/.8,0,1));
+ const x=mix(-1.5,-3.2,run)+stumble*.35,z=mix(1.1,4.4,run),y=.05-down*.42;
+ const gait=Math.sin(t*8.2)*run*(1-stumble),skin=[.66,.48,.34],uniform=[.12,.18,.19],boots=[.045,.055,.06];
+ if(t<7.7)return;
+ // The pilot climbs through the damaged side door, runs, then falls as the infected close in.
+ ball(x,y+1.15,z,.32,.43,.25,uniform,stumble*.4);
+ box(x,y+1.14,z+.08,.48,.56,.3,uniform,gait*.06);
+ ball(x,y+1.66,z,.22,.25,.21,skin,stumble*.25);
+ ball(x,y+1.79,z,.25,.18,.23,[.12,.16,.16]);
+ ball(x,y+1.68,z+.18,.17,.075,.055,[.035,.07,.08]);
+ box(x,y+1.56,z+.2,.17,.09,.08,[.09,.11,.1]);
+ limb(x-.34,y+1.13,z,.14,.34,.14,uniform,-.6+gait*.55+stumble*.65);
+ limb(x+.34,y+1.13,z,.14,.34,.14,uniform,.6-gait*.55-stumble*.65);
+ limb(x-.39,y+.83,z+.04,.105,.25,.11,skin,-.25+gait*.3);
+ limb(x+.39,y+.83,z+.04,.105,.25,.11,skin,.25-gait*.3);
+ limb(x-.14,y+.42,z,.13,.34,.14,uniform,gait*.62*(1-down));
+ limb(x+.14,y+.42,z,.13,.34,.14,uniform,-gait*.62*(1-down));
+ box(x-.14,y+.12,z+.12,.22,.13,.34,boots,gait*.2);
+ box(x+.14,y+.12,z+.12,.22,.13,.34,boots,-gait*.2);
+ if(down>.1){ball(x,y+.45,z+.15,.35,.22,.4,uniform,1.15*down);ball(x,y+.61,z+.4,.19,.18,.19,skin,1.1*down)}
+}
 function renderCrash(t){
  gl.clearColor(.025,.035,.031,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  const approach=smooth(t/10),impact=smooth((t-7.2)/2.4),cam=[mix(-18,-5,approach)+Math.sin(t*.7)*.35,mix(12,5,approach),mix(27,13,approach)];
