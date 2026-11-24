@@ -25,8 +25,13 @@ const expectedMove = [
 "}"
 ].join('\n');
 assert.equal(game.match(/function move\(dt\)\{[\s\S]*?\n\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
-assert.ok(game.includes("const isAndroidDevice=/Android/i.test(typeof navigator!=='undefined'?(navigator.userAgent||''):'')") && game.includes('isAndroidDevice?1.2:1.7') && game.includes('now-lastMobileDrawAt>=1000/30'), 'Android-only render resolution and frame-rate limits must not change PC settings');
-assert.ok(game.includes('requestedViewScale') && game.includes('isAndroidDevice?Math.min(requestedViewScale,.9):requestedViewScale'), 'Only Android must use the shorter object render distance');
+assert.ok(game.includes("const isAndroidDevice=/Android/i.test(typeof navigator!=='undefined'?(navigator.userAgent||''):'')") && game.includes('isAndroidDevice?1.2:1.7') && game.includes('now-lastMobileDrawAt>=1000/prefs.maxFps'), 'Android-only render resolution and frame-rate limits must not change PC settings');
+assert.ok(game.includes('requestedViewScale') && game.includes('Math.min(requestedViewScale,.9):requestedViewScale'), 'Only Android must use the shorter object render distance');
+assert.ok(game.includes('function drawRivers()') && game.includes('Array.from({length:60}') && game.includes('foundShelterCaches'), 'Rivers and 60 persistent searchable shelters must be present');
+assert.ok(game.includes('function updateRain(dt,now)') && game.includes('state.hydration>=10'), 'Acid rain damage and thirst sprint lock must be active');
+assert.ok(html.includes('id="settingMaxFps"') && html.includes('radar-button') && html.includes('dialogue-open'), 'FPS settings, radar and intro HUD hiding must exist');
+assert.ok(game.includes('mapRange=2600') && game.includes("playerMapCanvas.addEventListener('pointerdown'") && game.includes("playerMapCanvas.addEventListener('wheel'"), 'Full map must support drag panning and zooming');
+assert.ok(game.includes("b.id==='water_treatment'&&state.waterFilterLevel<1") && game.includes('state.hydration<10'), 'Water filters must be lootable in buildings and low thirst must disable sprint');
 assert.ok(game.includes('function drawResidentialInteriorDetails(') && game.includes('drawResidentialInteriorDetails(id,variant,floor)'), 'Residential interiors must receive the added home furnishing pass');
 assert.ok(game.includes('function renderPlayerList()') && game.includes("e.code==='Tab'||e.key==='Tab'") && game.includes('playerListOverlay'), 'Tab must open the online player list on PC');
 assert.ok(html.includes('id="playerListOverlay"') && html.includes('id="playerListContent"') && html.includes('id="playerListClose"'), 'Player list dialog markup must exist');
@@ -127,6 +132,7 @@ function makeHarness(seed = {}, failWrites = false) {
   const ctx2d = new Proxy({
     createPattern() { return {}; },
     createRadialGradient() { return gradient; },
+    createLinearGradient() { return gradient; },
     setTransform() {}
   }, {
     get(target, key) {
