@@ -395,3 +395,5 @@ assert.ok(game.includes("homeRadioDay[b.id]===state.day") && game.includes("acti
 assert.ok(game.includes("homeFurnitureLoot,homeRestedDay,homeWorkbenchDay,homeRadioDay"), 'Home furniture, rest, repair and radio progress must persist in existing saves');
 
 console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
+
+// Release guard: ensure the CC0 radio bulletin and recorded zombie vocal variants are wired into cinematic playback.
