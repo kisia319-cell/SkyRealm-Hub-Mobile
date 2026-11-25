@@ -1433,20 +1433,71 @@ function createApocalypseWorld(){
 }
 let characterCreatorThenIntro=false;
 function characterOptionSvg(id,value,index){
- const palettes=['#788c70','#b38c62','#697f91','#987b83','#a5a18a','#657b70','#9b765d','#73758d'];let seed=0;for(const c of (id+value))seed=(seed*31+c.charCodeAt(0))>>>0;const color=palettes[seed%palettes.length],accent=palettes[(seed+3)%palettes.length],n=index%7;let item='';
- if(id==='charHairStyle'){const shapes=['M17 31 Q15 8 31 8 Q48 8 45 31 L41 25 Q32 17 21 26Z','M15 29 Q11 3 31 5 Q52 4 47 30 L43 20 Q31 13 19 23Z','M18 25 Q31 10 44 25 L42 15 Q31 4 20 15Z','M15 27 L12 14 22 18 25 5 32 15 42 5 41 19 50 14 46 29Z','M16 27 Q10 12 24 8 Q39 2 47 18 L44 31 Q39 20 31 20 Q22 20 18 31Z','M15 27 Q13 8 31 8 Q50 8 47 27 L42 22 39 31 34 20 29 31 24 21 19 30Z','M15 27 Q18 5 31 8 Q47 7 47 27 L41 23 38 35 31 24 24 35 21 22Z'];item='<path d="'+shapes[n]+'" fill="'+color+'" stroke="#202a26" stroke-width="2"/><path d="M19 26 Q31 19 43 26" stroke="'+accent+'" stroke-width="2" fill="none"/>';}
- else if(['charOutfit','charOuterwear','charFabric','charCondition'].includes(id)){item='<path d="M18 22 L25 17 L37 17 L44 22 L51 32 L43 39 L40 33 L40 55 L22 55 L22 33 L19 39 L11 32Z" fill="'+color+'" stroke="#202a26" stroke-width="2"/><path d="M31 19 L31 53 M22 32 L40 32" stroke="'+accent+'" stroke-width="3"/><rect x="24" y="37" width="5" height="7" fill="'+accent+'"/><rect x="34" y="37" width="5" height="7" fill="'+accent+'"/>';}
- else if(id==='charCloak'){item='<path d="'+(n%3===0?'M22 19 L40 19 L51 53 L32 47 L11 53Z':n%3===1?'M23 18 L39 18 L47 57 L31 51 L16 57Z':'M22 18 L40 18 L53 48 L43 44 L32 58 L20 44 L9 48Z')+'" fill="'+color+'" stroke="#202a26" stroke-width="2"/><path d="M22 21 L40 21 M31 22 L31 48" stroke="'+accent+'" stroke-width="2"/>';}
- else if(id==='charHeadgear'){item='<path d="'+(n%3===0?'M15 28 Q16 9 31 9 Q47 9 47 28Z':n%3===1?'M10 24 L52 24 L42 29 L20 29Z':'M18 27 Q18 10 31 10 Q44 10 44 27 L48 34 L14 34Z')+'" fill="'+color+'" stroke="#202a26" stroke-width="2"/>';}
- else if(id==='charFaceAccessory'){item='<rect x="17" y="27" width="28" height="'+(n%2?9:13)+'" rx="4" fill="'+color+'" stroke="#202a26" stroke-width="2"/><circle cx="23" cy="33" r="3" fill="'+accent+'"/><circle cx="39" cy="33" r="3" fill="'+accent+'"/>';}
- else if(id==='charBackpack'){item='<rect x="17" y="18" width="28" height="38" rx="'+(n%2?10:4)+'" fill="'+color+'" stroke="#202a26" stroke-width="2"/><rect x="22" y="27" width="18" height="12" rx="3" fill="'+accent+'"/><path d="M21 18 L21 13 L41 13 L41 18" stroke="#202a26" stroke-width="3" fill="none"/>';}
- else if(id==='charGloves'){item='<path d="M18 52 L17 31 Q17 26 21 28 L23 39 L23 21 Q23 17 27 19 L28 38 L29 17 Q33 14 35 19 L35 38 L38 22 Q43 19 44 25 L43 43 L47 37 Q51 35 51 41 L47 54Z" fill="'+color+'" stroke="#202a26" stroke-width="2"/>';}
- else if(['charPantsStyle','charFootwear'].includes(id)){item='<path d="M20 15 L42 15 L44 39 L40 57 L30 57 L29 38 L25 57 L15 57 L18 38Z" fill="'+color+'" stroke="#202a26" stroke-width="2"/><path d="M31 18 L31 38" stroke="'+accent+'" stroke-width="3"/>';}
- else if(['charBelt','charPatch'].includes(id)){item='<rect x="12" y="26" width="38" height="14" rx="3" fill="'+color+'" stroke="#202a26" stroke-width="2"/><rect x="27" y="28" width="9" height="10" rx="1" fill="'+accent+'"/>';}
- else if(['charBodyType','charHeight','charFaceShape','charEyeStyle','charBeard','charMarkings','charScar'].includes(id)){item='<circle cx="31" cy="20" r="13" fill="#c99470" stroke="#513d32" stroke-width="2"/><path d="M17 54 Q16 34 31 34 Q47 34 46 54Z" fill="'+color+'" stroke="#202a26" stroke-width="2"/><circle cx="26" cy="21" r="1.8" fill="#252c2b"/><circle cx="37" cy="21" r="1.8" fill="#252c2b"/><path d="M25 28 Q31 32 38 28" stroke="'+accent+'" stroke-width="2" fill="none"/>';}
- else if(id==='charGarmentSize'){item='<path d="M17 21 L25 16 L38 16 L46 21 L52 34 L43 39 L40 32 L40 56 L22 56 L22 32 L19 39 L10 34Z" fill="'+color+'" stroke="#202a26" stroke-width="2" transform="translate('+(n-3)*1.2+' 0) scale('+(0.82+n*0.06)+' 1)"/>';}
- else{item='<circle cx="31" cy="31" r="19" fill="'+color+'" stroke="#202a26" stroke-width="2"/><path d="M19 31 L43 31 M31 19 L31 43" stroke="'+accent+'" stroke-width="4"/>';}
- const svg='<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#344239"/><stop offset="1" stop-color="#141d19"/></linearGradient></defs><rect width="64" height="64" rx="9" fill="url(#bg)"/><path d="M4 57 H60" stroke="#9aa88e" opacity=".35"/>'+item+'</svg>';
+ const palettes=['#788c70','#b38c62','#697f91','#987b83','#a5a18a','#657b70','#9b765d','#73758d'];
+ let seed=0;for(const c of (id+value))seed=(seed*31+c.charCodeAt(0))>>>0;
+ const color=palettes[seed%palettes.length],accent=palettes[(seed+3)%palettes.length],skin=['#e8b88c','#b97852','#f0c7a0','#8c5a42','#d7a77c'][seed%5],hair=palettes[(seed+5)%palettes.length];
+ const n=index%7,faceShape=value==='round'?'M25 20 Q36 15 47 20 Q49 33 43 42 Q36 49 29 42 Q22 34 25 20Z':value==='angular'?'M25 19 L47 19 L45 37 L36 47 L27 37Z':'M25 19 Q36 14 47 20 L45 38 Q37 48 28 39Z';
+ let hairShape='';
+ if(id==='charHairStyle'){
+  const shapes=['M24 25 Q20 5 36 6 Q52 5 49 26 L45 21 Q36 14 27 23Z','M23 28 Q18 2 36 4 Q54 3 51 28 L49 58 L43 45 L39 30 L30 46 L24 58Z','M24 25 Q22 12 36 10 Q49 12 49 25Z','M22 25 L20 14 29 18 31 5 37 17 46 5 45 19 53 14 49 29Z','M23 25 Q22 8 36 9 Q51 8 50 25 L45 18 Q36 13 28 20Z','M23 25 Q21 9 36 8 Q51 9 49 25 L44 22 42 31 36 22 30 31 27 21Z','M23 25 Q25 7 37 9 Q50 8 49 26 L44 22 41 34 35 23 29 33 27 22Z'];
+  hairShape=shapes[n];
+ }else if(id==='charHeadgear'){
+  hairShape=value==='helmet'?'M20 25 Q20 4 36 5 Q52 4 52 25 L49 29 L23 29Z':value==='cap'?'M20 21 Q23 9 36 10 Q48 10 50 22 L57 27 L17 27Z':'M20 26 Q20 8 36 8 Q52 8 52 26 L56 37 L16 37Z';
+ }else if(id==='charFaceAccessory'){
+  hairShape=value==='goggles'?'M22 26 H50 V34 H22Z':value==='mask'?'M25 31 H47 V43 H25Z':'M23 29 H49 V39 H23Z';
+ }
+ const clothesColor=['#526fba','#526b4c','#77604b','#5c6268','#8a5549'][seed%5];
+ const pants=['#343b3a','#4b5143','#42465b','#66513f'][seed%4];
+ const faceAccessory=id==='charFaceAccessory'||(id==='charHeadgear'&&value!=='none');
+ const beard=(id==='charBeard'&&value!=='none')||id==='charFaceShape'&&value==='bearded';
+ const scar=(id==='charScar'&&value==='yes')||(id==='charMarkings'&&value!=='none');
+ const cloak=id==='charCloak'&&value!=='none';
+ const pack=id==='charBackpack'&&value!=='none';
+ const gloves=id==='charGloves'&&value!=='none';
+ const shoes=id==='charFootwear';
+ const pantsOnly=id==='charPantsStyle';
+ const belt=id==='charBelt'&&value!=='none';
+ const size=id==='charGarmentSize';
+ const outfit=['charOutfit','charOuterwear','charFabric','charCondition'].includes(id);
+ const colorField=id.startsWith('char')&&['charSkin','charHair','charEyes','charEyeWhite','charShirt','charTrim','charPants','charBoots','charCloakColor','charPackColor','charHairAccent','charBrowColor','charBeardColor','charLipColor','charGloveColor','charBeltColor','charMetalColor','charUndershirtColor','charSkinDetail','charPatternColor'].includes(id);
+ const headwear=id==='charHeadgear'&&value!=='none';
+ const showBackpack=pack||id==='charBackpack';
+ const showCape=cloak||id==='charCloak';
+ const shirtColor=colorField&&id==='charShirt'?value:clothesColor;
+ const skinColor=colorField&&id==='charSkin'?value:skin;
+ const hairColor=colorField&&id==='charHair'?value:hair;
+ const eyesColor=colorField&&id==='charEyes'?value:'#29394a';
+ const shirt=(outfit||id==='charOutfit'||id==='charOuterwear'||id==='charFabric'||id==='charCondition')?color:shirtColor;
+ const pantsColor=pantsOnly?color:pants;
+ const itemOverlay=(()=>{
+  if(id==='charFaceAccessory')return value==='none'?'':'<path d="'+hairShape+'" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>';
+  if(id==='charHeadgear')return value==='none'?'':'<path d="'+hairShape+'" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>';
+  if(id==='charCloak')return '<path d="M24 47 L48 47 L57 87 L36 79 L15 87Z" fill="'+color+'" opacity=".95"/>';
+  if(id==='charBackpack')return '<rect x="14" y="43" width="13" height="28" rx="4" fill="'+color+'" stroke="#18231c" stroke-width="1.5"/>';
+  if(id==='charGloves')return '<path d="M15 65 L13 53 L19 52 L21 65 M49 65 L51 53 L45 52 L43 65" stroke="'+color+'" stroke-width="5" stroke-linecap="round"/>';
+  if(id==='charPantsStyle')return '<path d="M27 60 L35 60 L34 87 L27 87Z M38 60 L46 60 L45 87 L38 87Z" fill="'+color+'" stroke="#1a211d"/>';
+  if(id==='charFootwear')return '<path d="M25 84 H36 V91 H22Z M38 84 H49 V91 H36Z" fill="'+color+'" stroke="#17211b"/>';
+  if(id==='charBelt')return '<rect x="25" y="59" width="22" height="4" rx="1" fill="'+color+'"/><rect x="34" y="59" width="4" height="4" fill="'+accent+'"/>';
+  if(id==='charPatch')return '<rect x="40" y="47" width="7" height="7" rx="1" fill="'+color+'" stroke="#f0e2c2"/>';
+  if(id==='charGarmentSize')return '<path d="M25 44 L20 50 L15 59 M46 44 L51 50 L56 59" stroke="'+accent+'" stroke-width="3" fill="none"/>';
+  if(id==='charScar'||id==='charMarkings')return '<path d="M40 29 L34 37" stroke="'+color+'" stroke-width="2.2" stroke-linecap="round"/>';
+  if(id==='charBeard')return '<path d="M28 34 Q36 49 45 34 L43 41 Q36 51 29 41Z" fill="'+color+'" stroke="#382d26"/>';
+  if(id==='charHairStyle')return '<path d="'+hairShape+'" fill="'+hairColor+'" stroke="#17211b" stroke-width="1.5"/>';
+  if(id==='charFabric'||id==='charCondition'||id==='charOutfit'||id==='charOuterwear')return '<path d="M25 46 L30 42 H42 L48 46 L54 57 L47 61 L44 55 V75 H27 V55 L24 61 L17 57Z" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>';
+  if(colorField)return '<rect x="48" y="7" width="12" height="12" rx="3" fill="'+value+'" stroke="#f4e8ce"/>';
+  if(id==='charBodyType'||id==='charHeight'||id==='charFaceShape'||id==='charEyeStyle'||id==='charSkinDetail')return '<path d="M27 29 Q36 35 45 29" stroke="'+accent+'" stroke-width="1.4" fill="none"/>';
+  return '<path d="M18 50 L54 50" stroke="'+accent+'" stroke-width="2" opacity=".7"/>';
+ })();
+ const svg='<svg xmlns="http://www.w3.org/2000/svg" width="72" height="96" viewBox="0 0 72 96"><defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#455748"/><stop offset="1" stop-color="#151e19"/></linearGradient><linearGradient id="shirt" x2="0" y2="1"><stop stop-color="'+shirt+'"/><stop offset="1" stop-color="'+accent+'"/></linearGradient></defs><rect width="72" height="96" rx="9" fill="url(#bg)"/><path d="M5 89 H67" stroke="#b8c4aa" opacity=".3"/><ellipse cx="36" cy="89" rx="19" ry="3" fill="#0008"/>
+ <path d="M27 60 L34 60 L33 83 L26 85Z M38 60 L45 60 L46 85 L39 83Z" fill="'+pantsColor+'" stroke="#17211b" stroke-width="1.4"/><path d="M24 82 H35 V88 H21Z M38 82 H49 V88 H36Z" fill="#30352f" stroke="#121a15"/>
+ <path d="M25 44 L18 49 L14 63 L22 66 L26 57 L26 76 H46 V57 L50 66 L58 63 L54 49 L47 44Z" fill="url(#shirt)" stroke="#17211b" stroke-width="1.6"/><path d="M35 45 V75 M27 50 H45" stroke="'+accent+'" stroke-width="2" opacity=".8"/>
+ '+(showBackpack?'<rect x="13" y="47" width="12" height="27" rx="4" fill="'+(pack?color:accent)+'" stroke="#17211b"/>':'')+(showCape?'<path d="M26 43 L46 43 L57 83 L36 76 L15 83Z" fill="'+(cloak?color:accent)+'" opacity=".92"/>':'')+'
+ <rect x="32" y="38" width="8" height="9" rx="3" fill="'+skinColor+'"/><path d="'+faceShape+'" fill="'+skinColor+'" stroke="#47382e" stroke-width="1.4"/>
+ <path d="M27 28 Q25 13 36 13 Q50 13 47 29 L44 23 Q36 18 29 24Z" fill="'+hairColor+'" stroke="#17211b" stroke-width="1.4"/>
+ <path d="M28 28 Q31 26 34 28 M39 28 Q42 26 45 28" stroke="#49352d" stroke-width="1.5" fill="none"/>
+ <ellipse cx="32" cy="31" rx="2.3" ry="2.8" fill="#f5eee0"/><ellipse cx="42" cy="31" rx="2.3" ry="2.8" fill="#f5eee0"/><circle cx="32.4" cy="31.5" r="1.25" fill="'+eyesColor+'"/><circle cx="42.4" cy="31.5" r="1.25" fill="'+eyesColor+'"/>
+ <path d="M37 32 L35 37 L38 37" fill="none" stroke="#805b46" stroke-width="1"/><path d="M33 40 Q37 42 41 40" fill="none" stroke="#824d49" stroke-width="1.4" stroke-linecap="round"/>
+ '+(beard?'<path d="M29 36 Q36 49 44 36 L42 44 Q36 49 30 44Z" fill="'+(id==='charBeard'?color:hairColor)+'"/>':'')+(scar?'<path d="M43 27 L39 36" stroke="'+color+'" stroke-width="1.5"/>':'')+(headwear?'<path d="'+hairShape+'" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>':'')+(faceAccessory?'<path d="'+hairShape+'" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>':'')+itemOverlay+'</svg>';
  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
 const CHARACTER_TABS=[
@@ -1461,7 +1512,7 @@ const CHARACTER_TABS=[
 function buildCharacterTabs(){
  const host=document.querySelector('#characterCreator .character-fields');if(!host)return;
  if(host.dataset.tabsBuilt==='1')return;
- const allFields=Array.from(document.querySelectorAll('#characterCreator .character-field'));
+ const allFields=Array.from(document.querySelectorAll('#characterCreator .character-field')).filter(field=>field.querySelector('[data-character]'));
  const nav=document.createElement('div');nav.className='character-tab-nav';nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Разделы внешности');
  const panes=document.createElement('div');panes.className='character-tab-panes';
  const groups={};
