@@ -234,6 +234,7 @@ let voiceTimers=[],publishedPlayers=[],speechTimers=[];
 // Published OpenGameArt assets: CC0. Zombie calls recorded by saturn91; radio bulletin by OrbitStudios/Fernando Ferreira.
 const publishedSfx={zombieWalk:'https://opengameart.org/sites/default/files/01_zombey.mp3',zombieAttack:'https://opengameart.org/sites/default/files/03_zombey.mp3',zombieGroan2:'https://opengameart.org/sites/default/files/02_zombey.mp3',zombieGroan3:'https://opengameart.org/sites/default/files/04_zombey.mp3',zombieGrowl:'https://opengameart.org/sites/default/files/06_zombey.mp3',zombieScream:'https://opengameart.org/sites/default/files/07_zombey.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
 function stopRadioDialogue(){
+ if('speechSynthesis' in window){try{window.speechSynthesis.cancel()}catch(_){}}
  voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];
  speechTimers.forEach(id=>clearTimeout(id));speechTimers=[];
  publishedPlayers.forEach(a=>{try{a.pause();a.currentTime=0}catch(_){}});publishedPlayers=[];
