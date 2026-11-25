@@ -50,40 +50,45 @@ function drawZombie(x,y,z,t,variant=0,scale=1,phase=0,targetX=null,targetZ=null)
  const torsoTwist=Math.sin(t*1.65+phase)*.12;
  const headTilt=Math.sin(t*2.4+phase*1.3)*.16;
  const jawOpen=.045+Math.max(0,Math.sin(t*5.8+phase))*.12;
- const reach=approach*.8,skin=variant===1?[.29,.35,.29]:variant===2?[.39,.34,.27]:[.31,.37,.32];
- const cloth=variant===1?[.13,.19,.17]:variant===2?[.23,.14,.12]:[.12,.16,.15],dark=[.055,.07,.062];
+ const reach=approach*.8;
+ // Four deliberately different infected silhouettes, not palette swaps.
+ const bodyW=[1,.76,1.34,1.12][variant%4],bodyH=[1,1.12,1.08,.9][variant%4];
+ const headW=[1,.88,1.12,1.32][variant%4],headH=[1,1.08,.92,1.02][variant%4];
+ const armW=[1,.78,1.48,1.12][variant%4],legW=[1,.9,1.34,.92][variant%4];
+ const skin=[[.31,.37,.32],[.29,.35,.29],[.39,.34,.27],[.34,.29,.25]][variant%4];
+ const cloth=[[.12,.16,.15],[.13,.19,.17],[.23,.14,.12],[.16,.12,.105]][variant%4],dark=[.055,.07,.062];
  const Y=y+Math.abs(gait)*.035+lurch+stumble;
  // Offset, imperfect legs and independently animated boots.
- limb(x-.2*scale,Y+.48*scale,z,.17*scale,.42*scale,.19*scale,cloth,gait*.24+torsoTwist);
- limb(x+.2*scale,Y+.48*scale,z,.17*scale,.42*scale,.19*scale,cloth,counter*.18-torsoTwist);
- limb(x-.2*scale,Y+.15*scale,z+.05*scale,.12*scale,.28*scale,.13*scale,skin,gait*.46+stumble);
- limb(x+.2*scale,Y+.15*scale,z-.03*scale,.12*scale,.28*scale,.13*scale,skin,counter*.42-stumble*.6);
+ limb(x-.2*scale,Y+.48*scale,z,.17*legW*scale,.42*bodyH*scale,.19*legW*scale,cloth,gait*.24+torsoTwist);
+ limb(x+.2*scale,Y+.48*scale,z,.17*legW*scale,.42*bodyH*scale,.19*legW*scale,cloth,counter*.18-torsoTwist);
+ limb(x-.2*scale,Y+.15*scale,z+.05*scale,.12*legW*scale,.28*scale,.13*legW*scale,skin,gait*.46+stumble);
+ limb(x+.2*scale,Y+.15*scale,z-.03*scale,.12*legW*scale,.28*scale,.13*legW*scale,skin,counter*.42-stumble*.6);
  box(x-.2*scale,Y-.02*scale,z+.11*scale,.28*scale,.14*scale,.42*scale,dark,gait*.12);
  box(x+.2*scale,Y-.02*scale,z+.11*scale,.28*scale,.14*scale,.42*scale,dark,counter*.1);
  // Chest, uneven shoulders and torn clothing move with the stagger.
- ball(x,Y+1.08*scale,z,.39*scale,.52*scale,.25*scale,skin,torsoTwist);
- box(x,Y+1.08*scale,z+.025*scale,.58*scale,.58*scale,.39*scale,cloth,torsoTwist*.55);
+ ball(x,Y+1.08*scale,z,.39*bodyW*scale,.52*bodyH*scale,.25*bodyW*scale,skin,torsoTwist);
+ box(x,Y+1.08*scale,z+.025*scale,.58*bodyW*scale,.58*bodyH*scale,.39*bodyW*scale,cloth,torsoTwist*.55);
  box(x-.1*scale,Y+.84*scale,z+.23*scale,.2*scale,.22*scale,.035*scale,[.07,.085,.07],-.18);
  box(x+.19*scale,Y+1.05*scale,z+.235*scale,.14*scale,.34*scale,.035*scale,[.26,.22,.17],.16);
  // Shoulders, elbows and hands use different arcs to avoid mirrored puppet motion.
- ball(x-.38*scale,Y+1.35*scale,z,.19*scale,.2*scale,.2*scale,cloth,gait*.13);
- ball(x+.38*scale,Y+1.35*scale,z,.19*scale,.2*scale,.2*scale,cloth,-counter*.1);
+ ball(x-.38*bodyW*scale,Y+1.35*scale,z,.19*armW*scale,.2*bodyH*scale,.2*armW*scale,cloth,gait*.13);
+ ball(x+.38*bodyW*scale,Y+1.35*scale,z,.19*armW*scale,.2*bodyH*scale,.2*armW*scale,cloth,-counter*.1);
  const leftArm=-.62+gait*.34-reach-stumble*.5;
  const rightArm=.62-counter*.28+reach*.65+stumble;
- limb(x-.48*scale,Y+1.08*scale,z,.14*scale,.38*scale,.15*scale,skin,leftArm);
- limb(x+.48*scale,Y+1.08*scale,z,.15*scale,.38*scale,.15*scale,skin,rightArm);
- limb(x-.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,leftArm*.55-reach*.35);
- limb(x+.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,rightArm*.55+reach*.3);
+ limb(x-.48*bodyW*scale,Y+1.08*scale,z,.14*armW*scale,.38*scale,.15*armW*scale,skin,leftArm);
+ limb(x+.48*bodyW*scale,Y+1.08*scale,z,.15*armW*scale,.38*scale,.15*armW*scale,skin,rightArm);
+ limb(x-.62*bodyW*scale,Y+.79*scale,z+.03*scale,.12*armW*scale,.24*scale,.12*armW*scale,skin,leftArm*.55-reach*.35);
+ limb(x+.62*bodyW*scale,Y+.79*scale,z+.03*scale,.12*armW*scale,.24*scale,.12*armW*scale,skin,rightArm*.55+reach*.3);
  for(let f=0;f<4;f++){
   const spread=(f-1.5)*.055*scale;
   ball(x-.65*scale+spread,Y+.59*scale,z+.07*scale,.035*scale,.12*scale,.035*scale,skin,-.25+gait*.08);
   ball(x+.65*scale+spread,Y+.59*scale,z+.07*scale,.035*scale,.12*scale,.035*scale,skin,.25-counter*.08);
  }
  // Neck and skull: the head leads each turn, with a loose jaw and uneven eyes.
- tube(x,Y+1.48*scale,z,.11*scale,.22*scale,.11*scale,skin,headTilt*.5);
- ball(x,Y+1.79*scale,z,.28*scale,.34*scale,.25*scale,skin,headTilt+approach*.08);
- ball(x-.28*scale,Y+1.78*scale,z,.07*scale,.12*scale,.08*scale,skin);
- ball(x+.28*scale,Y+1.78*scale,z,.07*scale,.12*scale,.08*scale,skin);
+ tube(x,Y+1.48*scale,z,.11*headW*scale,.22*scale,.11*headW*scale,skin,headTilt*.5);
+ ball(x,Y+1.79*scale,z,.28*headW*scale,.34*headH*scale,.25*headW*scale,skin,headTilt+approach*.08+(variant===3?-.18:0));
+ ball(x-.28*headW*scale,Y+1.78*scale,z,.07*headW*scale,.12*headH*scale,.08*scale,skin);
+ ball(x+.28*headW*scale,Y+1.78*scale,z,.07*headW*scale,.12*headH*scale,.08*scale,skin);
  ball(x,Y+1.61*scale,z+.15*scale,.21*scale,.12*scale,.13*scale,[.19,.12,.1],jawOpen);
  box(x,Y+(1.56-jawOpen*.3)*scale,z+.245*scale,.2*scale,.045*scale,.025*scale,[.08,.055,.045],jawOpen);
  for(let h=0;h<6;h++)ball(x+(h-2.5)*.075*scale,Y+2.02*scale+Math.sin(h*3)*.04*scale,z-.04*scale,.09*scale,.16*scale,.11*scale,[.07,.075,.065],(h-2)*.12+headTilt*.25);
@@ -96,6 +101,37 @@ function drawZombie(x,y,z,t,variant=0,scale=1,phase=0,targetX=null,targetZ=null)
  ball(x-.22*scale,Y+1.25*scale,z+.21*scale,.055*scale,.11*scale,.025*scale,[.23,.055,.04]);
  ball(x+.14*scale,Y+1.02*scale,z+.23*scale,.075*scale,.045*scale,.02*scale,[.19,.045,.035]);
  ball(x-.13*scale,Y+.72*scale,z+.215*scale,.09*scale,.045*scale,.025*scale,[.16,.07,.055]);
+ // Signature anatomy and equipment distinguish each infected class at a glance.
+ if(variant===0){
+  // Common shambler: torn collar, exposed ribs and one drooping shoulder.
+  for(let r=0;r<3;r++)box(x-.12*scale+r*.1*scale,Y+.98*scale,z+.235*scale,.045*scale,.28*scale,.035*scale,[.075,.085,.07],-.12);
+  ball(x-.39*scale,Y+1.25*scale,z,.13*scale,.12*scale,.16*scale,[.19,.22,.18],-.35);
+ }else if(variant===1){
+  // Runner: narrow chest, long lower legs, forward skull and stretched tendons.
+  limb(x-.13*scale,Y+.32*scale,z+.02*scale,.075*scale,.31*scale,.08*scale,[.23,.29,.24],-.08);
+  limb(x+.13*scale,Y+.32*scale,z+.02*scale,.075*scale,.31*scale,.08*scale,[.23,.29,.24],.08);
+  ball(x,Y+1.16*scale,z+.2*scale,.19*scale,.23*scale,.09*scale,[.12,.16,.13],-.22);
+  box(x,Y+1.39*scale,z+.19*scale,.13*scale,.055*scale,.025*scale,[.29,.12,.08],-.2);
+ }else if(variant===2){
+  // Brute: heavy shoulder mantle, thick forearms and a battered chest plate.
+  ball(x,Y+1.37*scale,z,.62*scale,.28*scale,.31*scale,[.19,.16,.13]);
+  box(x,Y+1.12*scale,z+.24*scale,.53*scale,.42*scale,.075*scale,[.105,.12,.105],torsoTwist*.3);
+  for(let side of [-1,1]){
+   ball(x+side*.57*scale,Y+.83*scale,z,.2*scale,.28*scale,.2*scale,[.31,.27,.2]);
+   box(x+side*.53*scale,Y+1.43*scale,z+.03*scale,.28*scale,.13*scale,.3*scale,[.11,.12,.105],side*.18);
+  }
+  ball(x,Y+1.02*scale,z+.31*scale,.14*scale,.08*scale,.035*scale,[.62,.18,.07]);
+ }else{
+  // Mutant: asymmetrical swollen growths, ribbed back and malformed skull.
+  ball(x+.27*scale,Y+1.02*scale,z+.12*scale,.34*scale,.4*scale,.28*scale,[.28,.22,.19],-.28);
+  ball(x-.36*scale,Y+1.38*scale,z-.08*scale,.22*scale,.29*scale,.22*scale,[.24,.19,.17],.35);
+  for(let k=0;k<4;k++){
+   const px=x+(.12+k*.13)*scale,py=Y+(1.38+(k%2)*.12)*scale;
+   ball(px,py,z-.22*scale,.09*scale,.2*scale,.1*scale,[.17,.15,.13],-.24);
+  }
+  ball(x+.09*scale,Y+1.8*scale,z+.23*scale,.1*scale,.17*scale,.08*scale,[.16,.12,.1],.4);
+  ball(x-.19*scale,Y+1.05*scale,z+.29*scale,.13*scale,.17*scale,.055*scale,[.44,.24,.16]);
+ }
 }
 function rotorBlade(x,y,z,angle,length,width,color){box(x,y,z,length,.055,width,color,angle)}
 function drawHelicopter(x,y,z,t,damage=0){
@@ -276,7 +312,7 @@ function renderCrash(t){
  for(let i=0;i<4;i++){
   const side=i%2?1:-1,x=side*(9+Math.max(0,t-4)*.22),z=(i<2?-11:11)+Math.sin(t*1.15+i)*.28,y=.05;
   const [tx,tz]=crowdTargets[i];
-  drawZombie(x,y,z,t,i%3,.9+i*.035,i*1.7,tx,tz);
+  drawZombie(x,y,z,t,i%4,.9+i*.035,i*1.7,tx,tz);
  }
  // Non-graphic attack staging: bodies close in, camera dips, then the image cuts
  // to smoke and radio static rather than showing explicit gore.
@@ -304,7 +340,7 @@ for(let i=0;i<(mobile()?7:12);i++){let age=(t*.3+i*.22)%3,a=i*2.4+age*.8,x=2+Mat
 for(let i=0;i<(mobile()?9:16);i++){let a=i*2.39+t*1.5,r=.4+((t*1.8+i*.4)%3)*.3,y=.8+((t*1.8+i*.4)%3);ball(2+Math.cos(a)*r,y,Math.sin(a)*r,.05,.09,.05,[1,.36,.07])}
 if(t>4&&t<11){box(-3,5,-7,1.8,.035,.035,[.95,.72,.36],Math.sin(t*2)*.5);box(-3,5,-7,.035,1.8,.035,[.95,.72,.36],Math.sin(t*2)*.5)}
 gl.depthMask(true);gl.disable(gl.BLEND);
-if(t>9.5){for(let i=0;i<3;i++){const z=-5+i*4;drawZombie(-5+i*4,.05,z,t,i%3,.88+i*.06,i*2.2)}}if(t>10){let flash=Math.max(0,1-Math.abs(t-10.1)*2);if(flash>.02){gl.clearColor(.25*flash,.16*flash,.08*flash,1);gl.clear(gl.COLOR_BUFFER_BIT)}}
+if(t>9.5){for(let i=0;i<3;i++){const z=-5+i*4;drawZombie(-5+i*4,.05,z,t,i%4,.88+i*.06,i*2.2)}}if(t>10){let flash=Math.max(0,1-Math.abs(t-10.1)*2);if(flash>.02){gl.clearColor(.25*flash,.16*flash,.08*flash,1);gl.clear(gl.COLOR_BUFFER_BIT)}}
 }
 
 let voiceTimers=[],publishedPlayers=[],speechTimers=[];
