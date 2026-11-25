@@ -237,36 +237,22 @@ function stopRadioDialogue(){
  voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];
  speechTimers.forEach(id=>clearTimeout(id));speechTimers=[];
  publishedPlayers.forEach(a=>{try{a.pause();a.currentTime=0}catch(_){}});publishedPlayers=[];
- try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(_){}
-}
-function speakRadio(line,rate=1,pitch=1){
- if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance)return;
- try{
-  const u=new SpeechSynthesisUtterance(line);u.lang='ru-RU';u.rate=rate;u.pitch=pitch;u.volume=.92;
-  const voices=window.speechSynthesis.getVoices()||[];
-  const ru=voices.find(v=>/^ru(-|_)/i.test(v.lang))||voices.find(v=>/russian|рус/i.test(v.name));
-  if(ru)u.voice=ru;
-  window.speechSynthesis.speak(u);
- }catch(e){console.warn('Russian cinematic voice unavailable',e)}
-}
-function scheduleSpeech(line,at,rate=1,pitch=1){
- const id=setTimeout(()=>speakRadio(line,rate,pitch),at*1000);speechTimers.push(id);
 }
 function radioDialogue(kind){
  stopRadioDialogue();
+ // Published spoken zombie-emergency broadcast: OpenGameArt, CC0, OrbitStudios / Fernando Ferreira.
+ // This is a real recorded dispatcher/news voice, not system TTS.
+ const bulletinAt=kind==='crash'?.8:1.05;
+ const bulletinVolume=kind==='crash'?.9:.84;
+ const schedule=(url,delay,volume,limitMs=0)=>{const id=setTimeout(()=>{try{
+  const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('published cinematic sound unavailable',e));publishedPlayers.push(a);
+  if(limitMs){const stopId=setTimeout(()=>{try{a.pause();a.currentTime=0}catch(_){}},limitMs);voiceTimers.push(stopId)}
+ }catch(e){console.warn('published cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};
+ schedule(publishedSfx.radioBulletin,bulletinAt,bulletinVolume,14500);
  const sequence=kind==='crash'
- ?[[.35,publishedSfx.impact,.8],[1.5,publishedSfx.radioBulletin,.16],[2.2,publishedSfx.zombieWalk,.46],[4.1,publishedSfx.zombieGroan2,.5],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.82],[8.6,publishedSfx.zombieGrowl,.58],[10.4,publishedSfx.zombieScream,.75],[12.1,publishedSfx.zombieGroan3,.62],[13.1,publishedSfx.zombieWalk,.45]]
- :[[.25,publishedSfx.helicopter,.58],[1.5,publishedSfx.radioBulletin,.13],[4.2,publishedSfx.helicopter,.62],[6.1,publishedSfx.zombieGroan2,.38],[8.8,publishedSfx.impact,.85],[11.5,publishedSfx.zombieWalk,.42],[13.2,publishedSfx.zombieGrowl,.4]];
- const schedule=(url,delay,volume)=>{const id=setTimeout(()=>{try{const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('published cinematic sound unavailable',e));publishedPlayers.push(a)}catch(e){console.warn('published cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};
+ ?[[.35,publishedSfx.impact,.72],[2.2,publishedSfx.zombieWalk,.46],[4.1,publishedSfx.zombieGroan2,.52],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.82],[8.6,publishedSfx.zombieGrowl,.66],[10.4,publishedSfx.zombieScream,.82],[12.1,publishedSfx.zombieGroan3,.68],[13.1,publishedSfx.zombieWalk,.45]]
+ :[[.25,publishedSfx.helicopter,.5],[4.2,publishedSfx.helicopter,.58],[6.1,publishedSfx.zombieGroan2,.42],[8.8,publishedSfx.impact,.75],[11.5,publishedSfx.zombieWalk,.42],[13.2,publishedSfx.zombieGrowl,.48]];
  sequence.forEach(([at,url,volume])=>schedule(url,at,volume));
- const lines=kind==='crash'
- ?[[.7,'Диспетчер, ответьте! У нас отказ двигателя!'],[3.8,'Маяк вижу… высота падает!'],[7.9,'Есть кто-нибудь?! Я выбираюсь!'],[9.9,'Нет! Не подходите! А-а-а!'],[12.1,'Помогите! Они здесь!']]
- :[[.65,'База, это борт семь. Над городом нет связи.'],[4.1,'Повторяю, вижу движение на улицах…'],[7.5,'Что это было?! Нас задело!'],[10.7,'Мы падаем! Приготовиться к удару!'],[13.1,'Они идут сюда…']];
- lines.forEach(([at,line])=>scheduleSpeech(line,at,kind==='crash'&&at>9?.94:1,kind==='crash'&&at>9?1.22:0.94));
- if(kind==='crash'){
-  scheduleSpeech('А-а-а! Отстаньте!',11.15,.82,1.45);
-  scheduleSpeech('Гр-р-р…',13.45,.72,.55);
- }
 }
 function audioStart(){audioStop();try{let AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audio=new AC();let master=audio.createGain();master.gain.value=.26;master.connect(audio.destination);audioNodes.push(master);audio.resume();
 let osc=(freq,type,volume,when,duration,endFreq)=>{let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,when);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),when+duration);g.gain.setValueAtTime(.0001,when);g.gain.exponentialRampToValueAtTime(volume,when+.08);g.gain.setValueAtTime(volume,when+Math.max(.1,duration-.2));g.gain.exponentialRampToValueAtTime(.0001,when+duration);o.connect(g);g.connect(master);o.start(when);o.stop(when+duration+.04);audioNodes.push(o,g)};
