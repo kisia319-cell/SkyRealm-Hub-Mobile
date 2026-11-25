@@ -234,6 +234,7 @@ let voiceTimers=[],publishedPlayers=[],speechTimers=[];
 // Published OpenGameArt assets: CC0. Zombie calls recorded by saturn91; radio bulletin by OrbitStudios/Fernando Ferreira.
 const publishedSfx={zombieWalk:'https://opengameart.org/sites/default/files/01_zombey.mp3',zombieAttack:'https://opengameart.org/sites/default/files/03_zombey.mp3',zombieGroan2:'https://opengameart.org/sites/default/files/02_zombey.mp3',zombieGroan3:'https://opengameart.org/sites/default/files/04_zombey.mp3',zombieGrowl:'https://opengameart.org/sites/default/files/06_zombey.mp3',zombieScream:'https://opengameart.org/sites/default/files/07_zombey.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
 function stopRadioDialogue(){
+ if(window.AndroidBridge&&typeof window.AndroidBridge.stopRussianSpeech==='function'){try{window.AndroidBridge.stopRussianSpeech()}catch(_){}}
  if('speechSynthesis' in window){try{window.speechSynthesis.cancel()}catch(_){}}
  voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];
  speechTimers.forEach(id=>clearTimeout(id));speechTimers=[];
@@ -245,15 +246,23 @@ function radioDialogue(kind){
  const lines=kind==='crash'
   ?[[.8,'Внимание всем постам. Это диспетчерская. Зафиксирована вспышка заражения в жилом секторе. Повторяю: массовое заражение.'],[5.1,'Экипаж вертолёта, немедленно меняйте курс. Посадка запрещена. На земле замечено движение заражённых.'],[9.7,'Пилот, ответьте! Вы меня слышите? Уходите оттуда! Быстро!']]
   :[[1.0,'Внимание всем постам. Говорит центральная диспетчерская. В городе зафиксирована вспышка неизвестной инфекции.'],[5.2,'Не приближайтесь к заражённым. Избегайте скоплений людей. Следуйте к ближайшему укреплённому пункту.'],[10.1,'Повторяю: сохраняйте радиосвязь. Если вы слышите это сообщение, ответьте на частоте аварийного канала.']];
+ let androidInstallAsked=false;
  const speak=(line)=>{try{
+  if(window.AndroidBridge&&typeof window.AndroidBridge.speakRussian==='function'){
+   const available=typeof window.AndroidBridge.isRussianVoiceAvailable==='function'&&window.AndroidBridge.isRussianVoiceAvailable();
+   if(available){window.AndroidBridge.speakRussian(line);return;}
+   window.AndroidBridge.speakRussian(line);
+   if(!androidInstallAsked){androidInstallAsked=true;setTimeout(()=>{try{if(!window.AndroidBridge.isRussianVoiceAvailable())window.AndroidBridge.installRussianVoice()}catch(_){}},2200);}
+   return;
+  }
   if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return;
-  const u=new SpeechSynthesisUtterance(line);u.lang='ru-RU';u.rate=.88;u.pitch=.78;u.volume=1;
   const voices=window.speechSynthesis.getVoices()||[];
   const ru=voices.filter(v=>/^ru([_-]|$)/i.test(v.lang||''));
-  const preferred=ru.find(v=>/google|microsoft|russian|рус/i.test(v.name||''))||ru[0];
-  if(preferred)u.voice=preferred;
+  if(!ru.length){console.warn('Russian Windows voice is not installed; install the ru-RU Text-to-Speech capability.');return;}
+  const u=new SpeechSynthesisUtterance(line);u.lang='ru-RU';u.rate=.88;u.pitch=.82;u.volume=1;
+  const preferred=ru.find(v=>/microsoft|russian|рус/i.test(v.name||''))||ru[0];u.voice=preferred;
   window.speechSynthesis.speak(u);
- }catch(e){console.warn('Russian dispatcher voice unavailable',e)}};
+ }catch(e){console.warn('Russian dispatcher voice unavailable',e)}}
  lines.forEach(([at,line])=>{const id=setTimeout(()=>speak(line),at*1000);speechTimers.push(id)});
  const schedule=(url,delay,volume)=>{const id=setTimeout(()=>{try{const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('cinematic sound unavailable',e));publishedPlayers.push(a)}catch(e){console.warn('cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};
  const sequence=kind==='crash'
