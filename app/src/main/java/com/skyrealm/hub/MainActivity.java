@@ -86,6 +86,20 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void refreshRussianTtsLanguage() {
+        if (russianTts == null || !ttsReady) return;
+        int language = russianTts.setLanguage(new Locale("ru", "RU"));
+        russianAvailable = language != TextToSpeech.LANG_MISSING_DATA
+            && language != TextToSpeech.LANG_NOT_SUPPORTED;
+        if (russianAvailable) {
+            russianTts.setSpeechRate(0.88f);
+            russianTts.setPitch(0.82f);
+            synchronized (pendingRussianSpeech) {
+                while (!pendingRussianSpeech.isEmpty()) speakRussianNow(pendingRussianSpeech.removeFirst());
+            }
+        }
+    }
+
     private void speakRussianNow(String text) {
         if (russianTts == null || !russianAvailable || text == null || text.trim().isEmpty()) return;
         if (android.os.Build.VERSION.SDK_INT >= 21) {
@@ -151,6 +165,11 @@ public class MainActivity extends Activity {
                 catch (Exception ignored) { }
             });
         }
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        refreshRussianTtsLanguage();
     }
 
     @Override protected void onDestroy() {
