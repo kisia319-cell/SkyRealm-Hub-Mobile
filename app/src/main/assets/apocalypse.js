@@ -1449,7 +1449,34 @@ function characterOptionSvg(id,value,index){
  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#344239"/><stop offset="1" stop-color="#141d19"/></linearGradient></defs><rect width="64" height="64" rx="9" fill="url(#bg)"/><path d="M4 57 H60" stroke="#9aa88e" opacity=".35"/>'+item+'</svg>';
  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
+const CHARACTER_TABS=[
+ {id:'basic',label:'Основное',icon:'☻',fields:['charBodyType','charHeight']},
+ {id:'hair',label:'Волосы',icon:'✂',fields:['charHairStyle','charBeard']},
+ {id:'face',label:'Лицо',icon:'◉',fields:['charHeadgear','charFaceAccessory','charScar','charFaceShape','charEyeStyle']},
+ {id:'skin',label:'Кожа и глаза',icon:'◌',fields:['charSkin','charEyes','charEyeWhite','charMarkings','charSkinDetail']},
+ {id:'clothes',label:'Одежда',icon:'▣',fields:['charOutfit','charGarmentSize','charOuterwear','charCloak','charPantsStyle','charFootwear','charFabric','charCondition','charPatch']},
+ {id:'gear',label:'Снаряжение',icon:'▤',fields:['charBackpack','charGloves','charBelt']},
+ {id:'colors',label:'Цвета',icon:'◐',fields:[]}
+];
+function buildCharacterTabs(){
+ const host=document.querySelector('#characterCreator .character-fields');if(!host)return;
+ if(host.dataset.tabsBuilt==='1')return;
+ const allFields=Array.from(document.querySelectorAll('#characterCreator .character-field'));
+ const nav=document.createElement('div');nav.className='character-tab-nav';nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Разделы внешности');
+ const panes=document.createElement('div');panes.className='character-tab-panes';
+ const groups={};
+ CHARACTER_TABS.forEach((tab,index)=>{const button=document.createElement('button');button.type='button';button.className='character-tab-button'+(index===0?' active':'');button.dataset.tab=tab.id;button.id='characterTab-'+tab.id;button.setAttribute('role','tab');button.setAttribute('aria-selected',String(index===0));button.setAttribute('aria-controls','characterPane-'+tab.id);button.innerHTML='<span class="character-tab-icon" aria-hidden="true">'+tab.icon+'</span><span>'+tab.label+'</span>';button.addEventListener('click',()=>activateCharacterTab(tab.id));nav.appendChild(button);const pane=document.createElement('div');pane.className='character-tab-pane'+(index===0?' active':'');pane.id='characterPane-'+tab.id;pane.dataset.pane=tab.id;pane.setAttribute('role','tabpanel');pane.setAttribute('aria-labelledby',button.id);pane.hidden=index!==0;panes.appendChild(pane);groups[tab.id]=pane;});
+ const fieldTab=new Map();CHARACTER_TABS.forEach(tab=>tab.fields.forEach(id=>fieldTab.set(id,tab.id)));
+ allFields.forEach(field=>{const control=field.querySelector('[data-character]');if(!control)return;const id=control.id;const tab=control.type==='color'?'colors':(fieldTab.get(id)||'clothes');groups[tab].appendChild(field);});
+ host.replaceChildren(nav,panes);host.dataset.tabsBuilt='1';
+}
+function activateCharacterTab(id){
+ const host=document.querySelector('#characterCreator .character-fields');if(!host)return;
+ host.querySelectorAll('.character-tab-button').forEach(button=>{const active=button.dataset.tab===id;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));});
+ host.querySelectorAll('.character-tab-pane').forEach(pane=>{const active=pane.dataset.pane===id;pane.classList.toggle('active',active);pane.hidden=!active;});
+}
 function renderCharacterOptionGalleries(){
+ buildCharacterTabs();
  document.querySelectorAll('#characterCreator select[data-character]').forEach(select=>{let gallery=select.parentElement.querySelector('.character-option-gallery');if(!gallery){gallery=document.createElement('div');gallery.className='character-option-gallery';gallery.setAttribute('aria-label','Иллюстрированные варианты');select.insertAdjacentElement('afterend',gallery);}gallery.innerHTML='';Array.from(select.options).forEach((option,index)=>{const card=document.createElement('button');card.type='button';card.className='character-option-card';card.dataset.optionValue=option.value;card.setAttribute('aria-label',option.textContent);card.setAttribute('aria-pressed',String(option.value===select.value));const img=document.createElement('img');img.alt='';img.loading='lazy';img.src=characterOptionSvg(select.id,option.value,index);const caption=document.createElement('span');caption.textContent=option.textContent;card.append(img,caption);card.addEventListener('click',()=>{select.value=option.value;select.dispatchEvent(new Event('input',{bubbles:true}));select.dispatchEvent(new Event('change',{bubbles:true}));});gallery.appendChild(card);});});
 }
 function syncCharacterOptionGalleries(){
