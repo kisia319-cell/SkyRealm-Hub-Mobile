@@ -13,8 +13,8 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.5.9"
-# Cinematic 3D pilot escape, separated infected blocking and Russian speech restoration.
+APP_VERSION = "apocalypse-pc-v1.6.0"
+# Cinematic 3D pilot escape, separated infected blocking and native Russian speech support.
 APOCALYPSE_SETTINGS_PATH = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PrimeHub" / "apocalypse-settings.json"
 
 
