@@ -707,6 +707,7 @@ function drawZombies(){
   const attack=Math.max(0,(z.attackAnim||0)-(now-(z.attackAnimAt||now))/230);
   if(z.attackAnim){z.attackAnimAt=now;z.attackAnim=Math.max(0,z.attackAnim-.075);}
   const brute=z.kind==='brute',runner=z.kind==='runner',stalker=z.kind==='stalker';
+  const bloater=z.kind==='bloater',crawler=z.kind==='crawler',armored=z.kind==='armored',spitter=z.kind==='spitter',screecher=z.kind==='screecher',lurker=z.kind==='lurker';
   const alpha=(active?1:.72)*Math.min(1,p*2.5);
   ctx.save();ctx.translate(z.x,z.y);
   // Strong contact shadow and a subtle ground rim keep the silhouette readable on grass, roads and debris.
@@ -717,9 +718,12 @@ function drawZombies(){
     ctx.fillStyle=i%2?'#554a32':'#a08a5c';ctx.globalAlpha=alpha*.8;ctx.beginPath();ctx.arc(px,py,1.4+(i%3)*.55,0,Math.PI*2);ctx.fill();}
   }
   ctx.globalAlpha=alpha;
-  const bodyScale=bloater?1.38:brute||armored?1.28:crawler?.76:runner?.92:spitter?.96:lurker?.9:1;
+  const bodyScale=bloater?1.38:brute||armored?1.28:crawler?.76:runner?.92:spitter?.96:stalker?.9:screecher?.94:lurker?.9:1;
+  const shapeX=crawler?1.34:runner?.82:brute?1.16:bloater?1.08:armored?1.12:spitter?1.04:1;
+  const shapeY=crawler?.72:runner?1.12:brute?1.04:bloater?1.12:armored?1.08:screecher?1.13:stalker?1.1:1;
   ctx.translate(0,-buried*18+Math.sin(time*.006+z.phase)*.8);
-  ctx.scale(bodyScale,bodyScale);
+  if(crawler)ctx.rotate(.48+walk*.045);else if(runner)ctx.rotate(-.11+walk*.025);else if(lurker)ctx.rotate(.16+Math.sin(time*.004+z.phase)*.035);
+  ctx.scale(bodyScale*shapeX,bodyScale*shapeY);
   // Silhouette outline is deliberately brighter than the ground palette.
   ctx.save();ctx.translate(0,buried*16);ctx.scale(1,Math.max(.12,rise));
   ctx.strokeStyle='#171d18';ctx.lineWidth=8;ctx.lineCap='round';
@@ -745,7 +749,7 @@ function drawZombies(){
   }
   // Neck, face planes, jaw and scars.
   ctx.fillStyle='#b1a17b';ctx.fillRect(-3,-16,6,7);
-  ctx.fillStyle=brute?'#a18a68':stalker?'#b2a887':'#aaa17d';ctx.beginPath();ctx.ellipse(0,-22,8.5,9.5,-.08,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=brute?'#a18a68':stalker?'#b2a887':bloater?'#9a8a68':crawler?'#8c9672':'#aaa17d';ctx.beginPath();ctx.ellipse(0,-22,bloater?10.5:brute?9.8:stalker?7.6:crawler?7.2:8.5,screecher?11.5:runner?8:bloater?10.8:9.5,stalker?-.24:-.08,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#77745c';ctx.beginPath();ctx.ellipse(-6,-22,2.6,4,-.4,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#30271e';ctx.fillRect(-5,-24,4,4);ctx.fillRect(2,-24,4,4);
   const eye=spitter?'#c6ed75':screecher?'#f1d28a':armored?'#f2a56f':stalker?'#d4a4ff':brute?'#ff765c':runner?'#f2e47a':active?'#f2c56b':'#b2a47a';
@@ -754,6 +758,44 @@ function drawZombies(){
   if(armored){ctx.fillStyle='#3f4b48';ctx.beginPath();ctx.moveTo(-10,-12);ctx.lineTo(0,-17);ctx.lineTo(11,-11);ctx.lineTo(12,7);ctx.lineTo(4,12);ctx.lineTo(-11,7);ctx.closePath();ctx.fill();ctx.strokeStyle='#a9ad91';ctx.lineWidth=1.4;ctx.stroke();ctx.fillStyle='#8d927b';ctx.fillRect(-7,-8,14,3);ctx.fillRect(-8,1,16,3);ctx.fillStyle='#c1b68e';ctx.fillRect(-11,-9,5,7);ctx.fillRect(7,-9,5,7);}
   if(spitter){ctx.fillStyle='#81984e';ctx.beginPath();ctx.ellipse(-8,-7,5,7,-.5,0,Math.PI*2);ctx.ellipse(8,-7,5,7,.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c3dc78';ctx.beginPath();ctx.arc(0,-15,3,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#a6cb62';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-3,-13);ctx.lineTo(-7,-7);ctx.moveTo(3,-13);ctx.lineTo(7,-7);ctx.stroke();}
   if(screecher){ctx.strokeStyle='#d4c28c';ctx.lineWidth=2;for(let ring=0;ring<3;ring++){ctx.beginPath();ctx.arc(0,-21,11+ring*4,Math.PI*1.12,Math.PI*1.88);ctx.stroke();}if(z.screamUntil>now){ctx.strokeStyle='#e7d49b';ctx.globalAlpha=.8;ctx.beginPath();ctx.arc(0,-21,17+(now-(z.screamUntil-850))*.08,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=alpha;}}
+  // Per-class silhouettes and anatomy. Every special infected gets a distinct outline.
+  if(brute){
+   ctx.fillStyle='#4c3930';ctx.beginPath();ctx.moveTo(-13,-12);ctx.lineTo(-17,-5);ctx.lineTo(-13,9);ctx.lineTo(13,9);ctx.lineTo(17,-5);ctx.lineTo(12,-13);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#94735c';ctx.fillRect(-13,-10,26,5);ctx.fillStyle='#3a3029';ctx.fillRect(-12,0,24,4);
+   for(const side of [-1,1]){ctx.fillStyle='#a17a61';ctx.beginPath();ctx.arc(side*13,-8,4.5,0,Math.PI*2);ctx.fill();}
+  }
+  if(runner){
+   ctx.strokeStyle='#9da878';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(-5,-8);ctx.lineTo(-9,1);ctx.lineTo(-7,9);ctx.moveTo(5,-8);ctx.lineTo(9,0);ctx.lineTo(8,8);ctx.stroke();
+   ctx.fillStyle='#c2b27a';ctx.beginPath();ctx.moveTo(-5,-29);ctx.lineTo(0,-34);ctx.lineTo(6,-28);ctx.lineTo(4,-24);ctx.closePath();ctx.fill();
+  }
+  if(armored){
+   ctx.fillStyle='#303c39';ctx.beginPath();ctx.moveTo(-12,-12);ctx.lineTo(-16,-4);ctx.lineTo(-13,10);ctx.lineTo(13,10);ctx.lineTo(16,-4);ctx.lineTo(12,-12);ctx.closePath();ctx.fill();
+   ctx.strokeStyle='#a7ad96';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#929b86';ctx.fillRect(-13,-8,26,3);ctx.fillRect(-14,1,28,3);
+   ctx.fillStyle='#c0b99a';for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(side*8,-12);ctx.lineTo(side*13,-17);ctx.lineTo(side*16,-8);ctx.lineTo(side*9,-6);ctx.closePath();ctx.fill();}
+  }
+  if(spitter){
+   ctx.fillStyle='#617d3e';ctx.beginPath();ctx.ellipse(-10,-5,5.5,8,-.35,0,Math.PI*2);ctx.ellipse(10,-5,5.5,8,.35,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle='#b5d66c';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-10,-11);ctx.lineTo(-14,-2);ctx.moveTo(10,-11);ctx.lineTo(14,-2);ctx.stroke();
+   ctx.fillStyle='#c9e77a';ctx.beginPath();ctx.arc(0,-15,3,0,Math.PI*2);ctx.fill();
+  }
+  if(bloater){
+   ctx.fillStyle='#596044';ctx.beginPath();ctx.ellipse(0,1,13,11,0,0,Math.PI*2);ctx.fill();
+   ctx.fillStyle='#a0a36a';for(let k=0;k<5;k++){ctx.beginPath();ctx.arc(-8+k*4,Math.sin(k*2)*4,2.2,0,Math.PI*2);ctx.fill();}
+   ctx.strokeStyle='#c0a36f';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-9,-5);ctx.quadraticCurveTo(0,7,9,-5);ctx.stroke();
+  }
+  if(crawler){
+   ctx.fillStyle='#777f61';ctx.beginPath();ctx.ellipse(0,-5,11,5,.12,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle='#a6a17c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-8,-1);ctx.lineTo(-15,5);ctx.lineTo(-20,9);ctx.moveTo(8,-1);ctx.lineTo(15,5);ctx.lineTo(20,9);ctx.stroke();
+   ctx.fillStyle='#b2a17a';ctx.beginPath();ctx.arc(0,-17,6.5,0,Math.PI*2);ctx.fill();
+  }
+  if(stalker||lurker){
+   ctx.fillStyle=stalker?'#5e4e70':'#4e5a48';ctx.beginPath();ctx.moveTo(-8,-12);ctx.lineTo(-12,3);ctx.lineTo(-5,8);ctx.lineTo(7,5);ctx.lineTo(11,-10);ctx.lineTo(4,-16);ctx.closePath();ctx.fill();
+   ctx.strokeStyle=stalker?'#c3a0e0':'#a5b18a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-5,-5);ctx.lineTo(0,1);ctx.lineTo(6,-7);ctx.stroke();
+  }
+  if(screecher){
+   ctx.fillStyle='#a69a77';ctx.beginPath();ctx.moveTo(-7,-28);ctx.lineTo(-10,-39);ctx.lineTo(-2,-32);ctx.lineTo(2,-41);ctx.lineTo(7,-28);ctx.closePath();ctx.fill();
+   ctx.strokeStyle='#e6d4a1';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-8,-30);ctx.lineTo(-2,-34);ctx.lineTo(2,-33);ctx.lineTo(8,-30);ctx.stroke();
+  }
   if(z.shockedUntil>now){ctx.strokeStyle='#a6f0c5';ctx.lineWidth=1.6;ctx.shadowColor='#8cebb5';ctx.shadowBlur=10;ctx.beginPath();ctx.moveTo(-12,-7);ctx.lineTo(-5,-15);ctx.lineTo(0,-5);ctx.lineTo(7,-16);ctx.lineTo(12,-4);ctx.stroke();ctx.shadowBlur=0;}
   // Permanent light rim and animated infected veins make the body separate from the terrain.
   ctx.globalAlpha=alpha*.8;ctx.strokeStyle=stalker?'#c5a1e8':'#c2b38a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-8,-9);ctx.lineTo(-10,-2);ctx.moveTo(8,-8);ctx.lineTo(10,0);ctx.stroke();
