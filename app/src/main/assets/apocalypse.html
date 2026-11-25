@@ -356,14 +356,16 @@ body.menu-open .quickbar-hud,body.menu-open .convenience-hud,body.quick-menu-ope
 @media(prefers-reduced-motion:reduce){.cine-ash,.cine-rotor{animation:none!important}}
 
 
-.character-option-gallery{display:flex;gap:7px;overflow-x:auto;overscroll-behavior-x:contain;padding:6px 2px 9px;scrollbar-width:thin;scroll-snap-type:x mandatory}
-.character-option-card{flex:0 0 88px;min-width:88px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px;border:1px solid #64726555;border-radius:9px;background:#111a16;color:#dce5d9;text-align:center;cursor:pointer;scroll-snap-align:start}
-.character-option-card img{display:block;width:64px;height:64px;object-fit:cover;border-radius:7px;background:#25332b}
-.character-option-card span{font-size:10px;line-height:1.25;min-height:25px;display:flex;align-items:center;justify-content:center}
-.character-option-card.selected{border:2px solid #a7c78e;background:#293a2c;box-shadow:0 0 0 1px #a7c78e55}
+/* Clean transparent option art: show the item itself, not a framed tile. */
+.character-option-gallery{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;padding:9px 3px 12px;scrollbar-width:thin;scroll-snap-type:x mandatory;align-items:flex-end}
+.character-option-card{flex:0 0 94px;min-width:94px;min-height:126px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;padding:3px 4px 5px;border:1px solid transparent;border-radius:10px;background:transparent;color:#dce5d9;text-align:center;cursor:pointer;scroll-snap-align:start;transition:transform .16s ease,border-color .16s ease}
+.character-option-card img{display:block;width:88px;height:104px;object-fit:contain;object-position:center bottom;border:0;border-radius:0;background:transparent;filter:drop-shadow(0 4px 3px #0008)}
+.character-option-card span{font-size:10px;line-height:1.2;min-height:22px;display:flex;align-items:center;justify-content:center;padding:2px 3px;color:#cbd5c6}
+.character-option-card.selected{border-color:#a7c78e;background:transparent;box-shadow:0 0 0 1px #a7c78e55;transform:translateY(-2px)}
+.character-option-card.selected img{filter:drop-shadow(0 0 5px #b6d99b88) drop-shadow(0 4px 3px #0008)}
 .character-option-card:focus-visible{outline:2px solid #d2e6b7;outline-offset:2px}
 .character-field{min-width:0}
-@media(max-width:700px){.character-option-card{flex-basis:78px;min-width:78px}.character-option-card img{width:56px;height:56px}.character-option-card span{font-size:9px}}
+@media(max-width:700px){.character-option-gallery{gap:8px;padding:6px 2px 9px}.character-option-card{flex-basis:82px;min-width:82px;min-height:112px}.character-option-card img{width:78px;height:90px}.character-option-card span{font-size:9px}}
 
 /* Terraria-inspired character workshop: icon tabs, focused option pages and a persistent live preview. */
 .character-layout{grid-template-columns:minmax(190px,.72fr) minmax(0,1.65fr);align-items:start}
