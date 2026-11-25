@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.5.8"
+APP_VERSION = "apocalypse-pc-v1.5.9"
 # Cinematic 3D pilot escape, separated infected blocking and Russian speech restoration.
 APOCALYPSE_SETTINGS_PATH = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PrimeHub" / "apocalypse-settings.json"
 
