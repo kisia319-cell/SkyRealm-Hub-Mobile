@@ -232,7 +232,7 @@ if(t>9.5){for(let i=0;i<3;i++){const z=-5+i*4;drawZombie(-5+i*4,.05,z,t,i%3,.88+
 
 let voiceTimers=[],publishedPlayers=[],speechTimers=[];
 // Published OpenGameArt assets: CC0. Zombie calls recorded by saturn91; radio bulletin by OrbitStudios/Fernando Ferreira.
-const publishedSfx={zombieWalk:'https://opengameart.org/sites/default/files/01_zombey.mp3',zombieAttack:'https://opengameart.org/sites/default/files/03_zombey.mp3',zombieGroan2:'https://opengameart.org/sites/default/files/02_zombey.mp3',zombieGroan3:'https://opengameart.org/sites/default/files/04_zombey.mp3',zombieGrowl:'https://opengameart.org/sites/default/files/06_zombey.mp3',zombieScream:'https://opengameart.org/sites/default/files/07_zombey.mp3',radioBulletin:'https://opengameart.org/sites/default/files/radio_news_zombies.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
+const publishedSfx={zombieWalk:'https://opengameart.org/sites/default/files/01_zombey.mp3',zombieAttack:'https://opengameart.org/sites/default/files/03_zombey.mp3',zombieGroan2:'https://opengameart.org/sites/default/files/02_zombey.mp3',zombieGroan3:'https://opengameart.org/sites/default/files/04_zombey.mp3',zombieGrowl:'https://opengameart.org/sites/default/files/06_zombey.mp3',zombieScream:'https://opengameart.org/sites/default/files/07_zombey.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
 function stopRadioDialogue(){
  voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];
  speechTimers.forEach(id=>clearTimeout(id));speechTimers=[];
@@ -240,15 +240,21 @@ function stopRadioDialogue(){
 }
 function radioDialogue(kind){
  stopRadioDialogue();
- // Published spoken zombie-emergency broadcast: OpenGameArt, CC0, OrbitStudios / Fernando Ferreira.
- // This is a real recorded dispatcher/news voice, not system TTS.
- const bulletinAt=kind==='crash'?.8:1.05;
- const bulletinVolume=kind==='crash'?.9:.84;
- const schedule=(url,delay,volume,limitMs=0)=>{const id=setTimeout(()=>{try{
-  const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('published cinematic sound unavailable',e));publishedPlayers.push(a);
-  if(limitMs){const stopId=setTimeout(()=>{try{a.pause();a.currentTime=0}catch(_){}},limitMs);voiceTimers.push(stopId)}
- }catch(e){console.warn('published cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};
- schedule(publishedSfx.radioBulletin,bulletinAt,bulletinVolume,14500);
+ // Original Russian dispatcher lines, spoken with the device's Russian voice and filtered by the cinematic radio bed.
+ const lines=kind==='crash'
+  ?[[.8,'Внимание всем постам. Это диспетчерская. Зафиксирована вспышка заражения в жилом секторе. Повторяю: массовое заражение.'],[5.1,'Экипаж вертолёта, немедленно меняйте курс. Посадка запрещена. На земле замечено движение заражённых.'],[9.7,'Пилот, ответьте! Вы меня слышите? Уходите оттуда! Быстро!']]
+  :[[1.0,'Внимание всем постам. Говорит центральная диспетчерская. В городе зафиксирована вспышка неизвестной инфекции.'],[5.2,'Не приближайтесь к заражённым. Избегайте скоплений людей. Следуйте к ближайшему укреплённому пункту.'],[10.1,'Повторяю: сохраняйте радиосвязь. Если вы слышите это сообщение, ответьте на частоте аварийного канала.']];
+ const speak=(line)=>{try{
+  if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return;
+  const u=new SpeechSynthesisUtterance(line);u.lang='ru-RU';u.rate=.88;u.pitch=.78;u.volume=1;
+  const voices=window.speechSynthesis.getVoices()||[];
+  const ru=voices.filter(v=>/^ru([_-]|$)/i.test(v.lang||''));
+  const preferred=ru.find(v=>/google|microsoft|russian|рус/i.test(v.name||''))||ru[0];
+  if(preferred)u.voice=preferred;
+  window.speechSynthesis.speak(u);
+ }catch(e){console.warn('Russian dispatcher voice unavailable',e)}};
+ lines.forEach(([at,line])=>{const id=setTimeout(()=>speak(line),at*1000);speechTimers.push(id)});
+ const schedule=(url,delay,volume)=>{const id=setTimeout(()=>{try{const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('cinematic sound unavailable',e));publishedPlayers.push(a)}catch(e){console.warn('cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};
  const sequence=kind==='crash'
  ?[[.35,publishedSfx.impact,.72],[2.2,publishedSfx.zombieWalk,.46],[4.1,publishedSfx.zombieGroan2,.52],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.82],[8.6,publishedSfx.zombieGrowl,.66],[10.4,publishedSfx.zombieScream,.82],[12.1,publishedSfx.zombieGroan3,.68],[13.1,publishedSfx.zombieWalk,.45]]
  :[[.25,publishedSfx.helicopter,.5],[4.2,publishedSfx.helicopter,.58],[6.1,publishedSfx.zombieGroan2,.42],[8.8,publishedSfx.impact,.75],[11.5,publishedSfx.zombieWalk,.42],[13.2,publishedSfx.zombieGrowl,.48]];
