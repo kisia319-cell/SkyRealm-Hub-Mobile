@@ -208,6 +208,23 @@ function drawCinematicDebris(t,crash=false){
   for(let k=0;k<3;k++)ball(x+(k-1)*.17,.42+(i%3)*.06,z+.08,.18,.12,.24,[.12,.18,.12],k*.6);
  }
 }
+function drawCrashAtmosphere(t){
+ // Soot-dark impact bowl, fractured earth plates and glowing fragments around the wreck.
+ ball(-.25,.015,.35,7.6,.075,6.2,[.055,.065,.055],-.12);
+ for(let i=0;i<18;i++){
+  const a=i*2.399,r=4.1+(i%4)*.72,x=Math.cos(a)*r,z=Math.sin(a)*r;
+  const pulse=.7+.3*Math.sin(t*4+i);
+  box(x,.035+(i%3)*.025,z,.38+(i%4)*.16,.07,.22,[.12*pulse,.14*pulse,.11*pulse],a);
+ }
+ // Ash and hot fragments rise at different speeds; their motion loops without allocating objects.
+ const ash=mobile()?10:18;
+ for(let i=0;i<ash;i++){
+  const age=(t*.32+i*.173)%2.8,a=i*2.17+age*.48,r=.9+age*.55;
+  ball(-.4+Math.cos(a)*r,.3+age*1.05,Math.sin(a)*r,.035+age*.018,.055+age*.025,.035,[.32,.29,.22],a,.58*(1-age/3.6));
+ }
+ const flare=.55+.45*Math.sin(t*11.5);
+ ball(2.65,.42,-.25,.52,.16,.5,[.92,.18,.025],0,.52*flare);
+}
 function drawCrashWreckDetails(t){
  // Jagged panel edges, broken cockpit glass, landing gear, cables and warning lights.
  for(let side of [-1,1]){
@@ -227,11 +244,14 @@ function drawCrashWreckDetails(t){
 }
 function renderCrash(t){
  gl.clearColor(.025,.035,.031,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
- const approach=smooth(t/10),impact=smooth((t-7.2)/2.4),cam=[mix(-18,-5,approach)+Math.sin(t*.7)*.35,mix(12,5,approach),mix(27,13,approach)];
- const target=[0,1.1,0];VP=mul(perspective(Math.PI/3.2,W/H,.1,150),view(cam,target));
+ const impact=smooth((t-7.2)/2.4),shot=cameraForCrash(t);
+ const shake=(1-smooth((t-7.8)/1.35))*Math.max(0,t-7.2)*.12;
+ const cam=[shot.eye[0]+Math.sin(t*31)*shake,shot.eye[1]+Math.cos(t*27)*shake*.55,shot.eye[2]+Math.sin(t*23)*shake];
+ const target=[shot.target[0],shot.target[1]+Math.sin(t*19)*shake*.18,shot.target[2]];
+ VP=mul(perspective(Math.PI/3.2,W/H,.1,150),view(cam,target));
  gl.uniform3f(program.light,-.45,.88,.22);gl.uniform3f(program.fog,.025,.035,.031);
  box(0,-.5,0,110,.8,110,[.105,.13,.105]);
- for(let i=0;i<26;i++){const x=(i%7-3)*11,z=(Math.floor(i/7)-1.5)*14;ball(x,-.1,z,2.5,.6,3,[.13,.16,.13]);box(x+.3,.25,z+.4,1.1,.28,.65,[.19,.21,.17]);}drawCinematicDebris(t,true);
+ for(let i=0;i<26;i++){const x=(i%7-3)*11,z=(Math.floor(i/7)-1.5)*14;ball(x,-.1,z,2.5,.6,3,[.13,.16,.13]);box(x+.3,.25,z+.4,1.1,.28,.65,[.19,.21,.17]);}drawCinematicDebris(t,true);drawCrashAtmosphere(t);
  // A crashed fixed-wing aircraft, not the helicopter from the opening sequence.
  box(0,1.15,0,8.8,1.05,1.55,[.29,.34,.31],-.17);
  ball(4.15,1.3,.05,1.35,.78,.78,[.39,.45,.4],-.17);
@@ -246,15 +266,15 @@ function renderCrash(t){
  ball(3.25,1.2,-.2,.52,.55,.52,[.08,.1,.09]);drawCrashWreckDetails(t);
  // Flickering fire, drifting smoke and sparks around the fuselage.
  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
- for(let i=0;i<9;i++){const age=(t*.42+i*.29)%3.2,a=i*2.15+age*.65;ball(1.7+Math.cos(a)*(.45+age*.4),.8+age*1.4,Math.sin(a)*(.5+age*.3),.28+age*.25,.42+age*.35,.28+age*.25,[.17,.19,.17],0,.72-age*.13);}
- for(let i=0;i<15;i++){const a=i*2.4+t*1.2,r=.5+((t+i*.37)%2.8)*.38;ball(1.4+Math.cos(a)*r,.6+((t+i*.37)%2.8),Math.sin(a)*r,.055,.08,.055,[1,.32,.055]);}
+ for(let i=0;i<(mobile()?9:15);i++){const age=(t*.42+i*.29)%3.2,a=i*2.15+age*.65;ball(1.7+Math.cos(a)*(.45+age*.4),.8+age*1.4,Math.sin(a)*(.5+age*.3),.28+age*.25,.42+age*.35,.28+age*.25,[.17,.19,.17],0,.72-age*.13);}
+ for(let i=0;i<(mobile()?15:25);i++){const a=i*2.4+t*1.2,r=.5+((t+i*.37)%2.8)*.38;ball(1.4+Math.cos(a)*r,.6+((t+i*.37)%2.8),Math.sin(a)*r,.055,.08,.055,[1,.32,.055]);}
  gl.depthMask(true);gl.disable(gl.BLEND);
  const pulse=.65+.35*Math.sin(t*8);tube(-5,1.4,-1,.07,.8,.07,[.38,.4,.31]);ball(-5,2.25,-1,.2,.2,.2,[1,.16,.045],0,pulse);
  // Pilot forces the jammed side door, stumbles out, then is surrounded.
  drawPilot(t);
  const crowdTargets=[[-4.65,3.15],[-2.8,5.15],[-.9,3.35],[.95,5.25]];
  for(let i=0;i<4;i++){
-  const side=i%2?1:-1,x=side*(9+Math.max(0,t-4)*.22),z=i<2?-11:11,y=.05;
+  const side=i%2?1:-1,x=side*(9+Math.max(0,t-4)*.22),z=(i<2?-11:11)+Math.sin(t*1.15+i)*.28,y=.05;
   const [tx,tz]=crowdTargets[i];
   drawZombie(x,y,z,t,i%3,.9+i*.035,i*1.7,tx,tz);
  }
