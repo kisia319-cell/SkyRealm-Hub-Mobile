@@ -191,17 +191,17 @@ function drawPilot(t){
  if(down>.1){ball(x,y+.45,z+.15,.35,.22,.4,uniform,1.15*down);ball(x,y+.61,z+.4,.19,.18,.19,skin,1.1*down)}
 }
 function drawCinematicDebris(t,crash=false){
- const count=mobile()?34:76;
+ const count=mobile()?24:42;
  for(let i=0;i<count;i++){
   const x=((i*37)%23-11)*1.65,z=((i*19)%29-14)*1.38;
   const r=(i%5)*.055+.045,rot=t*.08+i*.73;
   if(crash){if(Math.abs(x)<5.5&&Math.abs(z)<8)continue;}
   else if(Math.abs(x)<5&&z>-14&&z<5)continue;
-  ball(x,.02+r,z,r*1.8,r*.48,r,[i%4===0?[.22,.19,.14]:[.09,.12,.1]][0],rot);
+  ball(x,.02+r,z,r*1.8,r*.48,r,(i%4===0?[.22,.19,.14]:[.09,.12,.1]),rot);
   if(i%4===0)box(x+r,.05,z+r,r*2,.035,r*.7,[.16,.17,.14],rot);
  }
  // Broken branches and low brush add readable foreground depth.
- const brush=mobile()?12:24;
+ const brush=mobile()?7:13;
  for(let i=0;i<brush;i++){const x=(i*13%37-18)*1.2,z=(i*17%31-15)*1.15;
   if(crash&&Math.abs(x)<5&&Math.abs(z)<7)continue;
   tube(x,.23,z,.055,.48+(i%3)*.14,.055,[.12,.16,.11],.2*Math.sin(i));
