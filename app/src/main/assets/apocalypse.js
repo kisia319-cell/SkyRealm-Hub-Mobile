@@ -701,13 +701,12 @@ function drawZombies(){
  const now=performance.now();
  for(const z of zombies){
   const age=now-z.born,p=Math.max(0,Math.min(1,age/z.emerge)),rise=1-Math.pow(1-p,2),buried=1-rise;
-  const spitter=z.kind==='spitter',armored=z.kind==='armored',screecher=z.kind==='screecher',crawler=z.kind==='crawler',bloater=z.kind==='bloater',lurker=z.kind==='lurker';
+  const brute=z.kind==='brute',runner=z.kind==='runner',stalker=z.kind==='stalker',spitter=z.kind==='spitter',armored=z.kind==='armored',screecher=z.kind==='screecher',crawler=z.kind==='crawler',bloater=z.kind==='bloater',lurker=z.kind==='lurker';
   const active=z.kind==='day'||z.kind==='horde'||z.kind==='patrol'||spitter||armored||screecher||crawler||bloater||lurker||!!z.eventId||worldClock>.62||worldClock<.08;
   const moving=age>z.emerge,walk=moving?Math.sin(time*.0085+z.phase):Math.sin(age*.012+z.phase)*.25;
   const attack=Math.max(0,(z.attackAnim||0)-(now-(z.attackAnimAt||now))/230);
   if(z.attackAnim){z.attackAnimAt=now;z.attackAnim=Math.max(0,z.attackAnim-.075);}
-  const brute=z.kind==='brute',runner=z.kind==='runner',stalker=z.kind==='stalker';
-  const bloater=z.kind==='bloater',crawler=z.kind==='crawler',armored=z.kind==='armored',spitter=z.kind==='spitter',screecher=z.kind==='screecher',lurker=z.kind==='lurker';
+  
   const alpha=(active?1:.72)*Math.min(1,p*2.5);
   ctx.save();ctx.translate(z.x,z.y);
   // Strong contact shadow and a subtle ground rim keep the silhouette readable on grass, roads and debris.
