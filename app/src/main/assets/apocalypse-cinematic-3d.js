@@ -33,50 +33,69 @@ function helicopter(t,crash){let x=mix(-20,2,crash),y=mix(13,2,crash),z=mix(-5,1
 
 function limb(x,y,z,sx,sy,sz,c,angle=0){draw('organic',model(x,y,z,sx*2.15,sy*2.0,sz*2.15,0,0,angle),c)}
 function drawZombie(x,y,z,t,variant=0,scale=1,phase=0,targetX=null,targetZ=null){
- const id=Math.max(0,Math.min(3,Math.round(phase/1.7))),approach=smooth(clamp((t-(4.5+id*.55))/4.6,0,1)),jumpProgress=clamp((t-(6.2+id*.48))/1.15,0,1),jump=Math.sin(jumpProgress*Math.PI)*1.9,crouch=smooth(clamp((t-(5.35+id*.48))/.35,0,1))*(1-smooth(clamp((t-(6.02+id*.48))/.25,0,1))),land=smooth(clamp((t-(7.45+id*.48))/.55,0,1)),side=x>=0?1:-1,zside=z>=0?1:-1;
+ const id=Math.max(0,Math.min(3,Math.round(phase/1.7)));
+ const approach=smooth(clamp((t-(4.5+id*.55))/4.6,0,1));
+ const jumpProgress=clamp((t-(6.2+id*.48))/1.15,0,1);
+ const jump=Math.sin(jumpProgress*Math.PI)*1.9;
+ const crouch=smooth(clamp((t-(5.35+id*.48))/.35,0,1))*(1-smooth(clamp((t-(6.02+id*.48))/.25,0,1)));
+ const side=x>=0?1:-1,zside=z>=0?1:-1;
  const slotX=targetX===null?side*(1.55+(id%2)*1.15):targetX;
  const slotZ=targetZ===null?zside*(3.7+Math.floor(id/2)*1.35):targetZ;
- const landingBounce=Math.sin(clamp((t-(7.35+id*.48))/.55,0,1)*Math.PI)*.16;
- x=mix(x,slotX,approach);z=mix(z,slotZ,approach);y+=jump+landingBounce-crouch*.22;
- const gait=Math.sin(t*5.1+phase)*(1-approach*.72),swing=Math.sin(t*5.1+phase+.8),reach=approach*.8,skin=variant===1?[.29,.35,.29]:variant===2?[.39,.34,.27]:[.31,.37,.32],cloth=variant===1?[.13,.19,.17]:variant===2?[.23,.14,.12]:[.12,.16,.15],dark=[.055,.07,.062];
- const Y=y+Math.abs(gait)*.045;
- // torn trousers, boots and independently swinging legs
- limb(x-.19*scale,Y+.48*scale,z,.17*scale,.42*scale,.19*scale,cloth,gait*.18);
- limb(x+.19*scale,Y+.48*scale,z,.17*scale,.42*scale,.19*scale,cloth,-gait*.18);
- limb(x-.2*scale,Y+.15*scale,z+.05*scale,.12*scale,.28*scale,.13*scale,skin,gait*.38);
- limb(x+.2*scale,Y+.15*scale,z-.03*scale,.12*scale,.28*scale,.13*scale,skin,-gait*.38);
- box(x-.2*scale,Y-.02*scale,z+.11*scale,.28*scale,.14*scale,.42*scale,dark,gait*.08);
- box(x+.2*scale,Y-.02*scale,z+.11*scale,.28*scale,.14*scale,.42*scale,dark,-gait*.08);
- // rib cage, torn jacket, belt and ripped fabric panels
- ball(x,Y+1.08*scale,z,.39*scale,.52*scale,.25*scale,skin);
- box(x,Y+1.08*scale,z+.025*scale,.58*scale,.58*scale,.39*scale,cloth,gait*.045);
+ const landing=Math.sin(clamp((t-(7.35+id*.48))/.55,0,1)*Math.PI)*.16;
+ const lurch=Math.max(0,Math.sin(t*2.15+phase))*.12;
+ x=mix(x,slotX,approach);z=mix(z,slotZ,approach);y+=jump+landing-crouch*.22;
+ const cycle=t*(4.1+variant*.42)+phase;
+ const gait=Math.sin(cycle),counter=Math.sin(cycle+Math.PI);
+ const stumble=Math.max(0,Math.sin(t*1.7+phase*2))*.12;
+ const torsoTwist=Math.sin(t*1.65+phase)*.12;
+ const headTilt=Math.sin(t*2.4+phase*1.3)*.16;
+ const jawOpen=.045+Math.max(0,Math.sin(t*5.8+phase))*.12;
+ const reach=approach*.8,skin=variant===1?[.29,.35,.29]:variant===2?[.39,.34,.27]:[.31,.37,.32];
+ const cloth=variant===1?[.13,.19,.17]:variant===2?[.23,.14,.12]:[.12,.16,.15],dark=[.055,.07,.062];
+ const Y=y+Math.abs(gait)*.035+lurch+stumble;
+ // Offset, imperfect legs and independently animated boots.
+ limb(x-.2*scale,Y+.48*scale,z,.17*scale,.42*scale,.19*scale,cloth,gait*.24+torsoTwist);
+ limb(x+.2*scale,Y+.48*scale,z,.17*scale,.42*scale,.19*scale,cloth,counter*.18-torsoTwist);
+ limb(x-.2*scale,Y+.15*scale,z+.05*scale,.12*scale,.28*scale,.13*scale,skin,gait*.46+stumble);
+ limb(x+.2*scale,Y+.15*scale,z-.03*scale,.12*scale,.28*scale,.13*scale,skin,counter*.42-stumble*.6);
+ box(x-.2*scale,Y-.02*scale,z+.11*scale,.28*scale,.14*scale,.42*scale,dark,gait*.12);
+ box(x+.2*scale,Y-.02*scale,z+.11*scale,.28*scale,.14*scale,.42*scale,dark,counter*.1);
+ // Chest, uneven shoulders and torn clothing move with the stagger.
+ ball(x,Y+1.08*scale,z,.39*scale,.52*scale,.25*scale,skin,torsoTwist);
+ box(x,Y+1.08*scale,z+.025*scale,.58*scale,.58*scale,.39*scale,cloth,torsoTwist*.55);
  box(x-.1*scale,Y+.84*scale,z+.23*scale,.2*scale,.22*scale,.035*scale,[.07,.085,.07],-.18);
  box(x+.19*scale,Y+1.05*scale,z+.235*scale,.14*scale,.34*scale,.035*scale,[.26,.22,.17],.16);
- // collar, shoulder joints, forearms and clawed fingers
- ball(x-.38*scale,Y+1.35*scale,z,.19*scale,.2*scale,.2*scale,cloth);
- ball(x+.38*scale,Y+1.35*scale,z,.19*scale,.2*scale,.2*scale,cloth);
- limb(x-.48*scale,Y+1.08*scale,z,gait*.02+.14*scale,.38*scale,.15*scale,skin,-.62+swing*.24-reach);
- limb(x+.48*scale,Y+1.08*scale,z,.15*scale,.38*scale,.15*scale,skin,.62-gait*.24+reach);
- limb(x-.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,-.3+swing*.16-reach*.45);
- limb(x+.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,.3-gait*.16+reach*.45);
- for(let f=0;f<3;f++){ball(x-.65*scale+(f-1)*.055*scale,Y+.59*scale,z+.07*scale,.035*scale,.12*scale,.035*scale,skin,-.25);ball(x+.65*scale+(f-1)*.055*scale,Y+.59*scale,z+.07*scale,.035*scale,.12*scale,.035*scale,skin,.25)}
- // neck, skull, ears, jaw and messy hair
- tube(x,Y+1.48*scale,z,.11*scale,.22*scale,.11*scale,skin);
- ball(x,Y+1.79*scale,z,.28*scale,.34*scale,.25*scale,skin,Math.sin(t*3.2+phase)*.075+approach*.08);
+ // Shoulders, elbows and hands use different arcs to avoid mirrored puppet motion.
+ ball(x-.38*scale,Y+1.35*scale,z,.19*scale,.2*scale,.2*scale,cloth,gait*.13);
+ ball(x+.38*scale,Y+1.35*scale,z,.19*scale,.2*scale,.2*scale,cloth,-counter*.1);
+ const leftArm=-.62+gait*.34-reach-stumble*.5;
+ const rightArm=.62-counter*.28+reach*.65+stumble;
+ limb(x-.48*scale,Y+1.08*scale,z,.14*scale,.38*scale,.15*scale,skin,leftArm);
+ limb(x+.48*scale,Y+1.08*scale,z,.15*scale,.38*scale,.15*scale,skin,rightArm);
+ limb(x-.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,leftArm*.55-reach*.35);
+ limb(x+.62*scale,Y+.79*scale,z+.03*scale,.12*scale,.24*scale,.12*scale,skin,rightArm*.55+reach*.3);
+ for(let f=0;f<4;f++){
+  const spread=(f-1.5)*.055*scale;
+  ball(x-.65*scale+spread,Y+.59*scale,z+.07*scale,.035*scale,.12*scale,.035*scale,skin,-.25+gait*.08);
+  ball(x+.65*scale+spread,Y+.59*scale,z+.07*scale,.035*scale,.12*scale,.035*scale,skin,.25-counter*.08);
+ }
+ // Neck and skull: the head leads each turn, with a loose jaw and uneven eyes.
+ tube(x,Y+1.48*scale,z,.11*scale,.22*scale,.11*scale,skin,headTilt*.5);
+ ball(x,Y+1.79*scale,z,.28*scale,.34*scale,.25*scale,skin,headTilt+approach*.08);
  ball(x-.28*scale,Y+1.78*scale,z,.07*scale,.12*scale,.08*scale,skin);
  ball(x+.28*scale,Y+1.78*scale,z,.07*scale,.12*scale,.08*scale,skin);
- ball(x,Y+1.61*scale,z+.15*scale,.21*scale,.12*scale,.13*scale,[.19,.12,.1]);
- box(x,Y+1.67*scale,z+.245*scale,.2*scale,.045*scale,.025*scale,[.08,.055,.045]);
- for(let h=0;h<6;h++){ball(x+(h-2.5)*.075*scale,Y+2.02*scale+Math.sin(h*3)*.04*scale,z-.04*scale,.09*scale,.16*scale,.11*scale,[.07,.075,.065],(h-2)*.12)}
- // recessed sockets, glowing infected eyes and uneven teeth
+ ball(x,Y+1.61*scale,z+.15*scale,.21*scale,.12*scale,.13*scale,[.19,.12,.1],jawOpen);
+ box(x,Y+(1.56-jawOpen*.3)*scale,z+.245*scale,.2*scale,.045*scale,.025*scale,[.08,.055,.045],jawOpen);
+ for(let h=0;h<6;h++)ball(x+(h-2.5)*.075*scale,Y+2.02*scale+Math.sin(h*3)*.04*scale,z-.04*scale,.09*scale,.16*scale,.11*scale,[.07,.075,.065],(h-2)*.12+headTilt*.25);
  ball(x-.105*scale,Y+1.83*scale,z+.22*scale,.075*scale,.06*scale,.035*scale,[.055,.035,.03]);
  ball(x+.105*scale,Y+1.83*scale,z+.22*scale,.075*scale,.06*scale,.035*scale,[.055,.035,.03]);
  ball(x-.105*scale,Y+1.83*scale,z+.252*scale,.027*scale,.026*scale,.018*scale,[.92,.18,.055]);
  ball(x+.105*scale,Y+1.83*scale,z+.252*scale,.027*scale,.026*scale,.018*scale,[.92,.18,.055]);
  for(let k=0;k<4;k++)box(x-.09*scale+k*.06*scale,Y+1.58*scale,z+.27*scale,.035*scale,.045*scale,.025*scale,[.72,.67,.52]);
- // wounds and blood-dark stains
+ // Layered bruising and wounds give each silhouette more depth.
  ball(x-.22*scale,Y+1.25*scale,z+.21*scale,.055*scale,.11*scale,.025*scale,[.23,.055,.04]);
  ball(x+.14*scale,Y+1.02*scale,z+.23*scale,.075*scale,.045*scale,.02*scale,[.19,.045,.035]);
+ ball(x-.13*scale,Y+.72*scale,z+.215*scale,.09*scale,.045*scale,.025*scale,[.16,.07,.055]);
 }
 function rotorBlade(x,y,z,angle,length,width,color){box(x,y,z,length,.055,width,color,angle)}
 function drawHelicopter(x,y,z,t,damage=0){
@@ -212,7 +231,8 @@ if(t>9.5){for(let i=0;i<3;i++){const z=-5+i*4;drawZombie(-5+i*4,.05,z,t,i%3,.88+
 }
 
 let voiceTimers=[],publishedPlayers=[],speechTimers=[];
-const publishedSfx={zombieWalk:'https://sfxmint.com/dl/zombie-groan-04.mp3',zombieAttack:'https://sfxmint.com/dl/zombie-groan-01.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
+// Published OpenGameArt assets: CC0. Zombie calls recorded by saturn91; radio bulletin by OrbitStudios/Fernando Ferreira.
+const publishedSfx={zombieWalk:'https://opengameart.org/sites/default/files/01_zombey.mp3',zombieAttack:'https://opengameart.org/sites/default/files/03_zombey.mp3',zombieGroan2:'https://opengameart.org/sites/default/files/02_zombey.mp3',zombieGroan3:'https://opengameart.org/sites/default/files/04_zombey.mp3',zombieGrowl:'https://opengameart.org/sites/default/files/06_zombey.mp3',zombieScream:'https://opengameart.org/sites/default/files/07_zombey.mp3',radioBulletin:'https://opengameart.org/sites/default/files/radio_news_zombies.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
 function stopRadioDialogue(){
  voiceTimers.forEach(id=>clearTimeout(id));voiceTimers=[];
  speechTimers.forEach(id=>clearTimeout(id));speechTimers=[];
@@ -235,8 +255,8 @@ function scheduleSpeech(line,at,rate=1,pitch=1){
 function radioDialogue(kind){
  stopRadioDialogue();
  const sequence=kind==='crash'
- ?[[.35,publishedSfx.impact,.8],[1.8,publishedSfx.zombieWalk,.42],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.85],[10.4,publishedSfx.zombieAttack,.72],[13.1,publishedSfx.zombieWalk,.45]]
- :[[.25,publishedSfx.helicopter,.58],[4.2,publishedSfx.helicopter,.62],[8.8,publishedSfx.impact,.85],[11.5,publishedSfx.zombieWalk,.42]];
+ ?[[.35,publishedSfx.impact,.8],[1.5,publishedSfx.radioBulletin,.16],[2.2,publishedSfx.zombieWalk,.46],[4.1,publishedSfx.zombieGroan2,.5],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.82],[8.6,publishedSfx.zombieGrowl,.58],[10.4,publishedSfx.zombieScream,.75],[12.1,publishedSfx.zombieGroan3,.62],[13.1,publishedSfx.zombieWalk,.45]]
+ :[[.25,publishedSfx.helicopter,.58],[1.5,publishedSfx.radioBulletin,.13],[4.2,publishedSfx.helicopter,.62],[6.1,publishedSfx.zombieGroan2,.38],[8.8,publishedSfx.impact,.85],[11.5,publishedSfx.zombieWalk,.42],[13.2,publishedSfx.zombieGrowl,.4]];
  const schedule=(url,delay,volume)=>{const id=setTimeout(()=>{try{const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('published cinematic sound unavailable',e));publishedPlayers.push(a)}catch(e){console.warn('published cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};
  sequence.forEach(([at,url,volume])=>schedule(url,at,volume));
  const lines=kind==='crash'
