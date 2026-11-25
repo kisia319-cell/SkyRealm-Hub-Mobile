@@ -12,10 +12,18 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.speech.tts.TextToSpeech;
+import java.util.ArrayDeque;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     private WebView webView;
     private String currentScreen = "hub";
+    private TextToSpeech russianTts;
+    private boolean ttsReady = false;
+    private boolean russianAvailable = false;
+    private boolean installPromptOpened = false;
+    private final ArrayDeque<String> pendingRussianSpeech = new ArrayDeque<>();
     private static final String HUB = "file:///android_asset/hub.html";
     private static final String APOCALYPSE = "file:///android_asset/apocalypse.html";
     private static final String LAUNCHER = "file:///android_asset/skyrealm/index.html";
@@ -24,6 +32,7 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        initRussianSpeech();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
         webView = new WebView(this);
@@ -55,7 +64,71 @@ public class MainActivity extends Activity {
         webView.loadUrl(HUB);
     }
 
+    private void initRussianSpeech() {
+        try {
+            russianTts = new TextToSpeech(this, status -> {
+                if (status != TextToSpeech.SUCCESS || russianTts == null) return;
+                ttsReady = true;
+                int language = russianTts.setLanguage(new Locale("ru", "RU"));
+                russianAvailable = language != TextToSpeech.LANG_MISSING_DATA
+                    && language != TextToSpeech.LANG_NOT_SUPPORTED;
+                if (russianAvailable) {
+                    russianTts.setSpeechRate(0.88f);
+                    russianTts.setPitch(0.82f);
+                    while (!pendingRussianSpeech.isEmpty()) speakRussianNow(pendingRussianSpeech.removeFirst());
+                } else {
+                    pendingRussianSpeech.clear();
+                }
+            });
+        } catch (Exception ignored) {
+            ttsReady = false;
+            russianAvailable = false;
+        }
+    }
+
+    private void speakRussianNow(String text) {
+        if (russianTts == null || !russianAvailable || text == null || text.trim().isEmpty()) return;
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            android.os.Bundle params = new android.os.Bundle();
+            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f);
+            russianTts.speak(text, TextToSpeech.QUEUE_ADD, params, "apocalypse-ru-" + System.nanoTime());
+        } else {
+            russianTts.speak(text, TextToSpeech.QUEUE_ADD, null);
+        }
+    }
+
     private class Bridge {
+        @JavascriptInterface public boolean speakRussian(String text) {
+            if (text == null || text.trim().isEmpty()) return false;
+            synchronized (pendingRussianSpeech) {
+                if (russianAvailable && ttsReady) {
+                    runOnUiThread(() -> speakRussianNow(text));
+                    return true;
+                }
+                if (pendingRussianSpeech.size() < 8) pendingRussianSpeech.addLast(text);
+                return false;
+            }
+        }
+        @JavascriptInterface public void stopRussianSpeech() {
+            runOnUiThread(() -> {
+                pendingRussianSpeech.clear();
+                if (russianTts != null) russianTts.stop();
+            });
+        }
+        @JavascriptInterface public boolean isRussianVoiceAvailable() {
+            return ttsReady && russianAvailable;
+        }
+        @JavascriptInterface public void installRussianVoice() {
+            runOnUiThread(() -> {
+                if (installPromptOpened) return;
+                installPromptOpened = true;
+                try {
+                    startActivity(new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA));
+                } catch (Exception ignored) {
+                    installPromptOpened = false;
+                }
+            });
+        }
         @JavascriptInterface public void openLauncher() { runOnUiThread(() -> { currentScreen = "launcher"; webView.loadUrl(LAUNCHER); }); }
         @JavascriptInterface public void openApocalypse() { runOnUiThread(() -> { currentScreen = "apocalypse"; webView.loadUrl(APOCALYPSE); }); }
         @JavascriptInterface public void launchGame(String preferences) { runOnUiThread(() -> { currentScreen = "game"; webView.loadUrl(GAME); }); }
@@ -78,6 +151,15 @@ public class MainActivity extends Activity {
                 catch (Exception ignored) { }
             });
         }
+    }
+
+    @Override protected void onDestroy() {
+        if (russianTts != null) {
+            russianTts.stop();
+            russianTts.shutdown();
+            russianTts = null;
+        }
+        super.onDestroy();
     }
 
     @Override public void onBackPressed() {
