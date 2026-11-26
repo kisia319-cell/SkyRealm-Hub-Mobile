@@ -344,7 +344,7 @@ if(t>9.5){for(let i=0;i<3;i++){const z=-5+i*4;drawZombie(-5+i*4,.05,z,t,i%4,.88+
 }
 
 let voiceTimers=[],publishedPlayers=[],speechTimers=[];
-// Published OpenGameArt assets: CC0. Zombie calls recorded by saturn91; radio bulletin by OrbitStudios/Fernando Ferreira.
+// CC0 zombie voice effects from OpenGameArt (saturn91); all Russian dispatcher/pilot lines below are original editable game dialogue rendered by platform speech synthesis. Radio hiss and squelch are generated procedurally.
 const publishedSfx={zombieWalk:'https://opengameart.org/sites/default/files/01_zombey.mp3',zombieAttack:'https://opengameart.org/sites/default/files/03_zombey.mp3',zombieGroan2:'https://opengameart.org/sites/default/files/02_zombey.mp3',zombieGroan3:'https://opengameart.org/sites/default/files/04_zombey.mp3',zombieGrowl:'https://opengameart.org/sites/default/files/06_zombey.mp3',zombieScream:'https://opengameart.org/sites/default/files/07_zombey.mp3',helicopter:'https://sfxmint.com/dl/helicopter-10.mp3',footsteps:'https://sfxmint.com/dl/footsteps-gravel-39.mp3',impact:'https://sfxmint.com/dl/impact-explosion-23.mp3'};
 function stopRadioDialogue(){
  if(window.AndroidBridge&&typeof window.AndroidBridge.stopRussianSpeech==='function'){try{window.AndroidBridge.stopRussianSpeech()}catch(_){}}
