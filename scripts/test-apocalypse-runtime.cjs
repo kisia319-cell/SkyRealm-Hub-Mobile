@@ -457,3 +457,8 @@ assert.ok(game.includes("function drawSupplyCrate("), 'Supply crates must use a 
 assert.ok(game.includes("drawSupplyCrate(lootX,lootY,1.22") && game.includes("drawSupplyCrate(281,294,1.18"), 'Building loot containers must use the enlarged detailed crate model');
 assert.ok(game.includes("drawSupplyCrate(s.x,s.y,1.24,'field',false)"), 'Radio supply cache must use the same detailed crate model');
 assert.ok(game.includes("if(opened)") && game.includes("variant==='medical'?'MED':variant==='military'?'MIL':'SUPPLY'") && game.includes("ctx.arc(xx,yy,1.4"), 'Crates must show an open searched state, type-specific markings and visible metal fasteners');
+
+assert.ok(game.includes("function openLootTransfer(") && game.includes("pointerdown") && game.includes("pointermove") && game.includes("pointerup") && game.includes("elementFromPoint"), 'Container loot must use real pointer drag-and-drop for mouse and touch');
+assert.ok(game.includes("function buildingContainerItems(") && game.includes("entry.contents=entry.picked?[]") && game.includes("tier:'rare'"), 'Building crates must contain multiple persistent items with rarity tiers');
+assert.ok(game.includes("supplyShelterContents") && game.includes("shelterLoot") && game.includes("Тайник выживших"), 'Supply caches and survivor shelters must keep individually transferable loot');
+assert.ok(game.includes("slot:'loot-item'") && game.includes("p.itemIndex") && game.includes("drop-ready"), 'Partial crate looting must sync per item in co-op and highlight the backpack drop zone');
