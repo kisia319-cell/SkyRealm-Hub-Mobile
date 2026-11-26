@@ -331,7 +331,7 @@ assert.ok(game.includes("for(const b of buildings){if(!b.role){b.role='loot';b.k
 assert.ok(game.includes("const phase=(Math.floor(time/52000)%6),storm=phase===2,rain=phase===3,drizzle=phase===5,dust=phase===4"), 'Weather must cycle through additional dynamic conditions');
 assert.ok(html.includes('id="quickbarHud"') && html.includes('id="quickSlot6"') && html.includes('id="objectiveHud"') && html.includes('id="waypointHud"') && html.includes('id="threatHud"'), 'Gameplay quickbar and guidance HUD must exist');
 assert.ok(html.includes('id="markerNavigate"') && html.includes('id="waypointClear"') && html.includes('id="mobileMoreSave"'), 'Waypoint selection and mobile quick save controls must exist');
-assert.ok(game.includes("Array.from({length:b.floors}") && game.includes("buildingFloors[lootBuilding.id]=floor>=lootBuilding.floors?1:floor+1") && game.includes("crateEntry.picked=true"), 'Each floor must have a searchable persistent crate and stair traversal');
+assert.ok(game.includes("Array.from({length:b.floors}") && game.includes("buildingFloors[lootBuilding.id]=floor>=lootBuilding.floors?1:floor+1") && game.includes("crateEntry.picked=crateEntry.contents.every(v=>v.picked)"), 'Each floor must have a multi-item searchable persistent crate and stair traversal');
 assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.max(.4,.68-(state.armorLevel-1)*.07)") && game.includes("46+(state.weaponLevel-2)*6"), 'New item effects must affect gameplay stats');
 
 assert.ok(game.includes("hydration:bounded(saved.hydration,100,0,100)") && game.includes("function updateHydration(dt,now)") && game.includes("state.hydration=Math.min(100,state.hydration+45)"), 'Thirst must drain over time and clean water must restore hydration');
@@ -457,3 +457,12 @@ assert.ok(game.includes("function drawSupplyCrate("), 'Supply crates must use a 
 assert.ok(game.includes("drawSupplyCrate(lootX,lootY,1.22") && game.includes("drawSupplyCrate(281,294,1.18"), 'Building loot containers must use the enlarged detailed crate model');
 assert.ok(game.includes("drawSupplyCrate(s.x,s.y,1.24,'field',false)"), 'Radio supply cache must use the same detailed crate model');
 assert.ok(game.includes("if(opened)") && game.includes("variant==='medical'?'MED':variant==='military'?'MIL':'SUPPLY'") && game.includes("ctx.arc(xx,yy,1.4"), 'Crates must show an open searched state, type-specific markings and visible metal fasteners');
+
+assert.ok(game.includes("function openLootTransfer(") && game.includes("pointerdown") && game.includes("pointermove") && game.includes("pointerup") && game.includes("elementFromPoint"), 'Container loot must use real pointer drag-and-drop for mouse and touch');
+assert.ok(game.includes("function buildingContainerItems(") && game.includes("entry.contents=entry.picked?[]") && game.includes("?'rare':'uncommon'"), 'Building crates must contain multiple persistent items with rarity tiers');
+assert.ok(game.includes("supplyShelterContents") && game.includes("shelterLoot") && game.includes("Тайник выживших"), 'Supply caches and survivor shelters must keep individually transferable loot');
+assert.ok(game.includes("slot:'loot-item'") && game.includes("p.itemIndex") && game.includes("drop-ready"), 'Partial crate looting must sync per item in co-op and highlight the backpack drop zone');
+
+assert.ok(game.includes("explorationCacheContents") && game.includes("Частично обысканный тайник") && game.includes("supplyShelterContents"), 'Exploration and survivor caches must preserve partial manual looting');
+assert.ok(game.includes("drop.loot") && game.includes("Аварийная поставка") && game.includes("site.loot") && game.includes("Операция · "), 'Airdrops and story-operation containers must use manual item transfer');
+assert.ok(game.includes("entry.contents.every(v=>v.picked)") && game.includes("itemIndex:loot.index"), 'Multi-item crates must persist partial progress and sync each taken item');
