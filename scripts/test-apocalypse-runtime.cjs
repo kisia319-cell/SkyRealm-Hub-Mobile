@@ -32,6 +32,8 @@ assert.ok(game.includes("const isAndroidDevice=/Android/i.test(typeof navigator!
 assert.ok(game.includes('requestedViewScale') && game.includes('Math.min(requestedViewScale,.9):requestedViewScale'), 'Only Android must use the shorter object render distance');
 assert.ok(game.includes('function drawRivers()') && game.includes('Array.from({length:60}') && game.includes('foundShelterCaches'), 'Rivers and 60 persistent searchable shelters must be present');
 assert.ok(game.includes('function updateRain(dt,now)') && game.includes('state.hydration>=10'), 'Acid rain damage and thirst sprint lock must be active');
+assert.ok(html.includes('id="panelSearch"') && html.includes('id="panelSearchCount"') && html.includes('id="panelSearchEmpty"'), 'All game panels must expose a searchable, accessible item filter and empty state');
+assert.ok(game.includes("slot.dataset.search=") && game.includes("search.oninput") && game.includes("e.key==='Escape'"), 'Panel search must filter live, count matches and clear on Escape');
 assert.ok(html.includes('id="settingMaxFps"') && html.includes('radar-button') && html.includes('dialogue-open'), 'FPS settings, radar and intro HUD hiding must exist');
 assert.ok(html.includes('id="cine3D"') && html.includes('apocalypse-cinematic-3d.js') && html.includes('cineProgress 16s'), '16-second WebGL cinematic canvas and progress timeline must be wired');
 assert.ok(html.includes('id="characterCreator"') && html.includes('id="charBodyType"') && html.includes('id="charOutfit"') && html.includes('id="charSkin"') && html.includes('id="charBoots"'), 'Expanded character creator controls must exist');
