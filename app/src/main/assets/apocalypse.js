@@ -1436,63 +1436,99 @@ function createApocalypseWorld(){
  try{localStorage.setItem(CURRENT_WORLD_KEY,id);sessionStorage.setItem('apoc_open_character_creator','new');location.reload();}catch(_){toast('Не удалось создать мир');}
 }
 let characterCreatorThenIntro=false;
+function characterArtworkSvg(v={},seed=0){
+ const pick=(id,fallback)=>String(v[id]??fallback);
+ const color=(id,fallback)=>/^#[0-9a-f]{6}$/i.test(pick(id,fallback))?pick(id,fallback):fallback;
+ const skin=color('charSkin','#d9a77e'),hair=color('charHair','#3b302d'),shirt=color('charShirt','#526b4c'),trim=color('charTrim','#b2aa83'),pants=color('charPants','#343b3a'),boots=color('charBoots','#252b28'),eyes=color('charEyes','#354c61'),white=color('charEyeWhite','#f2e9d8'),brow=color('charBrowColor',hair),lips=color('charLipColor','#915b55'),hairHi=color('charHairAccent','#a78b69'),metal=color('charMetalColor','#b5ad8d'),skinShade=color('charSkinDetail','#875743'),pattern=color('charPatternColor','#3c503b'),beltColor=color('charBeltColor','#786744'),glove=color('charGloveColor','#454a42'),packColor=color('charPackColor','#3e5144'),cloakColor=color('charCloakColor','#59634b'),beardColor=color('charBeardColor',hair),undershirt=color('charUndershirtColor','#343c38');
+ const style=pick('charHairStyle','short'),beard=pick('charBeard','none'),head=pick('charHeadgear','none'),face=pick('charFaceAccessory','none'),faceShape=pick('charFaceShape','normal'),eyeStyle=pick('charEyeStyle','normal'),outfit=pick('charOutfit','survivor'),outer=pick('charOuterwear','none'),fabric=pick('charFabric','solid'),condition=pick('charCondition','worn'),cloak=pick('charCloak','none'),pack=pick('charBackpack','none'),belt=pick('charBelt','utility'),gloves=pick('charGloves','none'),pantsStyle=pick('charPantsStyle','cargo'),footwear=pick('charFootwear','combat'),markings=pick('charMarkings','none'),scar=pick('charScar','no')==='yes',patch=pick('charPatch','none'),body=pick('charBodyType','average'),size=pick('charGarmentSize','M');
+ const hairPaths={
+ short:'M64 73 Q61 49 79 40 Q96 31 112 45 Q120 53 115 75 L106 64 Q91 53 76 65Z',
+ long:'M63 75 Q58 43 80 37 Q104 29 117 53 L119 147 Q111 151 107 137 L106 69 Q87 54 73 69 L72 145 Q63 151 59 140Z',
+ shaved:'M66 66 Q67 45 88 41 Q107 40 115 62 L111 69 Q91 57 69 70Z',
+ mohawk:'M82 71 L80 57 L83 40 L88 22 L94 40 L100 24 L102 54 L99 72Z',
+ bun:'M64 71 Q61 47 82 39 Q105 32 116 57 L111 76 Q94 57 73 70Z M86 39 Q80 23 94 18 Q109 20 105 39Z',
+ fade:'M65 68 Q66 45 86 41 Q105 37 115 56 L111 71 Q91 57 72 72Z',
+ crew:'M65 70 Q64 47 84 41 Q105 37 115 57 L109 66 Q89 57 72 68Z',
+ undercut:'M62 73 Q62 44 83 39 Q108 33 117 55 L112 69 Q93 54 74 68 L72 81Z',
+ sidepart:'M63 71 Q65 43 89 39 Q110 38 117 58 Q104 54 93 59 Q80 65 66 75Z',
+ slickback:'M62 70 Q65 41 88 39 Q111 38 118 61 Q102 51 85 52 Q72 54 63 72Z',
+ curly:'M65 72 Q55 61 62 50 Q58 39 73 39 Q77 26 91 34 Q104 26 111 42 Q126 46 117 62 L111 76 Q96 57 73 72Z',
+ wavy:'M63 72 Q56 54 68 47 Q69 34 83 38 Q91 29 101 39 Q116 35 119 53 L113 74 Q99 57 74 71Z',
+ afro:'M63 75 Q54 62 59 51 Q57 37 72 35 Q77 23 91 29 Q105 22 112 37 Q127 43 120 60 L114 78 Q92 58 68 77Z',
+ dreadlocks:'M63 69 Q61 43 83 37 Q105 32 117 55 L113 91 L106 92 L103 68 Q91 55 75 69 L72 92 L65 91Z',
+ braids:'M64 70 Q61 45 84 38 Q108 33 117 58 L110 73 Q91 55 72 71Z',
+ ponytail:'M64 72 Q60 44 83 38 Q109 32 117 57 L111 75 Q95 55 72 72Z',
+ twintails:'M64 70 Q61 44 83 38 Q108 33 117 58 L111 74 Q91 55 72 72Z',
+ bob:'M64 71 Q60 42 85 38 Q108 35 117 57 L115 115 Q107 123 103 106 L103 69 Q88 58 74 70 L73 116 Q65 123 61 112Z',
+ pixie:'M65 71 Q62 45 85 39 Q107 37 115 55 L106 67 Q93 58 75 71Z',
+ shag:'M63 74 Q56 45 82 38 Q108 31 118 56 L121 109 L110 100 L105 75 Q91 56 74 72 L67 106 L59 103Z',
+ wolfcut:'M62 72 Q57 43 82 36 Q108 31 119 57 L123 121 L111 109 L104 72 Q89 54 73 70 L66 117 L58 106Z',
+ mullet:'M64 72 Q60 43 83 38 Q108 32 117 57 L116 133 L108 130 L104 72 Q88 56 73 72Z',
+ spiky:'M64 72 L61 55 L70 58 L71 40 L83 53 L91 31 L99 51 L112 39 L109 57 L119 53 L114 75Z',
+ messy:'M63 73 Q58 48 74 45 L70 34 L85 41 L91 28 L100 43 L116 36 L111 53 L120 59 L111 76 Q91 57 72 72Z',
+ fringe:'M64 71 Q60 43 84 38 Q109 34 117 58 L108 71 L101 60 L94 72 L87 59 L78 72Z',
+ sidefringe:'M63 70 Q63 43 86 39 Q109 36 117 57 L110 70 Q96 59 78 76 L71 70Z',
+ balding:'M66 67 Q68 46 87 42 Q104 40 114 57 L108 62 Q90 55 72 68Z',
+ topknot:'M64 71 Q61 45 84 38 Q109 31 117 57 L111 73 Q92 55 73 72Z M85 40 Q81 23 95 17 Q108 19 105 39Z',
+ braidlong:'M64 70 Q61 44 84 38 Q108 32 117 58 L110 73 Q91 55 72 71Z',
+ braidside:'M64 71 Q61 44 84 38 Q108 33 117 58 L110 74 Q92 54 72 72Z',
+ cornrows:'M65 71 Q61 43 85 38 Q109 34 117 58 L111 68 Q91 54 72 70Z',
+ locs:'M64 71 Q60 44 83 37 Q107 31 117 56 L113 95 L106 100 L103 69 Q90 54 73 70 L70 98 L63 98Z',
+ shoulder:'M63 72 Q60 43 84 37 Q109 32 118 57 L118 129 L110 136 L106 71 Q89 55 73 72 L71 136 L62 129Z',
+ layered:'M63 72 Q60 44 84 37 Q109 33 118 57 L119 118 L108 108 L104 70 Q89 56 73 71 L68 112 L60 103Z',
+ curtain:'M63 72 Q61 42 85 38 Q110 35 117 57 L109 73 Q103 60 93 56 L92 78 L84 57 Q75 61 71 76Z',
+ pompadour:'M62 69 Q63 39 86 31 Q109 28 117 55 Q99 48 88 50 Q74 51 63 72Z',
+ quiff:'M63 70 Q62 40 84 35 Q107 32 116 56 L109 70 Q96 55 80 59Z',
+ bowl:'M62 73 Q59 42 88 38 Q116 39 119 68 L112 75 L107 63 Q90 57 73 64 L68 76Z',
+ buzz:'M66 66 Q68 47 88 43 Q106 41 114 61 L109 67 Q89 59 71 69Z',
+ military:'M66 68 Q67 45 87 42 Q106 40 114 60 L109 67 Q90 59 71 69Z',
+ messybun:'M63 72 Q61 45 83 38 Q107 33 117 57 L111 73 Q92 55 73 72Z M84 42 Q79 23 97 18 Q111 22 104 42Z',
+ doublebun:'M64 72 Q60 45 84 38 Q109 34 117 59 L111 72 Q92 56 72 72Z M72 42 Q67 26 81 24 Q93 27 86 42Z M98 41 Q94 24 108 23 Q119 28 111 43Z',
+ frenchbraid:'M63 71 Q61 43 84 38 Q108 32 117 58 L111 74 Q92 55 72 72Z',
+ fishtail:'M64 71 Q61 44 84 38 Q108 32 117 58 L110 72 Q91 56 73 72Z',
+ ribbon:'M64 72 Q61 44 84 38 Q108 32 117 58 L110 74 Q91 55 72 72Z',
+ spikehawk:'M67 72 L65 55 L77 53 L83 35 L92 49 L103 34 L106 54 L118 56 L111 74Z',
+ longcurl:'M63 72 Q58 42 83 36 Q108 29 118 57 L119 136 Q111 148 106 128 L105 71 Q89 54 73 71 L70 135 Q61 147 59 130Z',
+ halfup:'M63 72 Q61 42 84 37 Q108 32 117 57 L112 75 Q92 55 72 72Z M86 38 Q84 23 97 20 Q107 22 102 40Z'
+ };
+ const hairPath=hairPaths[style]||hairPaths.short;
+ const headPath=faceShape==='angular'?'M69 57 Q70 42 90 40 Q110 42 111 57 L106 91 L90 111 L74 91Z':faceShape==='round'?'M68 60 Q68 39 90 39 Q112 39 112 60 Q113 100 90 111 Q67 100 68 60Z':faceShape==='square'?'M68 55 Q70 39 90 39 Q110 39 112 55 L111 91 L101 109 L79 109 L69 91Z':faceShape==='heart'?'M68 55 Q67 38 90 39 Q113 38 112 55 Q109 83 90 111 Q71 83 68 55Z':faceShape==='long'?'M73 54 Q74 38 90 38 Q106 38 107 54 L105 96 Q101 112 90 116 Q79 112 75 96Z':'M69 57 Q70 40 90 40 Q110 40 111 57 L106 94 Q101 111 90 112 Q79 111 74 94Z';
+ const hairExtra=['ponytail','twintails','braids','braidlong','braidside','frenchbraid','fishtail','dreadlocks','locs','cornrows','ribbon','longcurl'].includes(style)?'<path d="M111 65 Q128 83 122 120" fill="none" stroke="'+hair+'" stroke-width="7" stroke-linecap="round"/><path d="M111 66 Q127 84 122 120" fill="none" stroke="'+hairHi+'" stroke-opacity=".72" stroke-width="1.2" stroke-linecap="round"/>':'';
+ const curlTexture=['curly','longcurl','afro','wavy'].includes(style)?Array.from({length:13},(_,i)=>'<circle cx="'+(67+(i%5)*11)+'" cy="'+(46+Math.floor(i/5)*5)+'" r="3.4" fill="'+hairHi+'" opacity=".55"/>').join(''):'';
+ const braidTexture=['braids','braidlong','braidside','frenchbraid','fishtail','dreadlocks','locs','cornrows'].includes(style)?'<path d="M72 60 Q79 67 73 77 Q82 82 76 92 M82 52 Q89 60 83 70 Q92 76 86 86 M100 52 Q94 60 101 70 Q93 76 99 86" fill="none" stroke="'+hairHi+'" stroke-width="1.4" stroke-linecap="round"/>':'';
+ const eyeSize=eyeStyle==='wide'?[8,6]:eyeStyle==='round'?[5.2,5.8]:eyeStyle==='narrow'?[8.2,2.8]:eyeStyle==='hooded'?[7.8,3.3]:eyeStyle==='tired'?[8,3.2]:eyeStyle==='sharp'?[8.5,3.2]:eyeStyle==='sleepy'?[8,2.6]:eyeStyle==='soft'?[7.2,4.1]:[8,4.4];
+ const eyeShape=eyeStyle==='sharp'?' M0 0 Q8 -4 16 0 Q9 6 0 0Z':eyeStyle==='hooded'?' M0 0 Q8 -4 16 0 Q8 4 0 0Z':'';
+ const pupilSize=eyeStyle==='wide'||eyeStyle==='round'?2.5:2.15;
+ const eyeWhiteId=white;
+ const garmentWidth=body==='slim'||body==='lanky'?55:body==='strong'||body==='athletic'?76:body==='stocky'||body==='bulky'?80:68;
+ const garmentScale=size==='XS'?.86:size==='S'?.93:size==='L'?1.06:size==='XL'?1.13:1;
+ const patternFill=fabric==='solid'?shirt:'url(#fabric)';
+ const coatStyle=['tactical','military','police','firefighter','paramedic','ranger','hunter','engineer','mechanic','scientist','hazmat','pilot','aviator','security','swat','sniper','commando','winter','arctic','desert','urban','woodland','urban_camo','rain','wasteland','raider','nomad','trapper','surgeon','lab','prisoner','civilian','worker','delivery','journalist','explorer','bodyguard','heavy','stealth','rebel','colonist','salvager'].includes(outfit);
+ const faceEyes='<g><path d="M76 79 Q83 73 90 79" fill="none" stroke="'+brow+'" stroke-width="3" stroke-linecap="round"/><path d="M91 79 Q99 73 106 79" fill="none" stroke="'+brow+'" stroke-width="3" stroke-linecap="round"/><ellipse cx="83" cy="85" rx="'+eyeSize[0]+'" ry="'+eyeSize[1]+'" fill="'+eyeWhiteId+'"/><ellipse cx="99" cy="85" rx="'+eyeSize[0]+'" ry="'+eyeSize[1]+'" fill="'+eyeWhiteId+'"/><circle cx="83" cy="85" r="'+pupilSize+'" fill="'+eyes+'"/><circle cx="99" cy="85" r="'+pupilSize+'" fill="'+eyes+'"/><circle cx="83.7" cy="84.1" r="1.05" fill="#fff"/><circle cx="99.7" cy="84.1" r="1.05" fill="#fff"/><circle cx="83" cy="85" r=".9" fill="#111"/><circle cx="99" cy="85" r=".9" fill="#111"/><path d="M75 85 Q83 '+(85-eyeSize[1]-1)+' 91 85 M91 85 Q99 '+(85-eyeSize[1]-1)+' 107 85" fill="none" stroke="'+skinShade+'" stroke-opacity=".5" stroke-width="1"/></g>';
+ const facialHair=beard==='none'?'':beard==='stubble'?'<path d="M75 98 Q90 112 105 98 L103 108 Q90 118 77 108Z" fill="'+beardColor+'" opacity=".3"/>':beard==='mustache'?'<path d="M81 99 Q85 96 90 100 Q95 96 100 99 Q97 105 90 102 Q83 105 81 99Z" fill="'+beardColor+'"/>':'<path d="M75 96 Q79 103 82 105 L87 113 L90 116 L93 113 L98 105 L105 96 L103 108 Q98 119 90 121 Q82 119 77 108Z" fill="'+beardColor+'" stroke="#30251f" stroke-width="1"/>';
+ const scarMark=scar||markings==='scars'?' <path d="M102 64 L95 79" fill="none" stroke="'+skinShade+'" stroke-width="2" stroke-linecap="round"/><path d="M101 65 L96 77" fill="none" stroke="#e8b99c" stroke-width=".8"/>':'';
+ const freckles=markings==='freckles'?Array.from({length:9},(_,i)=>'<circle cx="'+(78+(i%5)*5)+'" cy="'+(93+Math.floor(i/5)*3)+'" r=".9" fill="'+skinShade+'"/>').join(''):'';
+ const facePaint=markings==='warpaint'||markings==='tribal'?'<path d="M73 91 L84 95 M107 91 L96 95" stroke="'+skinShade+'" stroke-width="3" stroke-linecap="round"/>':markings==='biohazard'?'<path d="M90 93 l4 4 -4 4 -4-4Z" fill="#d2bf44"/>':'';
+ const headGear=head==='none'?'':head==='helmet'||head==='riot'||head==='hardhat'||head==='night_vision'?'<path d="M63 66 Q65 34 90 31 Q115 34 117 66 L110 69 L70 69Z" fill="#65705f" stroke="#202a24" stroke-width="3"/><path d="M66 64 Q90 70 114 64" stroke="'+metal+'" stroke-width="3"/>':head==='hood'||head==='gas_hood'||head==='balaclava'?'<path d="M60 72 Q58 29 90 27 Q122 29 120 72 L111 100 L69 100Z" fill="#303a35" stroke="#151b17" stroke-width="3"/>':head==='cap'?' <path d="M65 63 Q66 39 90 39 Q111 39 116 60 L122 66 L62 66Z" fill="'+trim+'" stroke="#242c25" stroke-width="2"/>':head==='beanie'||head==='ushanka'?'<path d="M64 64 Q62 36 90 34 Q118 36 116 64Z" fill="#665d4d" stroke="#242c25" stroke-width="2"/><path d="M65 60 H115 V68 H65Z" fill="'+metal+'"/>':head==='beret'?'<path d="M62 58 Q70 35 93 36 Q112 35 117 51 Q102 59 62 58Z" fill="#58694d" stroke="#242c25" stroke-width="2"/>':'<path d="M61 61 Q90 52 119 61 L120 68 H60Z" fill="'+trim+'" stroke="#242c25" stroke-width="2"/>';
+ const faceGear=face==='none'?'':face==='goggles'||face==='ski_goggles'?' <rect x="73" y="80" width="16" height="11" rx="4" fill="#263b40" stroke="'+metal+'" stroke-width="2"/><rect x="93" y="80" width="16" height="11" rx="4" fill="#263b40" stroke="'+metal+'" stroke-width="2"/><path d="M89 85 H93" stroke="'+metal+'" stroke-width="2"/>':face==='glasses'?' <rect x="74" y="80" width="16" height="10" rx="3" fill="#a9d5e055" stroke="'+metal+'" stroke-width="1.5"/><rect x="91" y="80" width="16" height="10" rx="3" fill="#a9d5e055" stroke="'+metal+'" stroke-width="1.5"/>':face==='gas_mask'||face==='respirator'||face==='filter'?'<path d="M74 91 Q90 84 106 91 L103 107 Q90 115 77 107Z" fill="#3b4942" stroke="'+metal+'" stroke-width="2"/><circle cx="80" cy="99" r="5" fill="#788578" stroke="#202a24" stroke-width="2"/><circle cx="100" cy="99" r="5" fill="#788578" stroke="#202a24" stroke-width="2"/>':face==='visor'?' <path d="M68 78 Q90 72 112 78 L108 94 Q90 98 72 94Z" fill="#8bc0bb66" stroke="'+metal+'" stroke-width="2"/>':face==='mask'||face==='bandana'||face==='face_wrap'?' <path d="M74 91 Q90 85 106 91 L103 105 Q90 111 77 105Z" fill="'+(face==='bandana'?'#8d4540':'#3b4942')+'" stroke="#202a24" stroke-width="1.5"/>':face==='scarf'?' <path d="M75 91 Q90 85 105 91 L106 107 Q90 114 74 107Z" fill="'+trim+'" stroke="#242c25" stroke-width="2"/>':'';
+ const hatExtras=head==='night_vision'?'<path d="M78 52 L82 68 M102 52 L98 68" stroke="#182522" stroke-width="4"/><circle cx="80" cy="68" r="4" fill="#8bb58a"/><circle cx="100" cy="68" r="4" fill="#8bb58a"/>':head==='pilot'?'<path d="M70 53 L110 53 L106 63 L74 63Z" fill="#514335" stroke="#242c25" stroke-width="2"/>':'';
+ const cloakArt=cloak==='none'?'':'<path d="M69 116 L111 116 L131 212 L90 194 L49 212Z" fill="'+cloakColor+'" stroke="#202a24" stroke-width="2"/><path d="M70 125 L90 145 L110 125" fill="none" stroke="'+metal+'" stroke-width="2"/>';
+ const backpackArt=pack==='none'?'':'<path d="M51 124 Q45 125 45 139 L46 185 Q48 193 64 192 L67 137Z" fill="'+packColor+'" stroke="#202a24" stroke-width="3"/><path d="M51 145 H64 M50 168 H64" stroke="'+metal+'" stroke-width="2"/><rect x="51" y="151" width="11" height="17" rx="3" fill="#25312a"/>';
+ const jacketExtra=outer==='parka'||outer==='longcoat'?'<path d="M62 118 L118 118 L125 190 L55 190Z" fill="none" stroke="'+trim+'" stroke-width="5"/><path d="M90 119 V190" stroke="'+trim+'" stroke-width="3"/>':outer==='leather'?'<path d="M62 120 L90 139 L118 120 M62 125 L70 186 M118 125 L110 186" fill="none" stroke="#3b3028" stroke-width="4"/>':outer==='vest'||outfit==='tactical'||outfit==='swat'||outfit==='commando'?'<path d="M65 122 L82 127 L79 172 L62 170Z M115 122 L98 127 L101 172 L118 170Z" fill="#303b34" stroke="'+metal+'" stroke-width="2"/><rect x="66" y="139" width="12" height="16" rx="2" fill="'+beltColor+'"/><rect x="102" y="139" width="12" height="16" rx="2" fill="'+beltColor+'"/>':outer==='hazmat'||outfit==='hazmat'?'<path d="M62 117 H118 L125 191 H55Z" fill="#b9a94a" opacity=".28" stroke="#d4c357" stroke-width="3"/><path d="M90 119 V190" stroke="#252b24" stroke-width="5"/>':'';
+ const fabricDots=fabric==='woodland'?'<path d="M67 136 q8-10 14 0 t14 0 t14 0 M62 158 q8-8 14 0 t14 0 t14 0" fill="none" stroke="'+pattern+'" stroke-width="6" opacity=".7"/>':fabric==='urban'?'<path d="M62 139 l15 -8 9 8 -12 10 13 8 -16 8 M97 137 l12 -8 9 10 -13 11 12 10" fill="none" stroke="'+pattern+'" stroke-width="5"/>':fabric==='desert'?'<path d="M63 141 q9-9 18 0 t18 0 t18 0 M64 165 q8-8 16 0 t16 0 t16 0" fill="none" stroke="#b49b6b" stroke-width="5"/>':fabric==='snow'?'<path d="M62 138 l15 -8 10 10 13 -9 17 10 M63 164 l14 -7 14 9 13 -8" fill="none" stroke="#e0e3dc" stroke-width="5"/>':'';
+ const bodyWear=condition==='clean'?'':condition==='torn'?'<path d="M66 160 l9 6 -5 7 12 6 M112 149 l-7 7 8 7" fill="none" stroke="#252d25" stroke-width="3"/>':condition==='dirty'?'<path d="M64 172 q15-10 23 0 t28 0 M70 140 l8 8 -7 5" fill="none" stroke="#30291d" stroke-width="5" opacity=".65"/>':'<path d="M66 177 l6 4 M108 145 l5 6 M76 133 l4 3" stroke="#30291d" stroke-width="2" opacity=".65"/>';
+ const gearArt=(belt==='none'?'':'<path d="M59 180 H121 V190 H59Z" fill="'+beltColor+'" stroke="#202a24" stroke-width="2"/><rect x="85" y="180" width="10" height="10" rx="2" fill="'+metal+'"/>')+(gloves==='none'?'':'<path d="M53 167 L42 183 Q40 191 51 193 L64 181 M127 167 L138 183 Q140 191 129 193 L116 181" fill="'+glove+'" stroke="#202a24" stroke-width="2"/>')+(patch==='none'?'':'<rect x="103" y="131" width="13" height="12" rx="2" fill="'+(patch==='medic'?'#e8e5d4':patch==='hazard'?'#d7c33b':trim)+'" stroke="#202a24" stroke-width="1.5"/>');
+ const pantsArt='<path d="M67 184 L90 187 L87 230 L67 232Z M93 187 L115 184 L113 232 L93 230Z" fill="'+pants+'" stroke="#202a24" stroke-width="3"/><path d="M90 190 V229 M71 207 H86 M96 207 H110" stroke="#899080" stroke-opacity=".45" stroke-width="1.5"/>'+(pantsStyle==='reinforced'?'<path d="M67 207 H87 V222 H67Z M93 207 H113 V222 H93Z" fill="#29332e" stroke="'+metal+'" stroke-width="2"/>':pantsStyle==='shorts'?'<path d="M67 184 L90 187 L88 211 H67Z M93 187 L115 184 L113 211 H93Z" fill="'+pants+'" stroke="#202a24" stroke-width="3"/>':'');
+ const shoesArt='<path d="M67 225 L87 225 L91 240 L61 240 Q58 233 67 225Z M94 225 L113 225 L121 240 L91 240Z" fill="'+boots+'" stroke="#161d19" stroke-width="3"/><path d="M63 236 H88 M94 236 H119" stroke="'+metal+'" stroke-width="2"/>'+(footwear==='waders'?'<path d="M68 204 H86 L87 231 H66Z M95 204 H114 L114 231 H94Z" fill="'+boots+'"/>':'');
+ const shirtArt='<path d="M69 116 L79 110 L90 116 L101 110 L112 116 L129 139 L117 149 L111 140 L114 187 L66 187 L69 140 L62 149 L51 139Z" fill="'+shirt+'" stroke="#202a24" stroke-width="3" transform="translate(0 0) scale('+garmentScale+' 1) translate('+(90-90*garmentScale)+' 0)"/><path d="M90 117 V184 M75 124 L85 139 M105 124 L95 139" fill="none" stroke="'+trim+'" stroke-width="2.3" opacity=".85"/><path d="M73 151 H83 V167 H73Z M97 151 H107 V167 H97Z" fill="'+undershirt+'" stroke="#202a24" stroke-width="1.5"/><circle cx="90" cy="131" r="2.2" fill="'+metal+'"/><circle cx="90" cy="147" r="2.2" fill="'+metal+'"/>';
+ const armsArt='<path d="M64 125 L52 140 L44 169 L55 176 L71 148 M116 125 L128 140 L136 169 L125 176 L109 148" fill="none" stroke="'+shirt+'" stroke-width="13" stroke-linecap="round"/><path d="M50 167 L45 181 M130 167 L135 181" stroke="'+skin+'" stroke-width="9" stroke-linecap="round"/>';
+ const bodyTypeAccent=body==='strong'||body==='stocky'||body==='bulky'?'1.13':body==='slim'||body==='lanky'?'.9':'1';
+ return '<svg xmlns="http://www.w3.org/2000/svg" class="character-portrait-svg" viewBox="0 0 180 252" role="img" aria-label="Предпросмотр персонажа"><defs><linearGradient id="skinGrad" x2="0" y2="1"><stop stop-color="'+skin+'"/><stop offset=".72" stop-color="'+skin+'"/><stop offset="1" stop-color="'+skinShade+'"/></linearGradient><linearGradient id="hairGrad" x2="0" y2="1"><stop stop-color="'+hairHi+'"/><stop offset=".35" stop-color="'+hair+'"/><stop offset="1" stop-color="'+hair+'"/></linearGradient><linearGradient id="shirtGrad" x2="0" y2="1"><stop stop-color="'+trim+'"/><stop offset=".22" stop-color="'+shirt+'"/><stop offset="1" stop-color="'+undershirt+'"/></linearGradient><pattern id="fabric" width="18" height="18" patternUnits="userSpaceOnUse"><rect width="18" height="18" fill="'+shirt+'"/><path d="M0 0 L18 18 M-4 8 L8 20 M10 -2 L20 8" stroke="'+pattern+'" stroke-width="4" opacity=".72"/></pattern><filter id="shadow"><feGaussianBlur stdDeviation="5"/></filter></defs><ellipse cx="90" cy="244" rx="42" ry="6" fill="#000" opacity=".42" filter="url(#shadow)"/>'+cloakArt+backpackArt+'<g transform="translate(90 0) scale('+bodyTypeAccent+' 1) translate(-90 0)">'+pantsArt+shoesArt+armsArt+'<path d="M90 102 V121" stroke="url(#skinGrad)" stroke-width="18" stroke-linecap="round"/>'+shirtArt+jacketExtra+fabricDots+bodyWear+gearArt+'<path d="M68 62 Q65 49 77 44 Q90 37 103 44 Q115 49 112 65 L109 99 Q105 114 90 116 Q75 114 71 99Z" fill="url(#skinGrad)" stroke="#513b30" stroke-width="2"/><ellipse cx="68" cy="82" rx="5" ry="9" fill="'+skin+'"/><ellipse cx="112" cy="82" rx="5" ry="9" fill="'+skin+'"/>'+faceEyes+'<path d="M90 87 L87 98 Q90 101 94 98" fill="none" stroke="'+skinShade+'" stroke-width="1.7" stroke-linecap="round"/><path d="M84 105 Q90 109 96 105" fill="none" stroke="'+lips+'" stroke-width="2.4" stroke-linecap="round"/>'+facialHair+scarMark+freckles+facePaint+'<path d="'+hairPath+'" fill="url(#hairGrad)" stroke="#191f1a" stroke-width="2"/><path d="M69 61 Q84 46 108 58 M73 67 Q82 58 89 58" fill="none" stroke="'+hairHi+'" stroke-width="2" opacity=".8"/>'+hairExtra+curlTexture+braidTexture+headGear+hatExtras+faceGear+'</g></svg>';
+}
 function characterOptionSvg(id,value,index){
- const palettes=['#788c70','#b38c62','#697f91','#987b83','#a5a18a','#657b70','#9b765d','#73758d'];
- let seed=0;for(const c of (id+value))seed=(seed*31+c.charCodeAt(0))>>>0;
- const color=palettes[seed%palettes.length],accent=palettes[(seed+3)%palettes.length],skin=['#e8b88c','#b97852','#f0c7a0','#8c5a42','#d7a77c'][seed%5],hair=palettes[(seed+5)%palettes.length];
- const n=index%7,faceShape=value==='round'?'M25 20 Q36 15 47 20 Q49 33 43 42 Q36 49 29 42 Q22 34 25 20Z':value==='angular'?'M25 19 L47 19 L45 37 L36 47 L27 37Z':'M25 19 Q36 14 47 20 L45 38 Q37 48 28 39Z';
- let hairShape='';
- if(id==='charHairStyle'){
-  const shapes=['M24 25 Q20 5 36 6 Q52 5 49 26 L45 21 Q36 14 27 23Z','M23 28 Q18 2 36 4 Q54 3 51 28 L49 58 L43 45 L39 30 L30 46 L24 58Z','M24 25 Q22 12 36 10 Q49 12 49 25Z','M22 25 L20 14 29 18 31 5 37 17 46 5 45 19 53 14 49 29Z','M23 25 Q22 8 36 9 Q51 8 50 25 L45 18 Q36 13 28 20Z','M23 25 Q21 9 36 8 Q51 9 49 25 L44 22 42 31 36 22 30 31 27 21Z','M23 25 Q25 7 37 9 Q50 8 49 26 L44 22 41 34 35 23 29 33 27 22Z'];
-  hairShape=shapes[n];
- }else if(id==='charHeadgear'){
-  hairShape=value==='helmet'?'M20 25 Q20 4 36 5 Q52 4 52 25 L49 29 L23 29Z':value==='cap'?'M20 21 Q23 9 36 10 Q48 10 50 22 L57 27 L17 27Z':'M20 26 Q20 8 36 8 Q52 8 52 26 L56 37 L16 37Z';
- }else if(id==='charFaceAccessory'){
-  hairShape=value==='goggles'?'M22 26 H50 V34 H22Z':value==='mask'?'M25 31 H47 V43 H25Z':'M23 29 H49 V39 H23Z';
- }
- const clothesColor=['#526fba','#526b4c','#77604b','#5c6268','#8a5549'][seed%5];
- const pants=['#343b3a','#4b5143','#42465b','#66513f'][seed%4];
- const faceAccessory=id==='charFaceAccessory'||(id==='charHeadgear'&&value!=='none');
- const beard=(id==='charBeard'&&value!=='none')||id==='charFaceShape'&&value==='bearded';
- const scar=(id==='charScar'&&value==='yes')||(id==='charMarkings'&&value!=='none');
- const cloak=id==='charCloak'&&value!=='none';
- const pack=id==='charBackpack'&&value!=='none';
- const gloves=id==='charGloves'&&value!=='none';
- const shoes=id==='charFootwear';
- const pantsOnly=id==='charPantsStyle';
- const belt=id==='charBelt'&&value!=='none';
- const size=id==='charGarmentSize';
- const outfit=['charOutfit','charOuterwear','charFabric','charCondition'].includes(id);
- const colorField=id.startsWith('char')&&['charSkin','charHair','charEyes','charEyeWhite','charShirt','charTrim','charPants','charBoots','charCloakColor','charPackColor','charHairAccent','charBrowColor','charBeardColor','charLipColor','charGloveColor','charBeltColor','charMetalColor','charUndershirtColor','charSkinDetail','charPatternColor'].includes(id);
- const headwear=id==='charHeadgear'&&value!=='none';
- const showBackpack=pack||id==='charBackpack';
- const showCape=cloak||id==='charCloak';
- const shirtColor=colorField&&id==='charShirt'?value:clothesColor;
- const skinColor=colorField&&id==='charSkin'?value:skin;
- const hairColor=colorField&&id==='charHair'?value:hair;
- const eyesColor=colorField&&id==='charEyes'?value:'#29394a';
- const shirt=(outfit||id==='charOutfit'||id==='charOuterwear'||id==='charFabric'||id==='charCondition')?color:shirtColor;
- const pantsColor=pantsOnly?color:pants;
- const itemOverlay=(()=>{
-  if(id==='charFaceAccessory')return value==='none'?'':'<path d="'+hairShape+'" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>';
-  if(id==='charHeadgear')return value==='none'?'':'<path d="'+hairShape+'" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>';
-  if(id==='charCloak')return '<path d="M24 47 L48 47 L57 87 L36 79 L15 87Z" fill="'+color+'" opacity=".95"/>';
-  if(id==='charBackpack')return '<rect x="14" y="43" width="13" height="28" rx="4" fill="'+color+'" stroke="#18231c" stroke-width="1.5"/>';
-  if(id==='charGloves')return '<path d="M15 65 L13 53 L19 52 L21 65 M49 65 L51 53 L45 52 L43 65" stroke="'+color+'" stroke-width="5" stroke-linecap="round"/>';
-  if(id==='charPantsStyle')return '<path d="M27 60 L35 60 L34 87 L27 87Z M38 60 L46 60 L45 87 L38 87Z" fill="'+color+'" stroke="#1a211d"/>';
-  if(id==='charFootwear')return '<path d="M25 84 H36 V91 H22Z M38 84 H49 V91 H36Z" fill="'+color+'" stroke="#17211b"/>';
-  if(id==='charBelt')return '<rect x="25" y="59" width="22" height="4" rx="1" fill="'+color+'"/><rect x="34" y="59" width="4" height="4" fill="'+accent+'"/>';
-  if(id==='charPatch')return '<rect x="40" y="47" width="7" height="7" rx="1" fill="'+color+'" stroke="#f0e2c2"/>';
-  if(id==='charGarmentSize')return '<path d="M25 44 L20 50 L15 59 M46 44 L51 50 L56 59" stroke="'+accent+'" stroke-width="3" fill="none"/>';
-  if(id==='charScar'||id==='charMarkings')return '<path d="M40 29 L34 37" stroke="'+color+'" stroke-width="2.2" stroke-linecap="round"/>';
-  if(id==='charBeard')return '<path d="M28 34 Q36 49 45 34 L43 41 Q36 51 29 41Z" fill="'+color+'" stroke="#382d26"/>';
-  if(id==='charHairStyle')return '<path d="'+hairShape+'" fill="'+hairColor+'" stroke="#17211b" stroke-width="1.5"/>';
-  if(id==='charFabric'||id==='charCondition'||id==='charOutfit'||id==='charOuterwear')return '<path d="M25 46 L30 42 H42 L48 46 L54 57 L47 61 L44 55 V75 H27 V55 L24 61 L17 57Z" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>';
-  if(colorField)return '<rect x="48" y="7" width="12" height="12" rx="3" fill="'+value+'" stroke="#f4e8ce"/>';
-  if(id==='charBodyType'||id==='charHeight'||id==='charFaceShape'||id==='charEyeStyle'||id==='charSkinDetail')return '<path d="M27 29 Q36 35 45 29" stroke="'+accent+'" stroke-width="1.4" fill="none"/>';
-  return '<path d="M18 50 L54 50" stroke="'+accent+'" stroke-width="2" opacity=".7"/>';
- })();
- const svg='<svg xmlns="http://www.w3.org/2000/svg" width="96" height="128" viewBox="0 0 72 96"><defs><linearGradient id="shirt" x2="0" y2="1"><stop stop-color="'+shirt+'"/><stop offset="1" stop-color="'+accent+'"/></linearGradient></defs>\n <path d="M27 60 L34 60 L33 83 L26 85Z M38 60 L45 60 L46 85 L39 83Z" fill="'+pantsColor+'" stroke="#17211b" stroke-width="1.4"/><path d="M24 82 H35 V88 H21Z M38 82 H49 V88 H36Z" fill="#30352f" stroke="#121a15"/>\n <path d="M25 44 L18 49 L14 63 L22 66 L26 57 L26 76 H46 V57 L50 66 L58 63 L54 49 L47 44Z" fill="url(#shirt)" stroke="#17211b" stroke-width="1.6"/><path d="M35 45 V75 M27 50 H45" stroke="'+accent+'" stroke-width="2" opacity=".8"/>\n '+(showBackpack?'<rect x="13" y="47" width="12" height="27" rx="4" fill="'+(pack?color:accent)+'" stroke="#17211b"/>':'')+(showCape?'<path d="M26 43 L46 43 L57 83 L36 76 L15 83Z" fill="'+(cloak?color:accent)+'" opacity=".92"/>':'')+'\n <rect x="32" y="38" width="8" height="9" rx="3" fill="'+skinColor+'"/><path d="'+faceShape+'" fill="'+skinColor+'" stroke="#47382e" stroke-width="1.4"/>\n <path d="M27 28 Q25 13 36 13 Q50 13 47 29 L44 23 Q36 18 29 24Z" fill="'+hairColor+'" stroke="#17211b" stroke-width="1.4"/>\n <path d="M28 28 Q31 26 34 28 M39 28 Q42 26 45 28" stroke="#49352d" stroke-width="1.5" fill="none"/>\n <ellipse cx="32" cy="31" rx="2.3" ry="2.8" fill="#f5eee0"/><ellipse cx="42" cy="31" rx="2.3" ry="2.8" fill="#f5eee0"/><circle cx="32.4" cy="31.5" r="1.25" fill="'+eyesColor+'"/><circle cx="42.4" cy="31.5" r="1.25" fill="'+eyesColor+'"/>\n <path d="M37 32 L35 37 L38 37" fill="none" stroke="#805b46" stroke-width="1"/><path d="M33 40 Q37 42 41 40" fill="none" stroke="#824d49" stroke-width="1.4" stroke-linecap="round"/>\n '+(beard?'<path d="M29 36 Q36 49 44 36 L42 44 Q36 49 30 44Z" fill="'+(id==='charBeard'?color:hairColor)+'"/>':'')+(scar?'<path d="M43 27 L39 36" stroke="'+color+'" stroke-width="1.5"/>':'')+(headwear?'<path d="'+hairShape+'" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>':'')+(faceAccessory?'<path d="'+hairShape+'" fill="'+color+'" stroke="#17211b" stroke-width="1.5"/>':'')+itemOverlay+'</svg>';
+ const values={};document.querySelectorAll('#characterCreator [data-character]').forEach(control=>{values[control.id]=control.value;});
+ values[id]=value;
+ const svg=characterArtworkSvg(values,index);
  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
 const CHARACTER_TABS=[
