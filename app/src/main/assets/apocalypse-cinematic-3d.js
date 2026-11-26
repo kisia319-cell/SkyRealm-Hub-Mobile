@@ -355,32 +355,37 @@ function stopRadioDialogue(){
 }
 function radioDialogue(kind){
  stopRadioDialogue();
- // Original Russian dispatcher lines, spoken with the device's Russian voice and filtered by the cinematic radio bed.
+ // Original, editable Russian dialogue. CC0 zombie calls remain layered under the radio transmission.
  const lines=kind==='crash'
-  ?[[.8,'Внимание всем постам. Это диспетчерская. Зафиксирована вспышка заражения в жилом секторе. Повторяю: массовое заражение.'],[5.1,'Экипаж вертолёта, немедленно меняйте курс. Посадка запрещена. На земле замечено движение заражённых.'],[9.7,'Пилот, ответьте! Вы меня слышите? Уходите оттуда! Быстро!']]
-  :[[1.0,'Внимание всем постам. Говорит центральная диспетчерская. В городе зафиксирована вспышка неизвестной инфекции.'],[5.2,'Не приближайтесь к заражённым. Избегайте скоплений людей. Следуйте к ближайшему укреплённому пункту.'],[10.1,'Повторяю: сохраняйте радиосвязь. Если вы слышите это сообщение, ответьте на частоте аварийного канала.']];
+  ?[[.65,'dispatch','Борт семь, приём! Подтвердите высоту. Ваш сигнал пропадает.'],[4.25,'pilot','Отказ двигателя! Кабина в дыму! Не удержу борт!'],[8.65,'dispatch','Всем группам: место падения подтверждено. Не приближаться без защиты!'],[13.05,'crew','Чёрный ящик… ищите у обломков…']]
+  :[[.65,'dispatch','Всем постам, это центр. Код чёрный. Очаг заражения растёт. Гражданским укрыться.'],[4.35,'pilot','Центр, это борт семь. На трассе люди… они идут прямо на машину!'],[8.75,'dispatch','Борт семь, уходите на север! Не садитесь! Повторяю, посадка запрещена!'],[13.0,'pilot','Удар! Держитесь!']];
  let androidInstallAsked=false;
- const speak=(line)=>{try{
+ const speak=(line,role)=>{try{
   if(window.AndroidBridge&&typeof window.AndroidBridge.speakRussian==='function'){
    const available=typeof window.AndroidBridge.isRussianVoiceAvailable==='function'&&window.AndroidBridge.isRussianVoiceAvailable();
-   if(available){window.AndroidBridge.speakRussian(line);return;}
    window.AndroidBridge.speakRussian(line);
-   if(!androidInstallAsked){androidInstallAsked=true;setTimeout(()=>{try{if(!window.AndroidBridge.isRussianVoiceAvailable())window.AndroidBridge.installRussianVoice()}catch(_){}},2200);}
+   if(!available&&!androidInstallAsked&&typeof window.AndroidBridge.installRussianVoice==='function'){
+    androidInstallAsked=true;setTimeout(()=>{try{if(!window.AndroidBridge.isRussianVoiceAvailable())window.AndroidBridge.installRussianVoice()}catch(_){}},1800);
+   }
    return;
   }
   if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return;
   const voices=window.speechSynthesis.getVoices()||[];
   const ru=voices.filter(v=>/^ru([_-]|$)/i.test(v.lang||''));
-  if(!ru.length){console.warn('Russian Windows voice is not installed; install the ru-RU Text-to-Speech capability.');return;}
-  const u=new SpeechSynthesisUtterance(line);u.lang='ru-RU';u.rate=.88;u.pitch=.82;u.volume=1;
-  const preferred=ru.find(v=>/microsoft|russian|рус/i.test(v.name||''))||ru[0];u.voice=preferred;
+  const u=new SpeechSynthesisUtterance(line);
+  u.lang='ru-RU';u.rate=role==='dispatch'?.84:role==='pilot'?.96:.88;
+  u.pitch=role==='dispatch'?.76:role==='pilot'?1.02:.9;u.volume=1;
+  const preferred=role==='pilot'?(ru[1]||ru[0]):(ru.find(v=>/microsoft|russian|рус/i.test(v.name||''))||ru[0]);
+  if(preferred)u.voice=preferred;
+  // Do not silently drop dialogue when the voice list is still loading. A
+  // ru-RU utterance is still submitted and the OS chooses its best available voice.
   window.speechSynthesis.speak(u);
- }catch(e){console.warn('Russian dispatcher voice unavailable',e)}}
- lines.forEach(([at,line])=>{const id=setTimeout(()=>speak(line),at*1000);speechTimers.push(id)});
+ }catch(e){console.warn('Russian cinematic dialogue unavailable',e)}};
+ lines.forEach(([at,role,line])=>{const id=setTimeout(()=>speak(line,role),at*1000);speechTimers.push(id)});
  const schedule=(url,delay,volume)=>{const id=setTimeout(()=>{try{const a=new Audio(url);a.preload='auto';a.volume=volume;a.play().catch(e=>console.warn('cinematic sound unavailable',e));publishedPlayers.push(a)}catch(e){console.warn('cinematic sound unavailable',e)}},delay*1000);voiceTimers.push(id)};
  const sequence=kind==='crash'
- ?[[.35,publishedSfx.impact,.72],[2.2,publishedSfx.zombieWalk,.46],[4.1,publishedSfx.zombieGroan2,.52],[4.7,publishedSfx.footsteps,.55],[7.4,publishedSfx.zombieAttack,.82],[8.6,publishedSfx.zombieGrowl,.66],[10.4,publishedSfx.zombieScream,.82],[12.1,publishedSfx.zombieGroan3,.68],[13.1,publishedSfx.zombieWalk,.45]]
- :[[.25,publishedSfx.helicopter,.5],[4.2,publishedSfx.helicopter,.58],[6.1,publishedSfx.zombieGroan2,.42],[8.8,publishedSfx.impact,.75],[11.5,publishedSfx.zombieWalk,.42],[13.2,publishedSfx.zombieGrowl,.48]];
+ ?[[.25,publishedSfx.impact,.76],[1.5,publishedSfx.zombieWalk,.44],[3.0,publishedSfx.zombieGroan2,.52],[4.7,publishedSfx.footsteps,.48],[6.2,publishedSfx.zombieAttack,.74],[7.2,publishedSfx.zombieGrowl,.66],[9.8,publishedSfx.zombieScream,.76],[11.7,publishedSfx.zombieGroan3,.62],[13.25,publishedSfx.zombieWalk,.4]]
+ :[[.2,publishedSfx.helicopter,.48],[3.9,publishedSfx.helicopter,.55],[5.9,publishedSfx.zombieGroan2,.4],[7.8,publishedSfx.impact,.7],[10.3,publishedSfx.zombieWalk,.4],[12.3,publishedSfx.zombieGrowl,.46]];
  sequence.forEach(([at,url,volume])=>schedule(url,at,volume));
 }
 function audioStart(){audioStop();try{let AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audio=new AC();let master=audio.createGain();master.gain.value=.26;master.connect(audio.destination);audioNodes.push(master);audio.resume();
