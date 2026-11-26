@@ -11,6 +11,6 @@ android {
         minSdk 23
         targetSdk 28
         versionCode 65
-        versionName '1.9.3'
+        versionName '1.9.4'
     }
 }
