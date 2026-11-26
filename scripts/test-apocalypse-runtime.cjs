@@ -428,3 +428,11 @@ console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt sav
 // Release guard: ensure the CC0 radio bulletin and recorded zombie vocal variants are wired into cinematic playback.
 
 assert.ok(fs.readFileSync(path.join(root, 'app/src/main/java/com/skyrealm/hub/MainActivity.java'), 'utf8').includes('TextToSpeech') && fs.readFileSync(path.join(root, 'tools/Install-Russian-Voice-Windows.ps1'), 'utf8').includes('Language.TextToSpeech~~~ru-RU'), 'Android native TTS bridge and Windows Russian Text-to-Speech installer must be present');
+
+
+assert.ok(game.includes("skillXP:whole(saved.skillXP") && game.includes("skillLevels:{combat:") && game.includes("function openSkillTree()"), 'Three persistent skill specializations must be available');
+assert.ok(game.includes("function openWeaponBench()") && game.includes("function upgradeWeaponMod(kind)") && game.includes("optic") && game.includes("barrel") && game.includes("grip"), 'Weapon optics, barrel and grip upgrades must be implemented');
+assert.ok(game.includes("function openFieldCrafting()") && game.includes("function craftAdvancedItem(kind)") && game.includes("injector:{cost:") && game.includes("plate:{cost:"), 'Advanced equipment crafting recipes must be available');
+assert.ok(game.includes("function openDefenseConsole()") && game.includes("function updateBaseDefense(now)") && game.includes("function drawBaseDefense()"), 'Base alarm and automatic turret must be implemented');
+assert.ok(game.includes("baseDefenseLevel:state.baseDefenseLevel") && game.includes("defenseAmmo:state.defenseAmmo"), 'Co-op world snapshots must synchronize base defense state');
+assert.ok(game.includes("function installApocalypseVisualRemaster()") && game.includes("const oldTree=tree") && game.includes("const oldZombies=drawZombies") && game.includes("const oldBuilding=building"), 'Visual remaster must cover world geometry, trees, buildings and infected');
