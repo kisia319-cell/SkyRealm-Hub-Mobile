@@ -99,7 +99,7 @@ const worldProps=[
  {id:'north_market_1',type:'stall',x:4500,y:-9800,w:116,h:70},{id:'north_dumpster_1',type:'dumpster',x:8900,y:-10800,w:82,h:52},{id:'east_camp_1',type:'tent',x:22600,y:10800,w:92,h:66},
  {id:'south_market_1',type:'stall',x:15100,y:22100,w:118,h:70},{id:'west_pump_1',type:'pump',x:-10900,y:4200,w:94,h:50},{id:'west_tent_1',type:'tent',x:-6400,y:22000,w:90,h:66}
 ];
-let lastSignalMission=saved.lastSignalMission&&typeof saved.lastSignalMission==='object'&&Number.isFinite(saved.lastSignalMission.x)&&Number.isFinite(saved.lastSignalMission.y)?{status:['briefing','active','completed'].includes(saved.lastSignalMission.status)?saved.lastSignalMission.status:'briefing',stage:Math.max(0,Math.min(2,Number(saved.lastSignalMission.stage)||0)),phase:Math.max(0,Math.min(4,Number(saved.lastSignalMission.phase)||0)),wave:Math.max(0,Math.min(3,Number(saved.lastSignalMission.wave)||0)),valves:Array.isArray(saved.lastSignalMission.valves)?saved.lastSignalMission.valves.slice(0,2).map(Boolean):[false,false],x:bounded(saved.lastSignalMission.x,0,WORLD_MIN+100,WORLD_MAX-100),y:bounded(saved.lastSignalMission.y,0,WORLD_MIN+100,WORLD_MAX-100)}:null;
+let lastSignalMission=saved.lastSignalMission&&typeof saved.lastSignalMission==='object'&&Number.isFinite(saved.lastSignalMission.x)&&Number.isFinite(saved.lastSignalMission.y)?{status:['briefing','active','completed'].includes(saved.lastSignalMission.status)?saved.lastSignalMission.status:'briefing',stage:Math.max(0,Math.min(2,Number(saved.lastSignalMission.stage)||0)),phase:Math.max(0,Math.min(5,Number(saved.lastSignalMission.phase)||0)),evidence:Array.isArray(saved.lastSignalMission.evidence)?saved.lastSignalMission.evidence.slice(0,3).map(Boolean):[false,false,false],wave:Math.max(0,Math.min(3,Number(saved.lastSignalMission.wave)||0)),valves:Array.isArray(saved.lastSignalMission.valves)?saved.lastSignalMission.valves.slice(0,2).map(Boolean):[false,false],x:bounded(saved.lastSignalMission.x,0,WORLD_MIN+100,WORLD_MAX-100),y:bounded(saved.lastSignalMission.y,0,WORLD_MIN+100,WORLD_MAX-100)}:null;
 if(lastSignalMission&&lastSignalMission.status==='briefing'&&Math.hypot(lastSignalMission.x-state.x,lastSignalMission.y-state.y)<3200){const dx=state.x<WORLD_MAX-3800?3600:-3600,dy=state.y>WORLD_MIN+900?-650:650;lastSignalMission.x=state.x+dx;lastSignalMission.y=state.y+dy;}
 if(lastSignalMission)worldProps.push({id:'last_signal_crash',type:'crash_site',x:lastSignalMission.x,y:lastSignalMission.y,w:190,h:132});
 
@@ -452,6 +452,15 @@ function drawWorldProp(p){
   // Animated smoke plumes.
   for(let i=0;i<7;i++){const drift=Math.sin(time*.0007+i)*13,yy=-48-i*17-(time*.018+i*19)%22;ctx.globalAlpha=.2+(1-i/9)*.22;ctx.fillStyle=i%2?'#333d38':'#697064';ctx.beginPath();ctx.arc(-3+drift+Math.sin(i*3)*9,yy,9+i*2.7,0,Math.PI*2);ctx.fill();}
   ctx.globalAlpha=1;ctx.fillStyle='#f3d78b';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('ЧЁРНЫЙ ЯЩИК',0,56);
+  // High-detail wreck dressing: torn panels, rivets, scorched paint and glass shards.
+  ctx.save();ctx.rotate(-.16);
+  for(let i=0;i<13;i++){const x=-58+i*9.4,y=-20+Math.sin(i*2.1)*9;ctx.fillStyle=i%3===0?'#b1a27d':i%3===1?'#303a34':'#737969';ctx.fillRect(x,y,5,2);ctx.fillStyle='#171f1b';ctx.fillRect(x+1,y+3,2,7);}
+  ctx.strokeStyle='#c1b18b';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-48,-18);ctx.lineTo(-29,-9);ctx.lineTo(-37,7);ctx.moveTo(16,-22);ctx.lineTo(30,-10);ctx.lineTo(24,12);ctx.stroke();
+  ctx.fillStyle='#263f43';ctx.globalAlpha=.85;for(const shard of [[-83,4],[-70,27],[66,20],[83,-6]]){ctx.save();ctx.translate(shard[0],shard[1]);ctx.rotate(shard[0]*.03);ctx.beginPath();ctx.moveTo(-7,0);ctx.lineTo(4,-5);ctx.lineTo(9,3);ctx.lineTo(-3,6);ctx.closePath();ctx.fill();ctx.restore();}ctx.globalAlpha=1;
+  ctx.fillStyle='#5d392c';ctx.globalAlpha=.55;ctx.beginPath();ctx.ellipse(5,26,82,14,.04,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.restore();
+  // Three evidence points are marked as distinct searchable debris piles.
+  const evidencePoints=[[-188,95],[18,-118],[178,82]];
+  evidencePoints.forEach((v,i)=>{const found=!!lastSignalMission?.evidence?.[i];ctx.save();ctx.translate(v[0],v[1]);ctx.fillStyle='#343b34';ctx.beginPath();ctx.ellipse(0,0,19,8,-.2,0,Math.PI*2);ctx.fill();for(let k=0;k<5;k++){ctx.fillStyle=['#6e7568','#a39a7c','#39443d'][k%3];ctx.save();ctx.rotate(k*1.1+i);ctx.fillRect(-9+k*3,-5+(k%2)*3,10,3);ctx.restore();}ctx.fillStyle=found?'#7d9a69':'#e0bd70';ctx.beginPath();ctx.arc(0,-7,found?3:5+Math.sin(time*.006)*1.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle=found?'#91ad79':'#f0d28b';ctx.globalAlpha=.75;ctx.beginPath();ctx.arc(0,-7,11+Math.sin(time*.004)*2,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;ctx.restore();});
   // Two fuel shutoff valves become interactive during the second phase.
   const valvePoints=[[-155,38],[155,-32]];
   valvePoints.forEach((v,i)=>{const closed=!!lastSignalMission?.valves?.[i];ctx.save();ctx.translate(v[0],v[1]);ctx.fillStyle=closed?'#657d55':'#9e3329';ctx.fillRect(-10,-7,20,14);ctx.strokeStyle='#d6c8a0';ctx.lineWidth=2;ctx.strokeRect(-10,-7,20,14);ctx.strokeStyle=closed?'#b9d19b':'#efb0a0';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-13,-13);ctx.lineTo(13,-13);ctx.moveTo(0,-13);ctx.lineTo(0,-23);ctx.stroke();ctx.fillStyle=closed?'#c4df9b':'#ffb4a0';ctx.font='bold 8px system-ui';ctx.textAlign='center';ctx.fillText(closed?'ЗАКРЫТ':'ТОПЛИВО',0,22);ctx.restore();});
@@ -908,7 +917,7 @@ let lastActionUiUpdate=-Infinity;
 function nearbyActionLabel(){
  if(lastSignalMission&&lastSignalMission.status==='active'&&Math.hypot(state.x-lastSignalMission.x,state.y-lastSignalMission.y)<145){
   if(lastSignalMission.stage===0)return 'Проверить чёрный ящик';
-  if(lastSignalMission.stage===1){if(zombies.some(z=>z.eventId==='last_signal_guard'))return 'Отбить волну '+(lastSignalMission.wave||1)+'/3';if(lastSignalMission.phase===1)return 'Отключить утечку топлива';if(lastSignalMission.phase===3)return 'Найти пилота и запись';return 'Осмотреть обломки самолёта';}
+  if(lastSignalMission.stage===1){if(zombies.some(z=>z.eventId==='last_signal_guard'))return 'Отбить волну '+(lastSignalMission.wave||1)+'/3';if(lastSignalMission.phase===1)return 'Отключить утечку топлива';if(lastSignalMission.phase===3)return 'Найти фрагменты записи '+(lastSignalMission.evidence||[]).filter(Boolean).length+'/3';return 'Осмотреть обломки самолёта';}
  }
  if(nearSpawnCampfire())return 'Подкинуть дерево в костёр';
  if(!starterKnife.picked&&Math.hypot(state.x-starterKnife.x,state.y-starterKnife.y)<74)return 'Подобрать стартовый нож';
@@ -982,7 +991,7 @@ function updateConvenienceHud(){
   else if(lastSignalMission&&lastSignalMission.status==='active'){
    const d=Math.hypot(lastSignalMission.x-state.x,lastSignalMission.y-state.y);
    if(lastSignalMission.stage===0)objective.textContent='ГЛАВНОЕ СОБЫТИЕ: проверь место крушения · '+Math.round(d)+' м';
-   else if(lastSignalMission.stage===1){const left=zombies.filter(z=>z.eventId==='last_signal_guard').length;const tasks=['ОТРАЗИ ВОЛНУ 1/3','ОТКЛЮЧИ ДВА ВЕНТИЛЯ · '+(lastSignalMission.valves||[]).filter(Boolean).length+'/2','ОТРАЗИ ВОЛНУ 2/3','НАЙДИ ПИЛОТА И ЕГО ЗАПИСЬ','ОТРАЗИ ФИНАЛЬНУЮ ВОЛНУ 3/3','ЗАБЕРИ ПОЛЕВУЮ ЗАПИСЬ'];objective.textContent=left?'ОПЕРАЦИЯ «ЧЁРНЫЙ САМОЛЁТ»: '+left+' угроз':'ОПЕРАЦИЯ «ЧЁРНЫЙ САМОЛЁТ»: '+(tasks[lastSignalMission.phase]||'ЗАВЕРШИ ОПЕРАЦИЮ');}
+   else if(lastSignalMission.stage===1){const left=zombies.filter(z=>z.eventId==='last_signal_guard').length;const tasks=['ОТРАЗИ ВОЛНУ 1/3','ОТКЛЮЧИ ДВА ВЕНТИЛЯ · '+(lastSignalMission.valves||[]).filter(Boolean).length+'/2','ОТРАЗИ ВОЛНУ 2/3','СОБЕРИ ФРАГМЕНТЫ ЗАПИСИ '+(lastSignalMission.evidence||[]).filter(Boolean).length+'/3','ОТРАЗИ ФИНАЛЬНУЮ ВОЛНУ 3/3','ПЕРЕДАЙ КООРДИНАТЫ ЭВАКУАЦИИ'];objective.textContent=left?'ОПЕРАЦИЯ «ЧЁРНЫЙ САМОЛЁТ»: '+left+' угроз':'ОПЕРАЦИЯ «ЧЁРНЫЙ САМОЛЁТ»: '+(tasks[lastSignalMission.phase]||'ЗАВЕРШИ ОПЕРАЦИЮ');}
   }else if(radioSignal){
    const d=Math.hypot(radioSignal.x-state.x,radioSignal.y-state.y);
    objective.textContent='СОБЫТИЕ: радиосигнал · '+Math.round(d)+' м · '+compassDirection(radioSignal.x-state.x,radioSignal.y-state.y);
@@ -1301,6 +1310,11 @@ function interact(){
     lastSignalMission.phase=3;save();toast('Вторая волна отбита. Найди пилота у хвостовой части самолёта и забери его полевую запись.');return;
    }
    if(lastSignalMission.phase===3){
+    const evidencePoints=[[-188,95],[18,-118],[178,82]];
+    const piece=evidencePoints.map((p,i)=>({i,d:Math.hypot(state.x-(lastSignalMission.x+p[0]),state.y-(lastSignalMission.y+p[1]))})).filter(v=>v.d<78&&!lastSignalMission.evidence[v.i]).sort((a,b)=>a.d-b.d)[0];
+    if(!piece){const found=(lastSignalMission.evidence||[]).filter(Boolean).length;toast('Осмотри три участка обломков: хвост, кабину и правое крыло · найдено '+found+'/3 фрагмента записи');return;}
+    lastSignalMission.evidence[piece.i]=true;save();
+    if(!lastSignalMission.evidence.every(Boolean)){toast('Фрагмент полётной записи найден · '+lastSignalMission.evidence.filter(Boolean).length+'/3. Ищи остальные части у обломков.');return;}
     lastSignalMission.phase=4;lastSignalMission.wave=3;
     const wave=[['alpha',-190,-125],['runner',185,-145],['crawler',-165,160],['stalker',160,170],['bloater',0,-215],['screecher',0,210]];
     for(const [kind,dx,dy] of wave)spawnZombie(lastSignalMission.x+dx,lastSignalMission.y+dy,kind,'last_signal_guard');
