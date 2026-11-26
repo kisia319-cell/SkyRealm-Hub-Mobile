@@ -360,6 +360,31 @@ function building(b){
  ctx.strokeStyle='#b2a17a88';ctx.lineWidth=2;ctx.beginPath();
  ctx.moveTo(b.x,top);ctx.lineTo(b.x+b.w,top);ctx.lineTo(b.x+b.w,bottom);ctx.moveTo(b.x,bottom);ctx.lineTo(cx-47,bottom);ctx.moveTo(cx+47,bottom);ctx.lineTo(b.x+b.w,bottom);ctx.lineTo(b.x,top);ctx.stroke();
 }
+function drawSupplyCrate(x,y,scale=1,variant='field',opened=false){
+ const palettes={field:['#3d4938','#7d7959','#b7a06b','#242d27','#d1bd8d'],medical:['#4b554b','#c7c5ad','#e0d8b8','#303b35','#a94d43'],military:['#303b3b','#68736a','#a99a72','#1d2828','#d0bd91']};
+ const p=palettes[variant]||palettes.field,pulse=.5+.5*Math.sin(time*.004+x*.013);
+ ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+ ctx.fillStyle='#080d0b88';ctx.beginPath();ctx.ellipse(0,22,39,10,0,0,Math.PI*2);ctx.fill();
+ const side=ctx.createLinearGradient(-31,-12,34,24);side.addColorStop(0,p[0]);side.addColorStop(.55,p[1]);side.addColorStop(1,p[3]);
+ ctx.fillStyle=side;ctx.beginPath();ctx.moveTo(-34,-13);ctx.lineTo(28,-13);ctx.lineTo(35,-5);ctx.lineTo(35,20);ctx.lineTo(-29,20);ctx.lineTo(-35,13);ctx.closePath();ctx.fill();
+ ctx.fillStyle=p[1];ctx.fillRect(-30,-9,60,26);
+ for(let i=0;i<4;i++){const yy=-7+i*6;ctx.fillStyle=i%2?'#252e27':'#d1bd8d22';ctx.fillRect(-28,yy,56,2);}
+ ctx.fillStyle=p[3];ctx.fillRect(-35,12,70,8);ctx.fillStyle=p[2];ctx.fillRect(-33,12,66,2);
+ ctx.fillStyle='#202925';ctx.fillRect(-34,-13,7,33);ctx.fillRect(27,-13,7,33);ctx.fillStyle=p[2];ctx.fillRect(-33,-12,3,29);ctx.fillRect(30,-12,3,29);
+ for(const xx of [-29,29])for(const yy of [-7,4,15]){ctx.fillStyle='#e0d1a3';ctx.beginPath();ctx.arc(xx,yy,1.4,0,Math.PI*2);ctx.fill();}
+ ctx.fillStyle='#252d29';ctx.fillRect(-6,-12,12,34);ctx.fillStyle=p[2];ctx.fillRect(-2,-10,4,28);
+ if(opened){
+  ctx.fillStyle='#111915';ctx.fillRect(-27,-17,54,7);ctx.save();ctx.translate(0,-16);ctx.rotate(-.2);ctx.fillStyle=p[0];ctx.fillRect(-34,-13,68,12);ctx.fillStyle=p[2];ctx.fillRect(-32,-12,64,3);ctx.fillStyle='#202a25';ctx.fillRect(-29,-3,58,3);ctx.restore();
+  ctx.fillStyle='#c7a66b';ctx.globalAlpha=.2+.13*pulse;ctx.fillRect(-22,-9,44,18);ctx.globalAlpha=1;
+ }else{
+  const lid=ctx.createLinearGradient(0,-27,0,-8);lid.addColorStop(0,p[2]);lid.addColorStop(.35,p[1]);lid.addColorStop(1,p[0]);ctx.fillStyle=lid;
+  ctx.beginPath();ctx.moveTo(-36,-17);ctx.lineTo(-27,-27);ctx.lineTo(28,-27);ctx.lineTo(36,-17);ctx.lineTo(30,-9);ctx.lineTo(-31,-9);ctx.closePath();ctx.fill();ctx.strokeStyle='#202923';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle=p[2];ctx.fillRect(-30,-24,60,3);ctx.fillStyle='#242d27';ctx.fillRect(-7,-19,14,8);
+ }
+ ctx.fillStyle=p[4];ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(variant==='medical'?'MED':variant==='military'?'MIL':'SUPPLY',0,8);
+ ctx.fillStyle=variant==='medical'?'#b84e43':'#d1b56e';ctx.fillRect(-10,18,20,3);ctx.strokeStyle='#171f1a';ctx.lineWidth=1.5;ctx.strokeRect(-35,-13,70,33);
+ ctx.restore();
+}
 function drawBuildingInterior(b){
  const top=b.y-b.floors*34,cx=b.x+b.w/2,roomY=b.y+b.h-250;
  if(!b.role)return;
@@ -385,7 +410,7 @@ function drawBuildingInterior(b){
   const floor=buildingFloors[b.id]||1,entry=buildingLoot[b.id]?.[floor-1],lootX=cx-b.w*.22,lootY=roomY+78,stairX=cx+b.w*.29,stairY=roomY+78;
   ctx.fillStyle=b.kind==='water'?'#354d4d':b.kind==='school'?'#554a3b':b.kind==='bank'?'#4c504d':b.kind==='garage'?'#414b43':b.kind==='lab'?'#495552':'#514633';ctx.fillRect(b.x+30,roomY+18,b.w-60,112);
   for(let row=0;row<2;row++){ctx.fillStyle=row?'#77745f':'#393f38';ctx.fillRect(b.x+45,roomY+30+row*48,b.w-90,12);for(let x=b.x+54;x<b.x+b.w-55;x+=38){ctx.fillStyle=['#8a8062','#586b5d','#a18d68'][Math.abs(Math.floor((x+b.x+row)%3))];ctx.fillRect(x,roomY+22+row*48,22,8);}}
-  ctx.fillStyle='#252b26';ctx.fillRect(lootX-24,lootY-17,48,35);ctx.fillStyle='#9a8056';ctx.fillRect(lootX-21,lootY-14,42,28);ctx.fillStyle='#d1b47b';ctx.fillRect(lootX-24,lootY-5,48,7);ctx.strokeStyle='#302d24';ctx.lineWidth=2;ctx.strokeRect(lootX-24,lootY-17,48,35);
+  drawSupplyCrate(lootX,lootY,1.22,b.kind==='lab'||b.kind==='bunker'?'military':b.kind==='pharmacy'?'medical':'field',!!entry?.picked);
   if(entry?.weaponDrop&&!entry.weaponPicked){ctx.save();ctx.translate(lootX+70,lootY+12);ctx.rotate(-.22);ctx.fillStyle='#1d2420';ctx.fillRect(-18,-3,34,6);ctx.fillStyle=entry.weaponDrop==='rifle'?'#303a33':'#697568';ctx.fillRect(-8,-6,15,3);ctx.fillStyle='#171c19';ctx.fillRect(-12,2,7,9);ctx.fillStyle='#c2bda7';ctx.fillRect(13,-2,4,2);ctx.restore();ctx.fillStyle='#f0d49a';ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillText(entry.weaponDrop==='pistol'?'ПИСТОЛЕТ':entry.weaponDrop==='shotgun'?'ДРОБОВИК':'ВИНТОВКА',lootX+70,lootY-7);}
   ctx.fillStyle=entry&&!entry.picked?'#f0d49a':'#9b9b87';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(entry&&!entry.picked?'E · ОБЫСКАТЬ':'ЯЩИК ПУСТ',lootX,lootY-26);
   ctx.fillStyle='#4c493d';ctx.fillRect(stairX-18,stairY-28,36,56);for(let i=0;i<5;i++){ctx.fillStyle=i%2?'#a08a60':'#6f654c';ctx.fillRect(stairX-17+i*7,stairY-25+i*10,34-i*4,5);}ctx.fillStyle='#e4d19b';ctx.font='bold 10px system-ui';ctx.fillText('ЛЕСТНИЦА · '+floor+'/'+b.floors,stairX,stairY+42);
@@ -480,7 +505,7 @@ function drawRadioSignal(){
  const color=s.kind==='medical'?'#8fd3b0':s.kind==='survivors'?'#9dc5ef':'#e6c783';
  ctx.save();
  // A physical event site, not only a floating marker.
- if(s.kind==='cache'){ctx.fillStyle='#252d27';ctx.fillRect(s.x-23,s.y-16,46,32);ctx.fillStyle='#8b7954';ctx.fillRect(s.x-20,s.y-13,40,26);ctx.fillStyle='#c0a56d';ctx.fillRect(s.x-23,s.y-5,46,7);ctx.fillStyle='#303a31';ctx.fillRect(s.x-4,s.y-7,8,11);ctx.strokeStyle='#d6c18c';ctx.strokeRect(s.x-23,s.y-16,46,32);}
+ if(s.kind==='cache'){drawSupplyCrate(s.x,s.y,1.24,'field',false);}
  else if(s.kind==='medical'){ctx.fillStyle='#3e5145';ctx.fillRect(s.x-26,s.y-15,52,30);ctx.fillStyle='#d3d1b8';ctx.fillRect(s.x-19,s.y-10,38,20);ctx.fillStyle='#a94d43';ctx.fillRect(s.x-4,s.y-8,8,16);ctx.fillRect(s.x-10,s.y-2,20,4);ctx.strokeStyle='#252e29';ctx.strokeRect(s.x-26,s.y-15,52,30);}
  else{ctx.fillStyle='#353f36';ctx.fillRect(s.x-25,s.y-16,50,32);ctx.fillStyle='#7c8065';ctx.fillRect(s.x-20,s.y-11,40,22);ctx.fillStyle='#b9a16c';ctx.fillRect(s.x-3,s.y-8,6,16);ctx.fillRect(s.x-9,s.y-3,18,6);ctx.strokeStyle='#242d28';ctx.strokeRect(s.x-25,s.y-16,50,32);}
  const glow=ctx.createRadialGradient(s.x,s.y,2,s.x,s.y,92);
@@ -673,7 +698,7 @@ function drawInteriorMap(){const b=buildings.find(v=>v.id===activeInterior.build
  ctx.fillStyle='#4c493d';ctx.fillRect(210,205,150,42);ctx.fillRect(710,205,150,42);ctx.fillRect(440,382,160,52);ctx.fillRect(210,465,105,72);ctx.fillRect(785,455,105,72);ctx.fillRect(610,545,90,38);
  ctx.fillStyle='#8b7958';ctx.fillRect(220,210,130,8);ctx.fillRect(720,210,130,8);ctx.fillStyle='#242b25';for(let i=0;i<5;i++){ctx.fillRect(230+i*24,220,14,20);ctx.fillRect(730+i*24,220,14,20);}ctx.fillStyle='#77745f';ctx.fillRect(450,390,140,10);ctx.fillStyle='#292f29';ctx.fillRect(458,405,124,22);
  // Storage crate and weapon locker are independent, persistent search points on each floor.
- ctx.fillStyle='#292d27';ctx.fillRect(250,270,62,48);ctx.fillStyle='#a18a60';ctx.fillRect(254,274,54,40);ctx.fillStyle='#d1b47b';ctx.fillRect(250,288,62,7);ctx.strokeStyle='#25251e';ctx.strokeRect(250,270,62,48);ctx.fillStyle=entry&&!entry.picked?'#f1d49a':'#a3a08b';ctx.font='bold 11px system-ui';ctx.fillText(entry&&!entry.picked?'E · ОБЫСКАТЬ':'ЯЩИК ПУСТ',281,258);
+ drawSupplyCrate(281,294,1.18,/lab|bunker|prison/.test(id)?'military':/hospital|clinic|pharmacy/.test(id)?'medical':'field',!!entry?.picked);ctx.fillStyle=entry&&!entry.picked?'#f1d49a':'#a3a08b';ctx.font='bold 11px system-ui';ctx.fillText(entry&&!entry.picked?'E · ОБЫСКАТЬ':'ЯЩИК ПУСТ',281,258);
  ctx.fillStyle='#303832';ctx.fillRect(750,270,62,48);ctx.fillStyle='#70776b';ctx.fillRect(755,275,52,38);ctx.fillStyle='#b6a17a';ctx.fillRect(755,288,52,6);ctx.strokeStyle='#252b26';ctx.strokeRect(750,270,62,48);if(entry?.weaponDrop&&!entry.weaponPicked){ctx.fillStyle='#e9d29a';ctx.fillText('E · ОРУЖИЕ',781,258);ctx.save();ctx.translate(781,291);ctx.rotate(-.15);ctx.fillStyle='#202923';ctx.fillRect(-22,-3,44,6);ctx.fillStyle='#aeb4a7';ctx.fillRect(12,-5,10,3);ctx.restore();}else{ctx.fillStyle='#aaa58f';ctx.fillText('ШКАФ',781,258);}
  ctx.fillStyle='#6a624e';ctx.fillRect(490,455,60,34);ctx.fillStyle='#9d865c';ctx.fillRect(494,459,52,26);ctx.fillStyle='#d8c18a';ctx.fillText('РАБОЧИЙ СТОЛ',520,448);
  // Building-specific fixtures make each generated interior read like its real-world location.
