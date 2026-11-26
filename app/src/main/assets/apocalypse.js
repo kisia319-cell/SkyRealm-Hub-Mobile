@@ -452,6 +452,12 @@ function drawWorldProp(p){
   // Animated smoke plumes.
   for(let i=0;i<7;i++){const drift=Math.sin(time*.0007+i)*13,yy=-48-i*17-(time*.018+i*19)%22;ctx.globalAlpha=.2+(1-i/9)*.22;ctx.fillStyle=i%2?'#333d38':'#697064';ctx.beginPath();ctx.arc(-3+drift+Math.sin(i*3)*9,yy,9+i*2.7,0,Math.PI*2);ctx.fill();}
   ctx.globalAlpha=1;ctx.fillStyle='#f3d78b';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('ЧЁРНЫЙ ЯЩИК',0,56);
+  // Two fuel shutoff valves become interactive during the second phase.
+  const valvePoints=[[-155,38],[155,-32]];
+  valvePoints.forEach((v,i)=>{const closed=!!lastSignalMission?.valves?.[i];ctx.save();ctx.translate(v[0],v[1]);ctx.fillStyle=closed?'#657d55':'#9e3329';ctx.fillRect(-10,-7,20,14);ctx.strokeStyle='#d6c8a0';ctx.lineWidth=2;ctx.strokeRect(-10,-7,20,14);ctx.strokeStyle=closed?'#b9d19b':'#efb0a0';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-13,-13);ctx.lineTo(13,-13);ctx.moveTo(0,-13);ctx.lineTo(0,-23);ctx.stroke();ctx.fillStyle=closed?'#c4df9b':'#ffb4a0';ctx.font='bold 8px system-ui';ctx.textAlign='center';ctx.fillText(closed?'ЗАКРЫТ':'ТОПЛИВО',0,22);ctx.restore();});
+  // A shimmering fuel spill and sparks make the aircraft site hazardous.
+  const spill=ctx.createRadialGradient(-48,34,3,-48,34,62);spill.addColorStop(0,'#d6a54b55');spill.addColorStop(1,'#8e542000');ctx.fillStyle=spill;ctx.beginPath();ctx.ellipse(-48,34,62,18,-.2,0,Math.PI*2);ctx.fill();
+  for(let i=0;i<5;i++){const sx=-68+i*13,sy=25+Math.sin(time*.008+i)*3;ctx.fillStyle=i%2?'#ffb04a':'#ffdf86';ctx.globalAlpha=.45+.45*pulse;ctx.beginPath();ctx.arc(sx,sy,1.5+(i%2),0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
   ctx.fillStyle='#a94a3b';ctx.globalAlpha=.65+.35*pulse;ctx.beginPath();ctx.arc(60,-17,4,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
   if(lastSignalMission&&lastSignalMission.status!=='completed'){const glow=ctx.createRadialGradient(0,0,20,0,0,145);glow.addColorStop(0,'#d7b46b22');glow.addColorStop(1,'#d7b46b00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,145,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#e6c783';ctx.globalAlpha=.4+.25*pulse;ctx.setLineDash([8,12]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,92+Math.sin(time*.004)*5,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
  }else if(p.type==='tent'){
