@@ -462,3 +462,7 @@ assert.ok(game.includes("function openLootTransfer(") && game.includes("pointerd
 assert.ok(game.includes("function buildingContainerItems(") && game.includes("entry.contents=entry.picked?[]") && game.includes("tier:'rare'"), 'Building crates must contain multiple persistent items with rarity tiers');
 assert.ok(game.includes("supplyShelterContents") && game.includes("shelterLoot") && game.includes("Тайник выживших"), 'Supply caches and survivor shelters must keep individually transferable loot');
 assert.ok(game.includes("slot:'loot-item'") && game.includes("p.itemIndex") && game.includes("drop-ready"), 'Partial crate looting must sync per item in co-op and highlight the backpack drop zone');
+
+assert.ok(game.includes("explorationCacheContents") && game.includes("Частично обысканный тайник") && game.includes("supplyShelterContents"), 'Exploration and survivor caches must preserve partial manual looting');
+assert.ok(game.includes("drop.loot") && game.includes("Аварийная поставка") && game.includes("site.loot") && game.includes("Операция · "), 'Airdrops and story-operation containers must use manual item transfer');
+assert.ok(game.includes("entry.contents.every(v=>v.picked)") && game.includes("itemIndex:loot.index"), 'Multi-item crates must persist partial progress and sync each taken item');
