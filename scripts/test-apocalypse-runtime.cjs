@@ -441,3 +441,9 @@ assert.ok(game.includes("alpha:[520,46,21]") && game.includes("type==='alpha-hun
 assert.ok(game.includes("baseDefenseLevel:state.baseDefenseLevel") && game.includes("defenseAmmo:state.defenseAmmo"), 'Co-op world snapshots must synchronize base defense state');
 assert.ok(game.includes("site.source==='alpha-hunt'?'ОХОТА: АЛЬФА'") && game.includes("state.weaponParts+=2;state.medInjector++"), 'Alpha hunt must have a distinct world marker and reward');
 assert.ok(game.includes("function installApocalypseVisualRemaster()") && game.includes("const oldTree=tree") && game.includes("const oldZombies=drawZombies") && game.includes("const oldBuilding=building"), 'Visual remaster must cover world geometry, trees, buildings and infected');
+
+assert.ok(game.includes("function updateCampaign(now)") && game.includes("function interactCampaign()"), 'Long multi-stage survivor operation must update and interact');
+assert.ok(game.includes("campaign.wave<5") && game.includes("Date.now()+110000") && game.includes("campaign-extract"), 'Long operation must contain five timed defense waves and an extraction finale');
+assert.ok(game.includes("campaign-cache") && game.includes("campaign-relay") && game.includes("campaign-convoy"), 'Long operation must include scavenging, relay repair and convoy objectives');
+assert.ok(game.includes("longCampaign:campaign") && game.includes("campaignObjectiveText()"), 'Long operation progress must persist and appear in the objective HUD');
+assert.ok(game.includes("const detailCount=Math.round(count*1.32)") && game.includes("gy+=36"), 'World material textures must receive additional procedural detail');
