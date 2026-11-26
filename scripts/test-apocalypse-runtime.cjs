@@ -453,3 +453,7 @@ assert.ok(game.includes("ПОДКЛЮЧИТЬ КАБЕЛЬ") && game.includes("�
 assert.ok(game.includes("campaign.beaconParts") && game.includes("campaign-beacon-active") && game.includes("campaign.beaconActivated"), "Beacon repair progress and activated landmark must persist");
 assert.ok(game.includes("campaignSpawnBeaconParts();save();") && game.includes("campaign.beaconParts<3"), "Older active campaign saves must recover missing beacon repair points");
 assert.ok(game.includes("ctx.shadowColor='#7be8ff'") && game.includes("ctx.lineTo(-150,-250)"), "Beacon must render a detailed antenna and activation beam");
+assert.ok(game.includes("function drawSupplyCrate("), 'Supply crates must use a dedicated dimensional renderer');
+assert.ok(game.includes("drawSupplyCrate(lootX,lootY,1.22") && game.includes("drawSupplyCrate(281,294,1.18"), 'Building loot containers must use the enlarged detailed crate model');
+assert.ok(game.includes("drawSupplyCrate(s.x,s.y,1.24,'field',false)"), 'Radio supply cache must use the same detailed crate model');
+assert.ok(game.includes("if(opened)") && game.includes("variant==='medical'?'MED':variant==='military'?'MIL':'SUPPLY'") && game.includes("ctx.arc(xx,yy,1.4"), 'Crates must show an open searched state, type-specific markings and visible metal fasteners');
