@@ -357,8 +357,8 @@ function radioDialogue(kind){
  stopRadioDialogue();
  // Original, editable Russian dialogue. CC0 zombie calls remain layered under the radio transmission.
  const lines=kind==='crash'
-  ?[[.65,'dispatch','Борт семь, приём! Подтвердите высоту. Ваш сигнал пропадает.'],[4.25,'pilot','Отказ двигателя! Кабина в дыму! Не удержу борт!'],[8.65,'dispatch','Всем группам: место падения подтверждено. Не приближаться без защиты!'],[13.05,'crew','Чёрный ящик… ищите у обломков…']]
-  :[[.65,'dispatch','Всем постам, это центр. Код чёрный. Очаг заражения растёт. Гражданским укрыться.'],[4.35,'pilot','Центр, это борт семь. На трассе люди… они идут прямо на машину!'],[8.75,'dispatch','Борт семь, уходите на север! Не садитесь! Повторяю, посадка запрещена!'],[13.0,'pilot','Удар! Держитесь!']];
+  ?[[.55,'dispatch','Северный сектор, это диспетчерская. Борт семь, ответьте. Приём.'],[4.05,'pilot','Диспетчер, у нас отказ правого двигателя! Давление падает, видимость нулевая!'],[8.35,'dispatch','Борт семь, не пытайтесь вернуться. Курс на север, уходите от жилого сектора!'],[12.85,'crew','Маяк включён… если кто-то слышит… координаты переданы…']]
+  :[[.55,'dispatch','Всем постам, говорит оперативный центр. Код чёрный. Подтверждён контакт с заражёнными.'],[4.15,'pilot','Центр, борт семь. Вижу людей на дороге… нет, это не люди. Они бегут к нам!'],[8.55,'dispatch','Борт семь, немедленно набирайте высоту. Не снижаться. Повторяю: не садиться!'],[12.95,'pilot','Управление не отвечает! Держитесь крепче… сейчас будет удар!']];
  let androidInstallAsked=false;
  const speak=(line,role)=>{try{
   if(window.AndroidBridge&&typeof window.AndroidBridge.speakRussian==='function'){
@@ -373,8 +373,8 @@ function radioDialogue(kind){
   const voices=window.speechSynthesis.getVoices()||[];
   const ru=voices.filter(v=>/^ru([_-]|$)/i.test(v.lang||''));
   const u=new SpeechSynthesisUtterance(line);
-  u.lang='ru-RU';u.rate=role==='dispatch'?.84:role==='pilot'?.96:.88;
-  u.pitch=role==='dispatch'?.76:role==='pilot'?1.02:.9;u.volume=1;
+  u.lang='ru-RU';u.rate=role==='dispatch'?.78:role==='pilot'?.99:.86;
+  u.pitch=role==='dispatch'?.72:role==='pilot'?1.08:.88;u.volume=1;
   const preferred=role==='pilot'?(ru[1]||ru[0]):(ru.find(v=>/microsoft|russian|рус/i.test(v.name||''))||ru[0]);
   if(preferred)u.voice=preferred;
   // Do not silently drop dialogue when the voice list is still loading. A
