@@ -597,8 +597,60 @@ function drawSurvivorHair(style,baseColor,accentColor,phase=0){
  }
  ctx.restore();
 }
+function drawTerrariaSurvivorSprite(x,y,p,phase=0,moving=false,remote=false,name='',action=null){
+ const c={skin:p?.skin||'#e8b88c',hair:p?.hair||'#352d3d',shirt:p?.shirt||'#526fba',trim:p?.trim||'#9cb9ff',pants:p?.pants||'#343b3a',boots:p?.boots||'#242a27',eyes:p?.eyes||'#26334c',pack:p?.packColor||'#3e5144',metal:p?.metalColor||'#a6a99c',belt:p?.beltColor||'#786744',glove:p?.gloveColor||'#454a42'};
+ const movingNow=moving?Math.sin(time*.014+phase):0,step=moving?Math.round(movingNow*3):0;
+ const hair=p?.hairStyle||'short',head=p?.headgear||'none',face=p?.faceAccessory||'none',outfit=p?.outfit||'survivor',cloak=p?.cloak||'none',backpack=p?.backpack||'none',beard=p?.beard||'none';
+ const act=action?.type||'',pulse=action?Math.sin(Math.max(0,Math.min(1,(performance.now()-action.started)/(action.until-action.started)))*Math.PI):0;
+ ctx.save();ctx.translate(Math.round(x),Math.round(y+(moving?Math.abs(movingNow):0)));ctx.imageSmoothingEnabled=false;
+ ctx.fillStyle='#10181099';ctx.fillRect(-12,18,24,4);
+ if(backpack!=='none'){ctx.fillStyle=c.pack;ctx.fillRect(-12,-15,8,21);ctx.fillStyle='#202a25';ctx.fillRect(-11,-12,6,3);ctx.fillRect(-11,-4,6,2);if(backpack==='medic'){ctx.fillStyle='#eee7d5';ctx.fillRect(-9,-10,2,9);ctx.fillRect(-12,-7,8,2);}}
+ if(cloak!=='none'){ctx.fillStyle=p?.cloakColor||'#59634b';ctx.fillRect(-9,-13,18,26);ctx.fillRect(-12,-8,3,20);ctx.fillRect(9,-8,3,20);ctx.fillStyle='#202a24';ctx.fillRect(-9,9,18,3);}
+ // Legs and chunky boots: deliberately hard pixel edges, no antialiasing.
+ ctx.fillStyle=c.pants;ctx.fillRect(-8,5+step,7,12);ctx.fillRect(1,5-step,7,12);
+ ctx.fillStyle=c.boots;ctx.fillRect(-9,15+step,9,5);ctx.fillRect(1,15-step,9,5);
+ if(p?.pantsStyle==='tactical'){ctx.fillStyle=c.trim;ctx.fillRect(-7,9+step,4,4);ctx.fillRect(3,9-step,4,4);}
+ // Compact torso with square shoulders and a small number of readable outfit accents.
+ ctx.fillStyle=c.shirt;ctx.fillRect(-9,-14,18,21);ctx.fillRect(-12,-12,24,8);
+ ctx.fillStyle=c.trim;
+ if(['medic','paramedic','surgeon'].includes(outfit)){ctx.fillStyle='#eee9d9';ctx.fillRect(-2,-12,4,17);ctx.fillRect(-6,-7,12,4);ctx.fillStyle='#b84a43';ctx.fillRect(-1,-6,2,2);}
+ else if(['tactical','swat','commando','security','military'].includes(outfit)){ctx.fillRect(-8,-10,5,5);ctx.fillRect(3,-10,5,5);ctx.fillStyle='#27332c';ctx.fillRect(-8,-2,16,3);}
+ else {ctx.fillRect(-8,-12,16,3);ctx.fillRect(-2,-8,4,12);}
+ ctx.fillStyle=c.belt;ctx.fillRect(-9,4,18,3);ctx.fillStyle=c.metal;ctx.fillRect(-2,4,4,3);
+ // Arms are stepped rectangles; action poses remain readable.
+ ctx.fillStyle=c.shirt;ctx.fillRect(-14,-11,5,13);ctx.fillRect(9,-11,5,13);
+ ctx.fillStyle=c.skin;ctx.fillRect(-14,1,5,5);ctx.fillRect(9,1,5,5);
+ if(p?.gloves&&p.gloves!=='none'){ctx.fillStyle=c.glove;ctx.fillRect(-14,2,5,4);ctx.fillRect(9,2,5,4);}
+ // Oversized square head, Terraria-inspired proportions.
+ ctx.fillStyle=c.skin;ctx.fillRect(-10,-34,20,19);ctx.fillRect(-9,-36,18,3);ctx.fillRect(-11,-30,2,10);ctx.fillRect(9,-30,2,10);
+ ctx.fillStyle=p?.skinDetailColor||'#9c6a52';ctx.fillRect(-10,-17,20,2);
+ // Hair silhouettes use chunky pixels rather than strands or smooth curves.
+ ctx.fillStyle=c.hair;
+ if(hair==='shaved'||hair==='buzz'||hair==='military'){ctx.fillRect(-10,-36,20,3);ctx.fillRect(-9,-38,18,2);}
+ else if(hair==='mohawk'||hair==='spikehawk'){ctx.fillRect(-3,-42,6,8);ctx.fillRect(-2,-44,4,3);}
+ else if(['long','shoulder','layered','bob','shag','wolfcut','mullet','longcurl'].includes(hair)){ctx.fillRect(-12,-37,24,8);ctx.fillRect(-12,-30,4,18);ctx.fillRect(8,-30,4,18);ctx.fillRect(-10,-39,20,3);}
+ else if(['afro','curly','wavy'].includes(hair)){ctx.fillRect(-12,-38,24,7);ctx.fillRect(-10,-41,20,4);ctx.fillRect(-7,-43,14,3);ctx.fillRect(-12,-31,4,4);ctx.fillRect(8,-31,4,4);}
+ else {ctx.fillRect(-11,-38,22,7);ctx.fillRect(-9,-40,18,3);ctx.fillRect(-11,-31,5,4);if(['fringe','sidefringe','curtain','sidepart'].includes(hair)){ctx.fillRect(-8,-32,7,4);ctx.fillRect(1,-33,7,3);}if(['spiky','messy'].includes(hair)){ctx.fillRect(-8,-42,4,4);ctx.fillRect(0,-43,4,5);ctx.fillRect(6,-41,4,3);}}
+ if(['ponytail','twintails','braids','braidlong','dreadlocks','locs','ribbon'].includes(hair)){ctx.fillStyle=c.hair;ctx.fillRect(9,-31,5,13);if(hair==='twintails')ctx.fillRect(-14,-29,4,12);if(['braids','braidlong','dreadlocks','locs'].includes(hair)){ctx.fillStyle=p?.hairAccent||'#a78b69';ctx.fillRect(10,-26,2,3);ctx.fillRect(10,-20,2,3);}}
+ // Simple two-pixel eyes and a one-pixel mouth.
+ ctx.fillStyle=p?.browColor||c.hair;ctx.fillRect(-7,-28,5,1);ctx.fillRect(2,-28,5,1);
+ ctx.fillStyle=c.eyes;ctx.fillRect(-6,-26,3,3);ctx.fillRect(3,-26,3,3);
+ ctx.fillStyle='#f7f1df';ctx.fillRect(-6,-26,1,1);ctx.fillRect(3,-26,1,1);
+ ctx.fillStyle=p?.lipColor||'#8b5b55';ctx.fillRect(-2,-19,4,1);
+ if(beard==='beard'){ctx.fillStyle=p?.beardColor||c.hair;ctx.fillRect(-7,-19,14,4);ctx.fillRect(-5,-15,10,2);}else if(beard==='mustache'){ctx.fillStyle=p?.beardColor||c.hair;ctx.fillRect(-5,-20,4,2);ctx.fillRect(1,-20,4,2);}
+ if(face==='mask'||face==='bandana'){ctx.fillStyle=face==='mask'?'#39463f':'#8d4540';ctx.fillRect(-8,-22,16,5);}
+ else if(face==='goggles'||face==='ski_goggles'){ctx.fillStyle=c.metal;ctx.fillRect(-8,-28,7,4);ctx.fillRect(1,-28,7,4);ctx.fillStyle='#42616a';ctx.fillRect(-7,-27,5,2);ctx.fillRect(2,-27,5,2);}
+ if(head!=='none'){ctx.fillStyle=['helmet','riot','hardhat','night_vision','pilot'].includes(head)?'#68745f':head==='beanie'||head==='ushanka'?'#665d4c':c.trim;ctx.fillRect(-11,-40,22,4);ctx.fillRect(-9,-43,18,4);if(['helmet','riot','hardhat','night_vision','pilot'].includes(head)){ctx.fillRect(-12,-37,24,3);ctx.fillStyle=c.metal;ctx.fillRect(-9,-35,18,1);}}
+ if(p?.scar===true){ctx.fillStyle='#8d5548';ctx.fillRect(4,-29,1,5);}
+ if(p?.patch&&p.patch!=='none'){ctx.fillStyle=p.patch==='medic'?'#eee9d9':p.patch==='hazard'?'#d7c33b':c.trim;ctx.fillRect(5,-10,4,4);}
+ if(act==='heal'&&pulse>.05){ctx.fillStyle='#8ee6a1';ctx.fillRect(-1,-49,2,8);ctx.fillRect(-4,-46,8,2);}
+ if(act==='attack'&&pulse>.05){ctx.fillStyle=c.metal;ctx.fillRect(14,-7,Math.round(5+pulse*9),2);}
+ if(remote){ctx.fillStyle='#e7e9d8';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(String(name||'Игрок').slice(0,16),0,-49);ctx.strokeStyle='#e7d6a0aa';ctx.lineWidth=1;ctx.strokeRect(-13,-38,26,58);}
+ ctx.restore();
+}
 function drawSurvivor(x,y,palette,phase=0,moving=false,remote=false,name='',action=null){
  const skin=palette?.skin||'#e8b88c',hair=palette?.hair||'#352d3d',shirt=palette?.shirt||'#526fba',trim=palette?.trim||'#9cb9ff',eyes=palette?.eyes||'#26334c',pants=palette?.pants||'#343b3a',boots=palette?.boots||'#242a27',bodyType=palette?.bodyType||'average',hairStyle=palette?.hairStyle||'short',beard=palette?.beard||'none',outfit=palette?.outfit||'survivor',headgear=palette?.headgear||'none',faceAccessory=palette?.faceAccessory||'none',scar=palette?.scar===true,garmentSize=palette?.garmentSize||'M',cloak=palette?.cloak||'none',outerwear=palette?.outerwear||'none',backpack=palette?.backpack||'none',gloves=palette?.gloves||'none',pantsStyle=palette?.pantsStyle||'cargo',belt=palette?.belt||'utility',fabric=palette?.fabric||'solid',condition=palette?.condition||'worn',patch=palette?.patch||'none',cloakColor=palette?.cloakColor||'#59634b',packColor=palette?.packColor||'#3e5144',hairAccent=palette?.hairAccent||'#a78b69',browColor=palette?.browColor||hair,beardColor=palette?.beardColor||hair,lipColor=palette?.lipColor||'#8b5b55',eyeWhiteColor=palette?.eyeWhiteColor||'#e7e3d7',gloveColor=palette?.gloveColor||'#454a42',beltColor=palette?.beltColor||'#786744',metalColor=palette?.metalColor||'#a6a99c',undershirtColor=palette?.undershirtColor||'#343c38',skinDetailColor=palette?.skinDetailColor||'#8c4c45',patternColor=palette?.patternColor||'#293d2c';
+ drawTerrariaSurvivorSprite(x,y,palette,phase,moving,remote,name,action);return;
  const hairIndex=Math.max(0,HAIR_STYLE_CATALOG.indexOf(hairStyle)),outfitIndex=Math.max(0,OUTFIT_STYLE_CATALOG.indexOf(outfit)),cloakIndex=Math.max(0,CLOAK_STYLE_CATALOG.indexOf(cloak));
  const now=performance.now(),walk=moving?Math.sin(time*.014+phase):0;
  const progress=action?Math.max(0,Math.min(1,(now-action.started)/(action.until-action.started))):1;
@@ -1602,7 +1654,21 @@ function createApocalypseWorld(){
  try{localStorage.setItem(CURRENT_WORLD_KEY,id);sessionStorage.setItem('apoc_open_character_creator','new');location.reload();}catch(_){toast('Не удалось создать мир');}
 }
 let characterCreatorThenIntro=false;
+function terrariaPortraitSvg(v={}){
+ const val=(id,f)=>String(v[id]??f),col=(id,f)=>/^#[0-9a-f]{6}$/i.test(val(id,f))?val(id,f):f;
+ const skin=col('charSkin','#d9a77e'),hair=col('charHair','#3b302d'),shirt=col('charShirt','#526b4c'),trim=col('charTrim','#b2aa83'),pants=col('charPants','#343b3a'),boots=col('charBoots','#252b28'),eyes=col('charEyes','#354c61'),metal=col('charMetalColor','#b5ad8d');
+ const style=val('charHairStyle','short'),head=val('charHeadgear','none'),face=val('charFaceAccessory','none'),beard=val('charBeard','none'),outfit=val('charOutfit','survivor');
+ const hairTop=['shaved','buzz','military'].includes(style)?'<rect x="69" y="30" width="42" height="7"/>':['mohawk','spikehawk'].includes(style)?'<rect x="84" y="17" width="12" height="20"/><rect x="88" y="11" width="8" height="8"/>':['afro','curly','wavy'].includes(style)?'<rect x="64" y="25" width="52" height="17"/><rect x="70" y="19" width="40" height="8"/><rect x="78" y="15" width="24" height="5"/>':'<rect x="66" y="25" width="48" height="15"/><rect x="72" y="19" width="36" height="8"/><rect x="78" y="16" width="24" height="5"/>';
+ const longHair=['long','shoulder','layered','bob','shag','wolfcut','mullet','longcurl'].includes(style)?'<rect x="62" y="36" width="9" height="55"/><rect x="109" y="36" width="9" height="55"/>':'';
+ const pony=['ponytail','twintails','braids','braidlong','dreadlocks','locs','ribbon'].includes(style)?'<rect x="108" y="38" width="10" height="40"/>':'';
+ const headgear=head==='none'?'':['helmet','riot','hardhat','night_vision','pilot'].includes(head)?'<rect x="63" y="18" width="54" height="12" fill="#68745f"/><rect x="68" y="11" width="44" height="10" fill="#68745f"/><rect x="61" y="28" width="58" height="5" fill="'+metal+'"/>':'<rect x="64" y="18" width="52" height="9" fill="'+trim+'"/><rect x="70" y="12" width="40" height="8" fill="'+trim+'"/>';
+ const mask=face==='mask'||face==='bandana'?'<rect x="68" y="75" width="44" height="13" fill="'+(face==='mask'?'#39463f':'#8d4540')+'"/>':face==='goggles'||face==='ski_goggles'?'<rect x="65" y="54" width="22" height="12" fill="'+metal+'"/><rect x="93" y="54" width="22" height="12" fill="'+metal+'"/><rect x="68" y="57" width="16" height="6" fill="#42616a"/><rect x="96" y="57" width="16" height="6" fill="#42616a"/>':'';
+ const cross=outfit==='medic'||outfit==='paramedic'||outfit==='surgeon'?'<rect x="87" y="111" width="8" height="44" fill="#eee9d9"/><rect x="77" y="126" width="28" height="8" fill="#eee9d9"/>':'';
+ const faceBeard=beard==='none'?'':'<rect x="72" y="78" width="36" height="'+(beard==='mustache'?5:13)+'" fill="'+hair+'"/>';
+ return '<svg xmlns="http://www.w3.org/2000/svg" class="character-portrait-svg terraria-character-portrait" viewBox="0 0 180 252" role="img" aria-label="Пиксельный персонаж"><g shape-rendering="crispEdges"><ellipse cx="90" cy="241" rx="39" ry="5" fill="#000" opacity=".25"/><rect x="62" y="178" width="25" height="45" fill="'+pants+'"/><rect x="93" y="178" width="25" height="45" fill="'+pants+'"/><rect x="59" y="218" width="31" height="13" fill="'+boots+'"/><rect x="91" y="218" width="31" height="13" fill="'+boots+'"/><rect x="62" y="105" width="56" height="75" fill="'+shirt+'"/><rect x="54" y="112" width="13" height="51" fill="'+shirt+'"/><rect x="113" y="112" width="13" height="51" fill="'+shirt+'"/><rect x="54" y="158" width="13" height="15" fill="'+skin+'"/><rect x="113" y="158" width="13" height="15" fill="'+skin+'"/><rect x="62" y="171" width="56" height="7" fill="'+trim+'"/>'+cross+'<rect x="60" y="48" width="60" height="60" fill="'+skin+'"/><rect x="55" y="60" width="5" height="24" fill="'+skin+'"/><rect x="120" y="60" width="5" height="24" fill="'+skin+'"/>'+hairTop+longHair+pony+'<rect x="72" y="66" width="12" height="9" fill="'+eyes+'"/><rect x="96" y="66" width="12" height="9" fill="'+eyes+'"/><rect x="75" y="67" width="3" height="3" fill="#fff"/><rect x="99" y="67" width="3" height="3" fill="#fff"/><rect x="85" y="88" width="10" height="3" fill="#8b5b55"/>'+faceBeard+mask+headgear+'<rect x="84" y="180" width="12" height="5" fill="'+metal+'"/></g></svg>';
+}
 function characterArtworkSvg(v={},seed=0){
+ return terrariaPortraitSvg(v);
  const pick=(id,fallback)=>String(v[id]??fallback);
  const color=(id,fallback)=>/^#[0-9a-f]{6}$/i.test(pick(id,fallback))?pick(id,fallback):fallback;
  const skin=color('charSkin','#d9a77e'),hair=color('charHair','#3b302d'),shirt=color('charShirt','#526b4c'),trim=color('charTrim','#b2aa83'),pants=color('charPants','#343b3a'),boots=color('charBoots','#252b28'),eyes=color('charEyes','#354c61'),white=color('charEyeWhite','#f2e9d8'),brow=color('charBrowColor',hair),lips=color('charLipColor','#915b55'),hairHi=color('charHairAccent','#a78b69'),metal=color('charMetalColor','#b5ad8d'),skinShade=color('charSkinDetail','#875743'),pattern=color('charPatternColor','#3c503b'),beltColor=color('charBeltColor','#786744'),glove=color('charGloveColor','#454a42'),packColor=color('charPackColor','#3e5144'),cloakColor=color('charCloakColor','#59634b'),beardColor=color('charBeardColor',hair),undershirt=color('charUndershirtColor','#343c38');
