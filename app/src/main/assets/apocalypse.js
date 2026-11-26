@@ -99,7 +99,7 @@ const worldProps=[
  {id:'north_market_1',type:'stall',x:4500,y:-9800,w:116,h:70},{id:'north_dumpster_1',type:'dumpster',x:8900,y:-10800,w:82,h:52},{id:'east_camp_1',type:'tent',x:22600,y:10800,w:92,h:66},
  {id:'south_market_1',type:'stall',x:15100,y:22100,w:118,h:70},{id:'west_pump_1',type:'pump',x:-10900,y:4200,w:94,h:50},{id:'west_tent_1',type:'tent',x:-6400,y:22000,w:90,h:66}
 ];
-let lastSignalMission=saved.lastSignalMission&&typeof saved.lastSignalMission==='object'&&Number.isFinite(saved.lastSignalMission.x)&&Number.isFinite(saved.lastSignalMission.y)?{status:['briefing','active','completed'].includes(saved.lastSignalMission.status)?saved.lastSignalMission.status:'briefing',stage:Math.max(0,Math.min(2,Number(saved.lastSignalMission.stage)||0)),x:bounded(saved.lastSignalMission.x,0,WORLD_MIN+100,WORLD_MAX-100),y:bounded(saved.lastSignalMission.y,0,WORLD_MIN+100,WORLD_MAX-100)}:null;
+let lastSignalMission=saved.lastSignalMission&&typeof saved.lastSignalMission==='object'&&Number.isFinite(saved.lastSignalMission.x)&&Number.isFinite(saved.lastSignalMission.y)?{status:['briefing','active','completed'].includes(saved.lastSignalMission.status)?saved.lastSignalMission.status:'briefing',stage:Math.max(0,Math.min(2,Number(saved.lastSignalMission.stage)||0)),phase:Math.max(0,Math.min(4,Number(saved.lastSignalMission.phase)||0)),wave:Math.max(0,Math.min(3,Number(saved.lastSignalMission.wave)||0)),valves:Array.isArray(saved.lastSignalMission.valves)?saved.lastSignalMission.valves.slice(0,2).map(Boolean):[false,false],x:bounded(saved.lastSignalMission.x,0,WORLD_MIN+100,WORLD_MAX-100),y:bounded(saved.lastSignalMission.y,0,WORLD_MIN+100,WORLD_MAX-100)}:null;
 if(lastSignalMission&&lastSignalMission.status==='briefing'&&Math.hypot(lastSignalMission.x-state.x,lastSignalMission.y-state.y)<3200){const dx=state.x<WORLD_MAX-3800?3600:-3600,dy=state.y>WORLD_MIN+900?-650:650;lastSignalMission.x=state.x+dx;lastSignalMission.y=state.y+dy;}
 if(lastSignalMission)worldProps.push({id:'last_signal_crash',type:'crash_site',x:lastSignalMission.x,y:lastSignalMission.y,w:190,h:132});
 
@@ -902,7 +902,7 @@ let lastActionUiUpdate=-Infinity;
 function nearbyActionLabel(){
  if(lastSignalMission&&lastSignalMission.status==='active'&&Math.hypot(state.x-lastSignalMission.x,state.y-lastSignalMission.y)<145){
   if(lastSignalMission.stage===0)return 'Проверить чёрный ящик';
-  if(lastSignalMission.stage===1)return zombies.some(z=>z.eventId==='last_signal_guard')?'Зачистить место крушения':'Открыть чёрный ящик';
+  if(lastSignalMission.stage===1){if(zombies.some(z=>z.eventId==='last_signal_guard'))return 'Отбить волну '+(lastSignalMission.wave||1)+'/3';if(lastSignalMission.phase===1)return 'Отключить утечку топлива';if(lastSignalMission.phase===3)return 'Найти пилота и запись';return 'Осмотреть обломки самолёта';}
  }
  if(nearSpawnCampfire())return 'Подкинуть дерево в костёр';
  if(!starterKnife.picked&&Math.hypot(state.x-starterKnife.x,state.y-starterKnife.y)<74)return 'Подобрать стартовый нож';
@@ -976,7 +976,7 @@ function updateConvenienceHud(){
   else if(lastSignalMission&&lastSignalMission.status==='active'){
    const d=Math.hypot(lastSignalMission.x-state.x,lastSignalMission.y-state.y);
    if(lastSignalMission.stage===0)objective.textContent='ГЛАВНОЕ СОБЫТИЕ: проверь место крушения · '+Math.round(d)+' м';
-   else if(lastSignalMission.stage===1){const left=zombies.filter(z=>z.eventId==='last_signal_guard').length;objective.textContent=left?'ОТРАЗИ АТАКУ: заражённые у вертолёта · '+left:'ОБЫЩИ ЧЁРНЫЙ ЯЩИК · место зачищено';}
+   else if(lastSignalMission.stage===1){const left=zombies.filter(z=>z.eventId==='last_signal_guard').length;const tasks=['ОТРАЗИ ВОЛНУ 1/3','ОТКЛЮЧИ ДВА ВЕНТИЛЯ · '+(lastSignalMission.valves||[]).filter(Boolean).length+'/2','ОТРАЗИ ВОЛНУ 2/3','НАЙДИ ПИЛОТА И ЕГО ЗАПИСЬ','ОТРАЗИ ФИНАЛЬНУЮ ВОЛНУ 3/3','ЗАБЕРИ ПОЛЕВУЮ ЗАПИСЬ'];objective.textContent=left?'ОПЕРАЦИЯ «ЧЁРНЫЙ САМОЛЁТ»: '+left+' угроз':'ОПЕРАЦИЯ «ЧЁРНЫЙ САМОЛЁТ»: '+(tasks[lastSignalMission.phase]||'ЗАВЕРШИ ОПЕРАЦИЮ');}
   }else if(radioSignal){
    const d=Math.hypot(radioSignal.x-state.x,radioSignal.y-state.y);
    objective.textContent='СОБЫТИЕ: радиосигнал · '+Math.round(d)+' м · '+compassDirection(radioSignal.x-state.x,radioSignal.y-state.y);
@@ -1270,15 +1270,46 @@ function openTrader(){
 }
 function interact(){
  if(!gameActive)return;triggerPlayerAction('interact',460);if(activeInterior){interactInterior();return;}if(nearSpawnCampfire()){feedSpawnCampfire();return;}
- if(lastSignalMission&&lastSignalMission.status==='active'&&Math.hypot(state.x-lastSignalMission.x,state.y-lastSignalMission.y)<145){
+ if(lastSignalMission&&lastSignalMission.status==='active'&&Math.hypot(state.x-lastSignalMission.x,state.y-lastSignalMission.y)<235){
   if(lastSignalMission.stage===0){startCrashSiteCinematic();return;}
   if(lastSignalMission.stage===1){
    const remaining=zombies.filter(z=>z.eventId==='last_signal_guard').length;
-   if(remaining){toast('Сначала зачисти место крушения · осталось заражённых: '+remaining);return;}
-   lastSignalMission.stage=2;lastSignalMission.status='completed';
-   state.scrap+=12;state.bolts+=6;state.electronicsPack+=2;state.weaponParts+=2;state.medInjector++;state.food+=3;state.survivorTrust+=3;state.radioFinds++;
-   if(activeWaypoint?.name==='Маяк бедствия')activeWaypoint=null;
-   save();updateHud();showPanel('Последний сигнал · находка','Ты восстановил чёрный ящик и получил координаты тайного убежища. Внутри записи — голос пилота: «Если кто-то слышит… база ещё держится». Награда уже добавлена в рюкзак.',[{icon:'🔩',name:'Металлолом',count:'+12'},{icon:'⚙️',name:'Крепёж',count:'+6'},{icon:'📡',name:'Электроника',count:'+2'},{icon:'🧩',name:'Детали оружия',count:'+2'},{icon:'💉',name:'Медицинский инъектор',count:'+1'},{icon:'🥫',name:'Пайки',count:'+3'},{icon:'📍',name:'Новые координаты убежища',count:'запись найдена'}]);return;
+   if(remaining){toast('Сначала отбей волну '+(lastSignalMission.wave||1)+'/3 · осталось угроз: '+remaining);return;}
+   if(lastSignalMission.phase===0){
+    lastSignalMission.phase=1;lastSignalMission.valves=[false,false];save();toast('Волна отбита. Из крыла течёт топливо! Найди два красных вентиля по сторонам обломков и отключи утечку.');return;
+   }
+   if(lastSignalMission.phase===1){
+    const valvePoints=[[-155,38],[155,-32]];
+    const valve=valvePoints.map((p,i)=>({i,d:Math.hypot(state.x-(lastSignalMission.x+p[0]),state.y-(lastSignalMission.y+p[1]))})).filter(v=>v.d<82&&!lastSignalMission.valves[v.i]).sort((a,b)=>a.d-b.d)[0];
+    if(!valve){toast('Найди красный вентиль у левого или правого крыла самолёта');return;}
+    lastSignalMission.valves[valve.i]=true;save();
+    if(lastSignalMission.valves.every(Boolean)){
+     lastSignalMission.phase=2;lastSignalMission.wave=2;
+     const wave=[['armored',-175,-100],['screecher',170,-115],['spitter',-110,155],['brute',130,150],['runner',0,-205]];
+     for(const [kind,dx,dy] of wave)spawnZombie(lastSignalMission.x+dx,lastSignalMission.y+dy,kind,'last_signal_guard');
+     toast('Утечка остановлена! Аварийный маяк включился и привлёк новую группу заражённых. Волна 2/3.');save();return;
+    }
+    toast('Вентиль закрыт · '+lastSignalMission.valves.filter(Boolean).length+'/2');return;
+   }
+   if(lastSignalMission.phase===2){
+    lastSignalMission.phase=3;save();toast('Вторая волна отбита. Найди пилота у хвостовой части самолёта и забери его полевую запись.');return;
+   }
+   if(lastSignalMission.phase===3){
+    lastSignalMission.phase=4;lastSignalMission.wave=3;
+    const wave=[['alpha',-190,-125],['runner',185,-145],['crawler',-165,160],['stalker',160,170],['bloater',0,-215],['screecher',0,210]];
+    for(const [kind,dx,dy] of wave)spawnZombie(lastSignalMission.x+dx,lastSignalMission.y+dy,kind,'last_signal_guard');
+    state.scrap+=4;state.electronicsPack+=1;save();updateHud();toast('Запись пилота получена. В ней координаты эвакуационного узла. Но сигнал вызвал последнюю, самую опасную волну!');return;
+   }
+   if(lastSignalMission.phase===4){
+    const left=zombies.filter(z=>z.eventId==='last_signal_guard').length;if(left){toast('Последняя волна ещё не отбита · осталось: '+left);return;}
+    lastSignalMission.phase=5;save();toast('Территория зачищена. Подойди к хвосту самолёта и заверши извлечение записи.');return;
+   }
+   if(lastSignalMission.phase===5){
+    lastSignalMission.stage=2;lastSignalMission.status='completed';
+    state.scrap+=18;state.bolts+=10;state.electronicsPack+=3;state.weaponParts+=3;state.medInjector+=2;state.food+=5;state.survivorTrust+=5;state.radioFinds++;
+    if(activeWaypoint?.name==='Маяк бедствия')activeWaypoint=null;
+    save();updateHud();showPanel('Чёрный самолёт · операция завершена','Ты остановил утечку топлива, пережил три волны заражённых и восстановил запись пилота. На ней отмечен эвакуационный узел и неизвестный позывной «Север-7». Награда добавлена в рюкзак.',[{icon:'🔩',name:'Металлолом',count:'+18'},{icon:'⚙️',name:'Крепёж',count:'+10'},{icon:'📡',name:'Электроника',count:'+3'},{icon:'🧩',name:'Детали оружия',count:'+3'},{icon:'💉',name:'Медицинский инъектор',count:'+2'},{icon:'🥫',name:'Пайки',count:'+5'},{icon:'📍',name:'Координаты эвакуационного узла',count:'найдены'}]);return;
+   }
   }
  }
  const river=rivers.find(r=>insideRiver(r));if(river){if(state.waterFilterLevel>0){state.hydration=Math.min(100,state.hydration+35);toast('Выпита отфильтрованная речная вода · +35 жажды');}else{state.hydration=Math.min(100,state.hydration+35);state.infection=Math.min(100,state.infection+12);toast('Заражённая речная вода · +12 инфекции');}save();updateHud();return;}
@@ -1712,9 +1743,10 @@ function startCrashSiteCinematic(){
 }
 function activateBlackBox(){
  if(!lastSignalMission||lastSignalMission.status!=='active'||lastSignalMission.stage!==0)return;
- lastSignalMission.stage=1;const offsets=[[-105,-35],[105,-20],[-25,105],[62,92]],kinds=['brute','runner','runner','stalker'];
+ lastSignalMission.stage=1;lastSignalMission.phase=0;lastSignalMission.wave=1;lastSignalMission.valves=[false,false];
+ const offsets=[[-105,-35],[105,-20],[-25,105],[62,92]],kinds=['brute','runner','runner','stalker'];
  for(let i=0;i<offsets.length;i++)spawnZombie(lastSignalMission.x+offsets[i][0],lastSignalMission.y+offsets[i][1],kinds[i],'last_signal_guard');
- gameActive=true;focusGame();save();toast('Чёрный ящик активирован! Заражённые услышали сигнал — держи оборону!');
+ gameActive=true;focusGame();save();toast('Аварийный маяк запущен! Первая волна у обломков. После боя придётся перекрыть топливо, найти пилота и пережить ещё две волны.');
 }
 
 function applySettings(){document.getElementById('joy').style.transform='scale('+(Number(prefs.joy||100)/100)+')';document.getElementById('settingMaxFps').value=String(prefs.maxFps);document.body.classList.toggle('reduced-motion',!prefs.motion);document.body.classList.toggle('hide-hints',!prefs.hints);document.getElementById('settingEffects').value=prefs.effects;document.getElementById('settingJoy').value=prefs.joy;document.getElementById('settingMotion').checked=!!prefs.motion;document.getElementById('settingHints').checked=!!prefs.hints;document.getElementById('settingWeather').checked=!!prefs.weather;document.getElementById('settingAmbientAudio').checked=!!prefs.ambientAudio;document.getElementById('settingInfectedCap').value=String(prefs.infectedCap);document.getElementById('settingEventFrequency').value=String(prefs.eventFrequency);document.getElementById('settingAutosave').value=String(prefs.autosaveSeconds);document.getElementById('settingAutoSprint').checked=!!prefs.autoSprint;document.getElementById('settingHydration').checked=!!prefs.showHydration;document.getElementById('settingSurvivalDifficulty').value=prefs.survivalDifficulty;document.getElementById('settingRenderDistance').value=prefs.renderDistance;document.getElementById('settingEnemyHealth').checked=!!prefs.showEnemyHealth;document.getElementById('settingSurvivalHud').checked=!!prefs.showSurvivalHud;}
