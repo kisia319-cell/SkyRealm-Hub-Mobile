@@ -331,7 +331,7 @@ assert.ok(game.includes("for(const b of buildings){if(!b.role){b.role='loot';b.k
 assert.ok(game.includes("const phase=(Math.floor(time/52000)%6),storm=phase===2,rain=phase===3,drizzle=phase===5,dust=phase===4"), 'Weather must cycle through additional dynamic conditions');
 assert.ok(html.includes('id="quickbarHud"') && html.includes('id="quickSlot6"') && html.includes('id="objectiveHud"') && html.includes('id="waypointHud"') && html.includes('id="threatHud"'), 'Gameplay quickbar and guidance HUD must exist');
 assert.ok(html.includes('id="markerNavigate"') && html.includes('id="waypointClear"') && html.includes('id="mobileMoreSave"'), 'Waypoint selection and mobile quick save controls must exist');
-assert.ok(game.includes("Array.from({length:b.floors}") && game.includes("buildingFloors[lootBuilding.id]=floor>=lootBuilding.floors?1:floor+1") && game.includes("crateEntry.picked=true"), 'Each floor must have a searchable persistent crate and stair traversal');
+assert.ok(game.includes("Array.from({length:b.floors}") && game.includes("buildingFloors[lootBuilding.id]=floor>=lootBuilding.floors?1:floor+1") && game.includes("crateEntry.picked=crateEntry.contents.every(v=>v.picked)"), 'Each floor must have a multi-item searchable persistent crate and stair traversal');
 assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.max(.4,.68-(state.armorLevel-1)*.07)") && game.includes("46+(state.weaponLevel-2)*6"), 'New item effects must affect gameplay stats');
 
 assert.ok(game.includes("hydration:bounded(saved.hydration,100,0,100)") && game.includes("function updateHydration(dt,now)") && game.includes("state.hydration=Math.min(100,state.hydration+45)"), 'Thirst must drain over time and clean water must restore hydration');
