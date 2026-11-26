@@ -447,3 +447,9 @@ assert.ok(game.includes("campaign.wave<7") && game.includes("Date.now()+150000")
 assert.ok(game.includes("campaign-cache") && game.includes("campaign-relay") && game.includes("campaign-convoy"), 'Long operation must include scavenging, relay repair and convoy objectives');
 assert.ok(game.includes("longCampaign:campaign") && game.includes("campaignObjectiveText()"), 'Long operation progress must persist and appear in the objective HUD');
 assert.ok(game.includes("const detailCount=Math.round(count*1.32)") && game.includes("gy+=36"), 'World material textures must receive additional procedural detail');
+
+assert.ok(game.includes("function campaignSpawnBeaconParts()") && game.includes("campaign-beacon-part"), "Beacon must spawn three distinct repair nodes");
+assert.ok(game.includes("ПОДКЛЮЧИТЬ КАБЕЛЬ") && game.includes("ЗАМЕНИТЬ ПРЕДОХРАНИТЕЛЬ") && game.includes("ВЫРОВНЯТЬ АНТЕННУ"), "Beacon repair must require cable, fuse and antenna tasks");
+assert.ok(game.includes("campaign.beaconParts") && game.includes("campaign-beacon-active") && game.includes("campaign.beaconActivated"), "Beacon repair progress and activated landmark must persist");
+assert.ok(game.includes("campaignSpawnBeaconParts();save();") && game.includes("campaign.beaconParts<3"), "Older active campaign saves must recover missing beacon repair points");
+assert.ok(game.includes("ctx.shadowColor='#7be8ff'") && game.includes("ctx.lineTo(-150,-250)"), "Beacon must render a detailed antenna and activation beam");
