@@ -1343,7 +1343,7 @@ function openCampaignChoice(){const modal=document.getElementById('campaignChoic
 function closeCampaignChoice(){document.getElementById('campaignChoiceModal')?.classList.add('hidden');}
 function chooseCampaignPath(choice){
  if(campaign.status!=='active'||campaign.stage!==4)return;
- campaign.choice=choice;closeCampaignChoice();
+ campaign.choice=choice;closeCampaignChoice();gameActive=true;focusGame();
  if(choice==='rescue'){
   campaign.stage=6;const site=campaignPlaceSite('campaign-rescue',campaign.x+430,campaign.y+280,'ПЛЕННЫЕ ВЫЖИВШИЕ');campaign.waveWanted=5;campaign.waveSpawned=0;
   for(let i=0;i<5&&zombies.length<prefs.infectedCap;i++){const a=i*2.399,x=site.x+Math.cos(a)*105,y=site.y+Math.sin(a)*105,kind=['runner','crawler','armored','stalker','brute'][i],before=zombies.length;spawnZombie(x,y,kind,site.id);if(zombies.length>before){campaign.waveSpawned++;const c=window.ApocalypseCoop;if(c?.room?.status==='running'&&c.isOwner())c.send({kind:'zombie-spawn',x,y,ztype:kind,eventId:site.id});}}
