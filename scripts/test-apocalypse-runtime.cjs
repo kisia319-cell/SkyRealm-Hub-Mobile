@@ -562,3 +562,8 @@ assert.ok(game.includes('function showMissionBriefing') && html.includes('id="mi
 assert.ok(html.includes('right:16px;bottom:max(16px') && html.includes('width:208px;height:140px') && html.includes('right:8px;left:auto'), 'Minimap must be moved right and enlarged');
 assert.ok(game.includes('function roadRoutePoints') && game.includes('const points=roadRoutePoints(state.x,state.y,activeWaypoint.x,activeWaypoint.y)') && game.includes('const route=roadRoutePoints(ox,oy,activeWaypoint.x,activeWaypoint.y)'), 'Map and minimap routes must follow the same road graph');
 assert.ok(game.includes("if(!storyArc.completed&&g.id!=='medic')continue"), 'Only first mission contact should show before story arc completion');
+
+assert.ok(game.includes("const expected=['explore','salvage','explore'][storyArc.stage]") && game.includes('const goals=[3,3,2]'), 'Story arc must use varied investigation and salvage objectives rather than a generic kill counter');
+assert.ok(game.includes('function showMissionBriefing') && game.includes('let missionBriefingMode=false;function openMissionGiver(g)') && html.includes('id="missionBriefing"'), 'All mission giver panels must use the separate briefing UI rather than backpack inventory');
+assert.ok(game.includes("function storyMissionGiverId(){return storyArc.completed?'all':(['medic','mechanic','engineer'][Math.min(2,storyArc.stage)]||'medic');}"), 'Mission giver map markers must unlock one stage at a time');
+assert.ok(game.includes("state.contractType=['salvage','explore'][state.day%2]") && !game.includes("state.contractType=['wood','kills','salvage'][state.day%3]"), 'Daily mission rotation must no longer offer zombie kill counters');
