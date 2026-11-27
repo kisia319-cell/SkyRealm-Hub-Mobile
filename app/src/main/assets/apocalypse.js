@@ -64,7 +64,11 @@ const missionGivers=[
  {id:'scout',name:'Роман',role:'Радиоразведчик',x:8750,y:9740,letter:'R',color:'#86c9e6',mission:'signal',avatar:{skin:'#d7a77e',hair:'#493b2d',shirt:'#536b70',trim:'#b4c7a0',pants:'#343e3a',boots:'#252b27',hairStyle:'messy',outfit:'scout',backpack:'tactical'}},
  {id:'engineer',name:'Борис',role:'Инженер связи',x:6860,y:11040,letter:'E',color:'#d9b76e',mission:'campaign',avatar:{skin:'#c99470',hair:'#5a4937',shirt:'#80694b',trim:'#d8bd83',pants:'#3d4036',boots:'#282c25',hairStyle:'short',outfit:'mechanic',headgear:'cap',backpack:'large',beard:'full'}},
  {id:'mechanic',name:'Сева',role:'Механик-разборщик',x:17080,y:10480,letter:'S',color:'#c7a6e8',mission:'salvage',avatar:{skin:'#d4a17b',hair:'#39302b',shirt:'#656b54',trim:'#c4ad83',pants:'#353a35',boots:'#292b26',hairStyle:'spiky',outfit:'mechanic',backpack:'small',beard:'stubble'}},
- {id:'ranger',name:'Анна',role:'Следопыт',x:-10580,y:5480,letter:'A',color:'#a9d18e',mission:'cache',avatar:{skin:'#e2b38d',hair:'#68462f',shirt:'#596d4a',trim:'#c1d29b',pants:'#343e32',boots:'#282d25',hairStyle:'braid',outfit:'ranger',backpack:'large'}}
+ {id:'ranger',name:'Анна',role:'Следопыт',x:-10580,y:5480,letter:'A',color:'#a9d18e',mission:'cache',avatar:{skin:'#e2b38d',hair:'#68462f',shirt:'#596d4a',trim:'#c1d29b',pants:'#343e32',boots:'#282d25',hairStyle:'braid',outfit:'ranger',backpack:'large'}},
+ {id:'northCommander',name:'Громов',role:'Старший патруля',x:-4540,y:-9760,letter:'G',color:'#e58b68',mission:'command',avatar:{skin:'#b9805e',hair:'#302a25',shirt:'#515b52',trim:'#c1a16e',pants:'#343b36',boots:'#242923',hairStyle:'military',outfit:'military',headgear:'helmet',backpack:'tactical',beard:'full'}},
+ {id:'northMedic',name:'Лев',role:'Врач эвакуационного пункта',x:2920,y:-8760,letter:'L',color:'#82d6b2',mission:'story',avatar:{skin:'#e4b58f',hair:'#7a4b38',shirt:'#e1ded0',trim:'#9bcdb6',pants:'#39453e',boots:'#252d28',hairStyle:'short',outfit:'medic',backpack:'medic',beard:'stubble'}},
+ {id:'southMedic',name:'Ника',role:'Поисковик припасов',x:8950,y:19900,letter:'N',color:'#a9d18e',mission:'cache',avatar:{skin:'#e2b38d',hair:'#68462f',shirt:'#596d4a',trim:'#c1d29b',pants:'#343e32',boots:'#282d25',hairStyle:'braid',outfit:'ranger',backpack:'large'}},
+ {id:'southCommander',name:'Виктор',role:'Начальник южного поста',x:15400,y:14800,letter:'V',color:'#d9b76e',mission:'salvage',avatar:{skin:'#c99470',hair:'#5a4937',shirt:'#80694b',trim:'#d8bd83',pants:'#3d4036',boots:'#282c25',hairStyle:'short',outfit:'mechanic',headgear:'cap',backpack:'large',beard:'full'}}
 ];
 // Spawn protection fire: one wood fuels three real-world minutes; each upgrade expands its safe radius.
 // Its position is initialized from the same deterministic safe-spawn search used by the player.
@@ -2462,7 +2466,7 @@ function openCommanderBoard(){
 }
 function openMissionGiver(g){
  if(g.id==='mark'){openMark();return;}
- if(g.id==='commander'){openCommanderBoard();return;}
+ if(g.mission==='command'){openCommanderBoard();return;}
  if(g.mission==='story'){openStoryBoard();return;}
  if(g.mission==='campaign'){openCampaignMissionBoard();return;}
  if(g.mission==='signal'){
