@@ -512,3 +512,10 @@ assert.ok(html.includes('id="reloadTouch"') && html.includes('id="aimTouch"') &&
 assert.ok(game.includes("function attack(){") && game.includes("meleeComboIndex") && game.includes("['slash','stab','kick']"), 'Knife melee must support a three-step combo');
 assert.ok(game.includes("const canFinish=hasKnife") && game.includes("target.kind!=='alpha'") && game.includes("function playCombatSound(kind,suppressed=false)") && game.includes("takedown:[68,24,.42"), 'Close-range finishers must be gated and have their own sound profile');
 assert.ok(game.includes("type==='kick'") && game.includes("act==='takedown'") && game.includes("z.stunnedUntil>now"), 'Kicks and finishers must have animation effects and temporarily interrupt infected attacks');
+
+
+assert.ok(game.includes("const missionGivers=[") && game.includes("function drawMissionGivers()") && game.includes("drawMissionGivers();"), 'Mission-giver NPCs must be rendered in the world');
+assert.ok(game.includes("function openMissionGiver(g)") && game.includes("function interactMissionGiver()") && game.includes("if(interactMissionGiver())return;"), 'Mission-giver NPCs must open their mission interactions');
+assert.ok(game.includes("function campaignMissionTarget()") && game.includes("function acceptCampaignMission()") && game.includes("campaignMissionTarget()"), 'The long operation must be startable and resumable from its engineer NPC');
+assert.ok(game.includes("m.fillText(g.letter,x,y+.5)") && game.includes("for(const g of missionGivers)"), 'Mission contacts must have persistent GTA-style map icons');
+assert.ok(game.includes("mission==='story'") && game.includes("mission==='signal'") && game.includes("mission==='salvage'") && game.includes("mission==='cache'"), 'Existing story, crash, salvage and exploration missions must be discoverable from NPCs');
