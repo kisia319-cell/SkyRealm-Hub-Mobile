@@ -521,3 +521,4 @@ assert.ok(game.includes("m.fillText(g.letter,x,y+.5)") && game.includes("for(con
 assert.ok(game.includes("mission==='story'") && game.includes("mission==='signal'") && game.includes("mission==='salvage'") && game.includes("mission==='cache'"), 'Existing story, crash, salvage and exploration missions must be discoverable from NPCs');
 assert.ok(game.includes("function openCommanderBoard()") && game.includes("g.mission==='command'"), 'The military NPC must offer the existing daily contract with its own dialogue');
 assert.ok(game.includes("id:'northCommander'") && game.includes("id:'northMedic'") && game.includes("id:'southMedic'") && game.includes("id:'southCommander'"), 'Mission contacts must cover northern and southern map regions');
+assert.ok(game.includes("const contact=missionGivers.map") && game.includes("Маршрут к контакту"), 'Clicking a mission letter on the map must set a route to that NPC');
