@@ -2731,16 +2731,20 @@ interact=function(){
  if(roadkillRoofGunner&&roadkillTurretPlacementArmed){roadkillInstallTurret();return;}
  _interactRoadkill();
 };
+document.getElementById('action').onclick=interact;
 const _interactCarRoadkill=interactCarRecovery;
 interactCarRecovery=function(){if(roadkillIsLive()&&carRecovery.localSeat===null&&Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)<145&&(window.ApocalypseCoop?.getPlayers?.()||[]).some(p=>p.carSeat===0)){toast('Для места стрелка нажми X и заберись на крышу');return true;}const wasRoof=roadkillRoofGunner;const result=_interactCarRoadkill();if(wasRoof&&carRecovery.localSeat===null)roadkillRoofGunner=false;return result;};
 const _attackRoadkill=attack;
 attack=function(){if(roadkillRoofGunner&&roadkillMission.turretMounted){roadkillFireTurret();return;} _attackRoadkill();};
+document.getElementById('attackTouch').onclick=attack;
 const _inventoryItemsRoadkill=inventoryItems;
 inventoryItems=function(){const items=_inventoryItemsRoadkill().map(v=>v.name==='Огнестрельное оружие'&&state.firearm==='rifle'?{...v,name:'АК-47'}:v);if(state.powerMedkit>0)items.unshift({icon:'🧰',name:'Мощная аптечка',count:state.powerMedkit,use:()=>{if(state.powerMedkit<1){toast('Мощных аптечек нет');return;}state.powerMedkit--;state.hp=100;state.infection=Math.max(0,state.infection-45);state.hydration=Math.min(100,state.hydration+20);save();updateHud();inventory();toast('Мощная аптечка использована · здоровье восстановлено');}});return items;};
 const _inventoryExpandedRoadkill=inventory;
 inventory=function(){_inventoryExpandedRoadkill();appendPanelAction('🚙','Операция «Мёртвая трасса»','Орда 1 500 · 100 убийств',openRoadkillMissionBoard);if(roadkillIsLive()&&roadkillMission.turretKit>0&&!roadkillMission.turretMounted)appendPanelAction('🔩','Станковая турель · выбрать для установки','1 комплект · X на крышу, затем E',()=>{roadkillTurretPlacementArmed=true;document.getElementById('panel')?.classList.add('hidden');toast('ТУРЕЛЬ ВЫБРАНА · нажми E, чтобы закрепить её на крыше');});if(roadkillMission.status==='complete')appendPanelAction('🏅','Операция «Мёртвая трасса» · выполнена','Награда получена',()=>toast('Операция уже завершена'));};
+document.getElementById('inventory').onclick=inventory;
 const _openWorkshopRoadkill=openWorkshop;
 openWorkshop=function(){_openWorkshopRoadkill();appendPanelAction('🚙','Операция «Мёртвая трасса»','Орда 1 500 · нужно 100 убийств',openRoadkillMissionBoard);};
+document.getElementById('craft').onclick=openWorkshop;
 document.getElementById('roadkillMissionStart')?.addEventListener('click',startRoadkillMission);
 document.getElementById('roadkillClimbTouch')?.addEventListener('click',roadkillClimb);
 document.getElementById('roadkillMissionClose')?.addEventListener('click',()=>document.getElementById('roadkillMissionModal')?.classList.add('hidden'));
