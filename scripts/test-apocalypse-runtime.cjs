@@ -426,6 +426,9 @@ assert.ok(game.includes("homeWorkbenchDay[b.id]===state.day") && game.includes("
 assert.ok(game.includes("homeRadioDay[b.id]===state.day") && game.includes("activeWaypoint={name:'Радиосигнал · припасы'"), 'Home radios must reveal a nearby unsearched supply cache and save its waypoint');
 assert.ok(game.includes("homeFurnitureLoot,homeRestedDay,homeWorkbenchDay,homeRadioDay"), 'Home furniture, rest, repair and radio progress must persist in existing saves');
 
+assert.ok(game.includes('const baseStructures=') && game.includes('function openBaseConstruction()') && game.includes('function drawBaseStructures()'), 'Modular base construction must persist and expose buildable structures');
+assert.ok(game.includes("type==='wall'") && game.includes("type==='floor'") && game.includes("type==='door'") && game.includes("type==='storage'") && game.includes("type==='generator'"), 'Base construction must include walls, floors, doors, storage and generators');
+assert.ok(game.includes('function drawUniqueInteriorLayout(b,floor)') && game.includes('function interactUniqueInterior(b,floor,d)'), 'Specialized interiors must have distinct layouts and persistent exploration rewards');
 console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
 
 // Release guard: ensure the CC0 radio bulletin and recorded zombie vocal variants are wired into cinematic playback.
