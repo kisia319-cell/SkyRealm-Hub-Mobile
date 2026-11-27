@@ -516,7 +516,7 @@ assert.ok(game.includes("function openCarMechanicBoard()") && game.includes("dia
 assert.ok(game.includes("carPartLocations") && game.includes("floor:4") && game.includes("carRecovery.parts.every(Boolean)"), 'The SUV recovery mission must require five parts, including four across the mechanic house floors');
 assert.ok(game.includes("repairRemaining=36") && game.includes("repairStep>=5") && game.includes("repairRunning"), 'Vehicle repair must have five timed stages totaling about three minutes');
 assert.ok(game.includes("carRecovery.stage==='return'") && game.includes("Принять ключи и забрать машину"), 'The repaired vehicle must be returned to the mechanic before ownership is granted');
-assert.ok(game.includes("carRecovery.driving?360") && game.includes("fuelTravel>=1800") && game.includes("Бензин закончился"), 'The unique vehicle must be manually driven and consume fuel');
+assert.ok(game.includes("carRecovery.localSeat") && game.includes("fuelTravel>=6000") && game.includes("Бензин закончился"), 'The unique vehicle must be manually driven and consume fuel');
 assert.ok(game.includes("for(const r of rivers)") && game.includes("createRadialGradient") && game.includes("ДОМ ИЛЬИ"), 'The map must display terrain, rivers and mechanic mission landmarks');
 assert.ok(html.includes('id="carHud"') && html.includes('touch-action:none'), 'Vehicle fuel HUD and touch-swipe map interaction must be present');
 assert.ok(!game.includes("Починить внедорожник · 18 металла") && game.includes("Внедорожник Ильи · миссия восстановления"), 'The old instant workshop recipe must not bypass the mechanic mission');
