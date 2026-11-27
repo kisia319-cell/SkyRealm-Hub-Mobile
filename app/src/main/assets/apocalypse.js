@@ -391,7 +391,7 @@ function drawSupplyCrate(x,y,scale=1,variant='field',opened=false){
  ctx.fillStyle=p.dark;ctx.beginPath();ctx.moveTo(-43,-15);ctx.lineTo(-32,-27);ctx.lineTo(34,-27);ctx.lineTo(43,-15);ctx.lineTo(35,-9);ctx.lineTo(-36,-9);ctx.closePath();ctx.fill();
  ctx.strokeStyle=p.edge;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-39,-15);ctx.lineTo(-30,-24);ctx.lineTo(32,-24);ctx.lineTo(39,-15);ctx.stroke();
  ctx.fillStyle=p.edge;ctx.fillRect(-34,19,68,3);ctx.fillStyle=p.dark;ctx.fillRect(-38,22,78,5);
- for(const xx of [-37,37])for(const yy of [-10,1,12,21]){ctx.fillStyle='#e0d0a6';ctx.beginPath();ctx.arc(xx,yy,1.7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#252c25';ctx.beginPath();ctx.arc(xx-.4,yy-.4,.65,0,Math.PI*2);ctx.fill();}
+ for(const xx of [-37,37])for(const yy of [-10,1,12,21]){ctx.fillStyle='#e0d0a6';ctx.beginPath();ctx.arc(xx,yy,1.4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#252c25';ctx.beginPath();ctx.arc(xx-.4,yy-.4,.65,0,Math.PI*2);ctx.fill();}
  // Broad securing straps and a central locking mechanism.
  ctx.fillStyle=p.dark;ctx.fillRect(-13,-18,7,39);ctx.fillRect(7,-18,7,39);
  ctx.fillStyle=p.edge;ctx.fillRect(-12,-17,2,36);ctx.fillRect(8,-17,2,36);
@@ -418,7 +418,7 @@ function drawSupplyCrate(x,y,scale=1,variant='field',opened=false){
  }
  // Stencilled category plate, unique marking and serial strip.
  ctx.fillStyle=p.dark;ctx.fillRect(-25,1,50,12);ctx.fillStyle=p.label;ctx.fillRect(-23,3,46,8);
- ctx.fillStyle=p.dark;ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(variant==='medical'?'MED / FIRST AID':variant==='military'?'MIL · FIELD KIT':'SUPPLY / RATIONS',0,9);
+ ctx.fillStyle=p.dark;ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(variant==='medical'?'MED':variant==='military'?'MIL':'SUPPLY',0,9);
  ctx.fillStyle=p.accent;ctx.fillRect(-20,16,40,3);ctx.fillStyle=p.dark;ctx.fillRect(-18,16,variant==='medical'?8:variant==='military'?25:15,3);
  // Scratches, chipped paint, dust and small hazard chevrons.
  ctx.strokeStyle='#e1d1a077';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-31,-3);ctx.lineTo(-25,-1);ctx.moveTo(20,-4);ctx.lineTo(29,-1);ctx.moveTo(-29,13);ctx.lineTo(-21,11);ctx.stroke();
