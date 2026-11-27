@@ -493,3 +493,7 @@ assert.ok(game.includes('const deadZombies=[]') && game.includes('function drawD
 assert.ok(game.includes('z.crawling=true') && game.includes('z.armInjuryUntil') && game.includes('z.headSnapUntil') && game.includes('function drawZombies()'), 'Leg injuries must trigger crawling and arm/head injuries must animate separately');
 assert.ok(game.includes('z.attackPowerScale||1') && game.includes('injuredArm&&side===1') && game.includes('injuredLeg?5:0'), 'Injured infected must show impaired movement and weaker attacks');
 assert.ok(html.includes('id="reloadTouch"') && html.includes('id="aimTouch"') && html.includes('id="combatAmmoHud"'), 'Mobile combat controls and magazine HUD must exist');
+
+assert.ok(game.includes("function attack(){") && game.includes("meleeComboIndex") && game.includes("['slash','stab','kick']"), 'Knife melee must support a three-step combo');
+assert.ok(game.includes("const canFinish=hasKnife") && game.includes("target.kind!=='alpha'") && game.includes("function playCombatSound(kind,suppressed=false)") && game.includes("takedown:[68,24,.42"), 'Close-range finishers must be gated and have their own sound profile');
+assert.ok(game.includes("type==='kick'") && game.includes("act==='takedown'") && game.includes("z.stunnedUntil>now"), 'Kicks and finishers must have animation effects and temporarily interrupt infected attacks');
