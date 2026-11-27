@@ -2573,7 +2573,7 @@ function openRoadkillMissionBoard(){
  ]);
 }
 function roadkillBroadcast(kind,extra={}){
- const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind,mission:{status:roadkillMission.status,partySize:roadkillMission.partySize,kills:roadkillMission.kills,spawned:roadkillMission.spawned,total:1500,eventId:roadkillMission.eventId,x:roadkillMission.x,y:roadkillMission.y,targetX:roadkillMission.targetX,targetY:roadkillMission.targetY,turretMounted:roadkillMission.turretMounted,turretMag:roadkillMission.turretMag,turretReserve:roadkillMission.turretReserve},...extra});
+ const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind,mission:{status:roadkillMission.status,partySize:roadkillMission.partySize,kills:roadkillMission.kills,spawned:roadkillMission.spawned,total:1500,eventId:roadkillMission.eventId,x:roadkillMission.x,y:roadkillMission.y,targetX:roadkillMission.targetX,targetY:roadkillMission.targetY,turretMounted:roadkillMission.turretMounted,turretKit:roadkillMission.turretKit,turretMag:roadkillMission.turretMag,turretReserve:roadkillMission.turretReserve},...extra});
 }
 function startRoadkillMission(){
  const count=whole(document.getElementById('roadkillPartySize')?.value,1,1,4),coop=window.ApocalypseCoop;
@@ -2594,6 +2594,7 @@ function startRoadkillMission(){
  document.getElementById('roadkillMissionModal')?.classList.add('hidden');save();roadkillBroadcast('roadkill-mission-start');
  toast('БРИФИНГ ПРИНЯТ · заберись на крышу клавишей X, выбери турель в рюкзаке и нажми E');
 }
+function roadkillClimb(){if(!roadkillIsLive()||carRecovery.localSeat!==null||Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)>=185)return false;const coop=window.ApocalypseCoop,occupied=(coop?.getPlayers?.()||[]).some(p=>p.carSeat===1);if(occupied){toast('Место стрелка на крыше уже занято');return false;}carRecovery.localSeat=1;roadkillRoofGunner=true;roadkillMission.localJoined=true;state.x=carRecovery.carX;state.y=carRecovery.carY;save();updateHud();toast('Ты забрался на крышу · открой рюкзак и выбери станковую турель');return true;}
 function roadkillInstallTurret(){
  if(!roadkillRoofGunner||carRecovery.localSeat!==1){toast('Сначала заберись на крышу машины клавишей X');return;}
  if(roadkillMission.status!=='preparing'||roadkillMission.turretMounted){toast('Турель уже установлена или операция не готова');return;}
@@ -2662,7 +2663,7 @@ function updateRoadkillMission(dt,now){
    else{const fx=Math.sin(carRecovery.angle),fy=-Math.cos(carRecovery.angle);roadkillMission.targetX=Math.max(WORLD_MIN+300,Math.min(WORLD_MAX-300,roadkillMission.targetX+fx*850));roadkillMission.targetY=Math.max(WORLD_MIN+300,Math.min(WORLD_MAX-300,roadkillMission.targetY+fy*850));activeWaypoint={name:'Мёртвая трасса · добей ещё '+(100-roadkillMission.kills),x:roadkillMission.targetX,y:roadkillMission.targetY};toast('Нужно ещё '+(100-roadkillMission.kills)+' убийств · орда продолжается');}
   }
  }
- if(now-roadkillLastSync>900){roadkillLastSync=now;save();updateRoadkillHud();}
+ if(now-roadkillLastSync>900){roadkillLastSync=now;save();updateRoadkillHud();if(authoritative)roadkillBroadcast('roadkill-mission-state');}
 }
 function updateRoadkillCarCrush(){
  if(roadkillMission.status!=='active'||carRecovery.localSeat!==0||Math.abs(carDynamics.speed)<12)return;
@@ -2675,11 +2676,12 @@ function updateRoadkillCarCrush(){
 }
 function updateRoadkillHud(){
  if(performance.now()-roadkillLastHud<220)return;roadkillLastHud=performance.now();
- const host=document.getElementById('roadkillHud');if(!host)return;
+ const host=document.getElementById('roadkillHud'),climb=document.getElementById('roadkillClimbTouch');if(climb){const show=roadkillIsLive()&&carRecovery.localSeat===null&&Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)<185;climb.classList.toggle('hidden',!show);}
+ if(!host)return;
  const show=roadkillIsLive()||roadkillMission.status==='complete'||roadkillMission.status==='failed';host.classList.toggle('hidden',!show);
  if(!show)return;
  const ammo=roadkillMission.turretMag+(roadkillMission.turretReserve);
- host.innerHTML='<strong>МЁРТВАЯ ТРАССА</strong><span>УБИЙСТВА '+roadkillMission.kills+'/100 · ОРДА '+roadkillMission.spawned+'/1500</span><span>ТУРЕЛЬ '+(roadkillMission.turretMounted?'УСТАНОВЛЕНА':'НЕ УСТАНОВЛЕНА')+' · '+ammo+'/385</span>';
+ host.innerHTML='<strong>МЁРТВАЯ ТРАССА</strong><span>УБИЙСТВА '+roadkillMission.kills+'/100 · ОРДА 1 500 · ПОДТЯНУТО '+roadkillMission.spawned+'</span><span>ТУРЕЛЬ '+(roadkillMission.turretMounted?'УСТАНОВЛЕНА':'НЕ УСТАНОВЛЕНА')+' · '+ammo+'/385</span>';
 }
 function drawRoadkillTurret(x,y,angle,scale){
  if(!roadkillMission.turretMounted)return;
@@ -2699,20 +2701,10 @@ function drawRoadkillTurretEffects(){
  for(const s of roadkillTurretShots){const sx=w/2+(s.x-state.x)*cameraZoom,sy=h/2+(s.y-state.y)*cameraZoom,tx=w/2+(s.tx-state.x)*cameraZoom,ty=h/2+(s.ty-state.y)*cameraZoom;ctx.save();ctx.globalAlpha=Math.max(0,s.life/.16);ctx.strokeStyle='#ffd48b';ctx.lineWidth=2;ctx.shadowColor='#ffd48b';ctx.shadowBlur=8;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(tx,ty);ctx.stroke();ctx.restore();s.life-=.04;}
  for(let i=roadkillTurretShots.length-1;i>=0;i--)if(roadkillTurretShots[i].life<=0)roadkillTurretShots.splice(i,1);
 }
+const roadkillHordeTexture=(()=>{const c=document.createElement('canvas');c.width=1100;c.height=2600;const g=c.getContext('2d');let seed=92731;const rnd=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;};for(let i=0;i<1500;i++){const x=18+rnd()*1064,y=12+rnd()*2576,s=.65+rnd()*.8;g.globalAlpha=.5+rnd()*.35;g.fillStyle=i%9===0?'#7e866d':'#29342b';g.beginPath();g.ellipse(x,y+4*s,3.4*s,2.1*s,0,0,Math.PI*2);g.fill();g.fillStyle=i%13===0?'#c3a77c':'#65735b';g.beginPath();g.arc(x,y-1*s,2.1*s,0,Math.PI*2);g.fill();}return c;})();
 function drawRoadkillHordeBackdrop(){
  if(!roadkillIsLive())return;
- const fx=Math.sin(carRecovery.angle),fy=-Math.cos(carRecovery.angle),sx=Math.cos(carRecovery.angle),sy=Math.sin(carRecovery.angle);
- const count=isAndroidDevice?72:150;
- ctx.save();for(let i=0;i<count;i++){
-  const lane=(i%15)-7,depth=180+Math.floor(i/15)*92+(i%4)*17;
-  const x=carRecovery.carX+fx*depth+sx*lane*32,y=carRecovery.carY+fy*depth+sy*lane*32;
-  if(Math.abs(x-state.x)>w+80||Math.abs(y-state.y)>h+80)continue;
-  const pulse=Math.sin(time*.004+i)*1.2;
-  ctx.globalAlpha=.26+(i%5)*.035;ctx.fillStyle=i%7===0?'#78806a':'#252d27';
-  ctx.beginPath();ctx.ellipse(x,y+4,5+pulse,3,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle=i%8===0?'#b9a17a':'#596653';ctx.beginPath();ctx.arc(x,y-4,3.2,0,Math.PI*2);ctx.fill();
- }
- ctx.restore();
+ ctx.save();ctx.translate(carRecovery.carX,carRecovery.carY);ctx.rotate(carRecovery.angle);ctx.globalAlpha=.84;ctx.drawImage(roadkillHordeTexture,-550,-2740,1100,2600);ctx.restore();
 }
 const _drawRoadkillZombies=drawZombies;
 drawZombies=function(){_drawRoadkillZombies();drawRoadkillHordeBackdrop();};
@@ -2742,20 +2734,18 @@ interactCarRecovery=function(){const wasRoof=roadkillRoofGunner;const result=_in
 const _attackRoadkill=attack;
 attack=function(){if(roadkillRoofGunner&&roadkillMission.turretMounted){roadkillFireTurret();return;} _attackRoadkill();};
 const _inventoryItemsRoadkill=inventoryItems;
-inventoryItems=function(){const items=_inventoryItemsRoadkill();if(state.powerMedkit>0)items.unshift({icon:'🧰',name:'Мощная аптечка',count:state.powerMedkit,use:()=>{if(state.powerMedkit<1){toast('Мощных аптечек нет');return;}state.powerMedkit--;state.hp=100;state.infection=Math.max(0,state.infection-45);state.hydration=Math.min(100,state.hydration+20);save();updateHud();inventory();toast('Мощная аптечка использована · здоровье восстановлено');}});return items;};
+inventoryItems=function(){const items=_inventoryItemsRoadkill().map(v=>v.name==='Огнестрельное оружие'&&state.firearm==='rifle'?{...v,name:'АК-47'}:v);if(state.powerMedkit>0)items.unshift({icon:'🧰',name:'Мощная аптечка',count:state.powerMedkit,use:()=>{if(state.powerMedkit<1){toast('Мощных аптечек нет');return;}state.powerMedkit--;state.hp=100;state.infection=Math.max(0,state.infection-45);state.hydration=Math.min(100,state.hydration+20);save();updateHud();inventory();toast('Мощная аптечка использована · здоровье восстановлено');}});return items;};
 const _inventoryExpandedRoadkill=inventory;
 inventory=function(){_inventoryExpandedRoadkill();appendPanelAction('🚙','Операция «Мёртвая трасса»','Орда 1 500 · 100 убийств',openRoadkillMissionBoard);if(roadkillIsLive()&&roadkillMission.turretKit>0&&!roadkillMission.turretMounted)appendPanelAction('🔩','Станковая турель · выбрать для установки','1 комплект · X на крышу, затем E',()=>{roadkillTurretPlacementArmed=true;document.getElementById('panel')?.classList.add('hidden');toast('ТУРЕЛЬ ВЫБРАНА · нажми E, чтобы закрепить её на крыше');});if(roadkillMission.status==='complete')appendPanelAction('🏅','Операция «Мёртвая трасса» · выполнена','Награда получена',()=>toast('Операция уже завершена'));};
 const _openWorkshopRoadkill=openWorkshop;
 openWorkshop=function(){_openWorkshopRoadkill();appendPanelAction('🚙','Операция «Мёртвая трасса»','Орда 1 500 · нужно 100 убийств',openRoadkillMissionBoard);};
 document.getElementById('roadkillMissionStart')?.addEventListener('click',startRoadkillMission);
+document.getElementById('roadkillClimbTouch')?.addEventListener('click',roadkillClimb);
 document.getElementById('roadkillMissionClose')?.addEventListener('click',()=>document.getElementById('roadkillMissionModal')?.classList.add('hidden'));
 window.addEventListener('keydown',e=>{
  const k=keyFromEvent(e);
  if(k==='x'&&gameActive&&roadkillIsLive()&&carRecovery.localSeat===null&&Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)<185){
-  const coop=window.ApocalypseCoop,occupied=(coop?.getPlayers?.()||[]).some(p=>p.carSeat===1);
-  if(occupied){toast('Место стрелка на крыше уже занято');return;}
-  carRecovery.localSeat=1;roadkillRoofGunner=true;roadkillMission.localJoined=true;state.x=carRecovery.carX;state.y=carRecovery.carY;
-  save();updateHud();toast('Ты забрался на крышу · открой рюкзак и выбери станковую турель');e.preventDefault();e.stopPropagation();
+  roadkillClimb();e.preventDefault();e.stopPropagation();
  }
 },true);
 window.addEventListener('apocalypse-coop-event',e=>{
