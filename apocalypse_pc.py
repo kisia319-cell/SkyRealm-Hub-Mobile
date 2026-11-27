@@ -130,6 +130,10 @@ class ApocalypseFileHandler(http.server.SimpleHTTPRequestHandler):
         if path in ("/", "/apocalypse.html"):
             try:
                 html = resource_path("apocalypse.html").read_text(encoding="utf-8")
+                # Fail early if the frozen Windows build omitted a script that the HTML loads.
+                for asset in ("apocalypse-character-3d.js", "apocalypse-cinematic-3d.js"):
+                    if f'<script src="{asset}"></script>' not in html or not resource_path(asset).is_file():
+                        raise FileNotFoundError(f"Required Apocalypse module is missing from the Windows package: {asset}")
                 # PrimeHub and the game share this validated profile. Inject it before
                 # apocalypse.js runs so it becomes the active defaults on every launch.
                 settings_json = json.dumps(read_apocalypse_settings(), ensure_ascii=False).replace("</", "<\\/")
