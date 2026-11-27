@@ -477,3 +477,7 @@ assert.ok(game.includes("slot:'loot-item'") && game.includes("p.itemIndex") && g
 assert.ok(game.includes("explorationCacheContents") && game.includes("Частично обысканный тайник") && game.includes("supplyShelterContents"), 'Exploration and survivor caches must preserve partial manual looting');
 assert.ok(game.includes("drop.loot") && game.includes("Аварийная поставка") && game.includes("site.loot") && game.includes("Операция · "), 'Airdrops and story-operation containers must use manual item transfer');
 assert.ok(game.includes("entry.contents.every(v=>v.picked)") && game.includes("itemIndex:loot.index"), 'Multi-item crates must persist partial progress and sync each taken item');
+
+assert.ok(game.includes("const combatVisualEffects=[]") && game.includes("function drawCombatVisualEffects()"), 'Combat visual feedback must be available');
+assert.ok(game.includes("type:'shot'") && game.includes("type:'impact'") && game.includes("type:'melee'"), 'Ranged shots, impacts and melee swings must have distinct effects');
+assert.ok(game.includes("function installCombatVisualPolish()") && game.includes("ctx.shadowBlur=13"), 'Held firearms must receive detailed procedural weapon polish and muzzle flash');
