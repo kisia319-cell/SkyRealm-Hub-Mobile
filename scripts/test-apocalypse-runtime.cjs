@@ -479,7 +479,7 @@ assert.ok(game.includes("drop.loot") && game.includes("Аварийная пос
 assert.ok(game.includes("entry.contents.every(v=>v.picked)") && game.includes("itemIndex:loot.index"), 'Multi-item crates must persist partial progress and sync each taken item');
 
 assert.ok(game.includes("const combatVisualEffects=[]") && game.includes("function drawCombatVisualEffects()"), 'Combat visual feedback must be available');
-assert.ok(game.includes("type:'shot'") && game.includes("type:'impact'") && game.includes("type:'melee'"), 'Ranged shots, impacts and melee swings must have distinct effects');
+assert.ok(game.includes("type:'shot'") && game.includes("type:'impact'") && game.includes("mode==='kick'?'kick'") && game.includes("type==='melee'||e.type==='kick'"), 'Ranged shots, impacts and melee swings must have distinct effects');
 assert.ok(game.includes("function installCombatVisualPolish()") && game.includes("ctx.shadowBlur=13"), 'Held firearms must receive detailed procedural weapon polish and muzzle flash');
 
 assert.ok(game.includes("function fireProjectile()") && game.includes("const combatProjectiles=[]") && game.includes("function updateCombatProjectiles(dt,now)"), 'Projectile firearms must use real moving bullets');
