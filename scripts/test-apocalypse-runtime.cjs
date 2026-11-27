@@ -524,7 +524,7 @@ assert.ok(game.includes("floor:1,x:460,y:535,label:'Блок предохран�
 
 assert.ok(game.includes("function missionWaypointCandidate()") && game.includes("function syncMissionWaypoint()") && game.includes("function updateWaypointArrival()"), 'Active mission stages must automatically receive a GPS destination and clear it after arrival');
 assert.ok(game.includes("m.setLineDash([13,8])") && game.includes("ФИНИШ") && game.includes("Маршрут проложен"), 'The map must draw a visible road-style route and accept custom destinations');
-assert.ok(game.includes("lastMapTap&&now-lastMapTap.time<390") && game.includes("clearActiveRoute()") && game.includes("Двойное нажатие удаляет его"), 'Double tapping the map must remove the active custom route');
+assert.ok(game.includes("lastMapTap&&now-lastMapTap.time<390") && game.includes("clearActiveRoute()") && html.includes("Двойное нажатие по карте удаляет маршрут"), 'Double tapping the map must remove the active custom route');
 assert.ok(game.includes("function carBlockedAt") && game.includes("carDynamics.speed=Math.min(590") && game.includes("carDynamics.skids.push") && game.includes("carDynamics.particles.push"), 'The SUV must accelerate, steer, drift, leave tire marks and emit collision particles');
 assert.ok(game.includes("function drawCarEffects()") && game.includes("carDynamics.wheelSpin") && game.includes("const bounce="), 'Vehicle wheels, suspension and impact effects must animate');
 assert.ok(game.includes("carRecovery.localSeat") && game.includes("const seat=[0,1,2,3].find") && game.includes("Все четыре места заняты"), 'The vehicle must support one driver and three co-op passengers');
