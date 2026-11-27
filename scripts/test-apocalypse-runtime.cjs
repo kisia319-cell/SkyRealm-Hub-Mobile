@@ -332,7 +332,7 @@ assert.ok(game.includes("const phase=(Math.floor(time/52000)%6),storm=phase===2,
 assert.ok(html.includes('id="quickbarHud"') && html.includes('id="quickSlot6"') && html.includes('id="objectiveHud"') && html.includes('id="waypointHud"') && html.includes('id="threatHud"'), 'Gameplay quickbar and guidance HUD must exist');
 assert.ok(html.includes('id="markerNavigate"') && html.includes('id="waypointClear"') && html.includes('id="mobileMoreSave"'), 'Waypoint selection and mobile quick save controls must exist');
 assert.ok(game.includes("Array.from({length:b.floors}") && game.includes("buildingFloors[lootBuilding.id]=floor>=lootBuilding.floors?1:floor+1") && game.includes("crateEntry.picked=crateEntry.contents.every(v=>v.picked)"), 'Each floor must have a multi-item searchable persistent crate and stair traversal');
-assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.max(.4,.68-(state.armorLevel-1)*.07)") && game.includes("46+(state.weaponLevel-2)*6"), 'New item effects must affect gameplay stats');
+assert.ok(game.includes("energyBoostUntil>now?1.22:1") && game.includes("Math.max(.4,.68-(state.armorLevel-1)*.07)") && game.includes("damageBase=hasKnife?(kick?17:heavy?34:25)"), 'New item effects must affect gameplay stats');
 
 assert.ok(game.includes("hydration:bounded(saved.hydration,100,0,100)") && game.includes("function updateHydration(dt,now)") && game.includes("state.hydration=Math.min(100,state.hydration+45)"), 'Thirst must drain over time and clean water must restore hydration');
 assert.ok(game.includes("function updateWaterFilter(now)") && game.includes("state.cleanWater=Math.min(12,state.cleanWater+state.waterFilterLevel)"), 'Rainwater filter must collect and cap purified water');
