@@ -431,6 +431,8 @@ assert.ok(game.includes("type==='wall'") && game.includes("type==='floor'") && g
 assert.ok(game.includes('function drawUniqueInteriorLayout(b,floor)') && game.includes('function interactUniqueInterior(b,floor,d)'), 'Specialized interiors must have distinct layouts and persistent exploration rewards');
 assert.ok(game.includes('function progressStoryArc(kind,amount=1)') && game.includes('function openStoryBoard()') && game.includes("progressStoryArc('explore',1)"), 'Three-stage persistent survivor story arc must track kills, salvage and interior exploration');
 assert.ok(game.includes('function interactBaseStructure()') && game.includes("b.type==='storage'") && game.includes("b.type==='generator'") && game.includes("b.open=!b.open"), 'Base doors, storage and generators must be interactive');
+assert.ok(game.includes('function updateBaseStructureRaid(now)') && game.includes('base-structure-damaged') && game.includes('МОДУЛЬ БАЗЫ'), 'Zombie raids must damage and destroy modular base structures and synchronize in co-op');
+assert.ok(game.includes('Ремонт требует 2 дерева и 1 металл') && game.includes('base-structure-built'), 'Base modules must be repairable and their placement must synchronize');
 console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
 
 // Release guard: ensure the CC0 radio bulletin and recorded zombie vocal variants are wired into cinematic playback.
