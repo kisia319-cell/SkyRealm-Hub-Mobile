@@ -255,6 +255,14 @@ const surfaceTextures=(()=>{
    g.fillRect(x,y,.6+rand()*1.4,.6+rand()*1.4);
    if(i%5===0){g.globalAlpha=.1;g.strokeStyle=colors[Math.floor(rand()*colors.length)];g.lineWidth=.45;g.beginPath();g.moveTo(x,y);g.lineTo(x+2+rand()*8,y+(rand()-.5)*2);g.stroke();}
   }
+  // A third micro-detail pass adds chipped paint, grit and short material scratches.
+  for(let i=0;i<detailCount*1.7;i++){
+   const x=rand()*128,y=rand()*128,tone=colors[Math.floor(rand()*colors.length)];
+   g.globalAlpha=.035+rand()*.095;g.fillStyle=tone;
+   if(i%6===0){g.fillRect(x,y,1+rand()*2,.45+rand()*.7);}
+   else{g.beginPath();g.arc(x,y,.35+rand()*.8,0,Math.PI*2);g.fill();}
+   if(strokes&&i%13===0){g.globalAlpha=.075;g.strokeStyle=tone;g.lineWidth=.45;g.beginPath();g.moveTo(x,y);g.lineTo(x+3+rand()*7,y+(rand()-.5)*2);g.stroke();}
+  }
   g.globalAlpha=1;return ctx.createPattern(c,'repeat');
  }
  return {
@@ -1241,20 +1249,39 @@ function drawSupplyDrop(){
 }
 function drawWorldAnimation(){
  if(prefs.effects==='low')return;
- // Moving motes, spores and distant ash give the whole scene subtle life without heavy particle systems.
- const night=worldClock>.62||worldClock<.08;
+ const night=worldClock>.62||worldClock<.08,balanced=prefs.effects==='balanced';
  ctx.save();
- for(let i=0;i<(prefs.effects==='balanced'?12:22);i++){
-  const seed=i*97.31,drift=(time*(night?.009:.018)+seed*13)%(w+80)-40;
-  const x=drift,y=(seed*7+Math.sin(time*.0015+i*2)*24)%(h+30)-15;
-  const glow=.25+.25*Math.sin(time*.003+i);
-  ctx.globalAlpha=night?glow*.65:glow*.3;
-  ctx.fillStyle=night?(i%3===0?'#b7d18a':'#d2c7a1'):'#d7d0a8';
-  ctx.beginPath();ctx.arc(x,y,i%5===0?1.8:1,0,Math.PI*2);ctx.fill();
+ // Layer 1: drifting ash, spores and fireflies with varied depth and soft glow.
+ for(let i=0;i<(balanced?18:32);i++){
+  const seed=i*97.31,drift=(time*(night?.009:.018)+seed*13)%(w+100)-50;
+  const x=drift,y=(seed*7+Math.sin(time*.0015+i*2)*24)%(h+36)-18;
+  const glow=.2+.3*Math.sin(time*.003+i),radius=i%7===0?2.1:i%3===0?1.45:.85;
+  ctx.globalAlpha=night?glow*.72:glow*.34;
+  ctx.fillStyle=night?(i%3===0?'#c8e6a0':'#e0d2a8'):(i%4===0?'#d5b77e':'#d7d0a8');
+  if(i%7===0){ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=7;}
+  ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+ }
+ // Layer 2: directional wind streaks make weather and movement easier to read.
+ if(wind>=.3){
+  ctx.globalAlpha=.12+wind*.1;ctx.strokeStyle='#d9dfc4';ctx.lineWidth=.8;
+  for(let i=0;i<(balanced?5:9);i++){
+   const x=(i*149+time*.07*(1+wind))%(w+90)-45,y=(i*83+Math.sin(time*.001+i)*22)%h;
+   ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+13,y-3,x+25+wind*18,y-1);ctx.stroke();
+  }
+ }
+ // Layer 3: tiny footfall puffs follow the survivor, without allocating particle objects.
+ const moving=Math.hypot(moveX,moveY)>.08||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].some(k=>keys.has(k));
+ if(moving){
+  const stride=time*.018,step=Math.sin(stride),side=Math.cos(stride);
+  ctx.globalAlpha=.12+Math.abs(step)*.16;ctx.fillStyle=night?'#c0b99a':'#d4c39b';
+  for(let i=0;i<3;i++){
+   const x=w/2-side*(i*5+8),y=h/2+13+Math.abs(step)*4+i*2;
+   ctx.beginPath();ctx.ellipse(x,y,2+i*.6,1+i*.25,stride*.08,0,Math.PI*2);ctx.fill();
+  }
  }
  if(night){
   const vignette=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.18,w/2,h/2,Math.max(w,h)*.72);
-  vignette.addColorStop(0,'#07100b00');vignette.addColorStop(1,'#02080555');
+  vignette.addColorStop(0,'#07100b00');vignette.addColorStop(1,'#02080566');
   ctx.fillStyle=vignette;ctx.fillRect(0,0,w,h);
  }
  ctx.restore();
