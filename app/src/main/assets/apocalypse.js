@@ -1169,7 +1169,7 @@ function updateConvenienceHud(){
 }
 function updateHud(){
  const now=performance.now();if(now-lastHudUpdate<125)return;lastHudUpdate=now;
- const ammoHud=document.getElementById('combatAmmoHud');if(ammoHud){ammoHud.textContent=state.firearm?(state.magAmmo+' / '+weaponMagazineSize(state.firearm)+'  ·  '+state.ammo+' в запасе'+(combatReload?'  ·  ЗАРЯДКА':'')):'НЕТ ОРУЖИЯ';ammoHud.classList.toggle('reloading',!!combatReload);ammoHud.classList.toggle('empty',!!state.firearm&&state.magAmmo===0&&!combatReload);}
+ const ammoHud=document.getElementById('combatAmmoHud');if(ammoHud){ammoHud.style.display=state.firearm?'block':'none';ammoHud.textContent=state.firearm?(state.magAmmo+' / '+weaponMagazineSize(state.firearm)+'  ·  '+state.ammo+' в запасе'+(combatReload?'  ·  ЗАРЯДКА':'')):'НЕТ ОРУЖИЯ';ammoHud.classList.toggle('reloading',!!combatReload);ammoHud.classList.toggle('empty',!!state.firearm&&state.magAmmo===0&&!combatReload);}
  const reloadBtn=document.getElementById('reloadTouch');if(reloadBtn)reloadBtn.disabled=!state.firearm||!!combatReload||state.ammo<=0||state.magAmmo>=weaponMagazineSize(state.firearm);const aimBtn=document.getElementById('aimTouch');if(aimBtn){aimBtn.classList.toggle('active',combatAimHeld);aimBtn.disabled=!state.firearm;}
  document.getElementById('health').textContent='♥ '+state.hp+' / 100';
  const staminaFill=document.getElementById('staminaFill'),staminaLabel=document.getElementById('staminaLabel');
