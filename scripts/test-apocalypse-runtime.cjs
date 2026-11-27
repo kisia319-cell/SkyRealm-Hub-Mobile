@@ -537,3 +537,9 @@ assert.ok(game.includes("carSeat:carRecovery.localSeat") && game.includes("vehic
 assert.ok(game.includes("occupants.push({seat:carRecovery.localSeat") && game.includes("if(Number.isInteger(p.carSeat))continue"), 'Seated players must be drawn inside the vehicle rather than walking beside it');
 assert.ok(html.includes('id="carSpeedHud"') && html.includes('id="carSpeedValue"') && html.includes("bottom:max(153px"), 'The km/h display must be visible above the mobile joystick and at the lower left');
 assert.ok(coop.includes("apocalypse-protocol-1.3.2"), 'Co-op clients must require the matching updated vehicle-seat protocol');
+
+assert.ok(game.includes("const roadkillMission=(()=>") && game.includes("total:1500") && game.includes("roadkillMission.kills>=100"), 'Roadkill operation must track a 1,500-infected horde and require at least 100 kills');
+assert.ok(game.includes("function roadkillInstallTurret()") && game.includes("function drawRoadkillTurret(") && game.includes("roadkillTurretMag")===false && game.includes("turretMag:whole(m.turretMag,77,0,77)"), 'Roadkill operation must support a roof-mounted 3D turret with 77-round magazines');
+assert.ok(game.includes("function updateRoadkillCarCrush()") && game.includes("combatDamageZombie(z,9999,now,'body')") && game.includes("function roadkillFireTurret()"), 'Vehicle collisions and turret fire must kill infected through animated combat damage');
+assert.ok(html.includes('id="roadkillMissionModal"') && html.includes('id="roadkillPartySize"') && html.includes('id="roadkillMissionStart"') && html.includes('id="roadkillHud"'), 'Roadkill mission briefing, party-size selection and HUD must exist');
+assert.ok(game.includes("powerMedkit:whole(saved.powerMedkit") && game.includes("roadkillGrantReward()") && game.includes("state.magAmmo=30;state.ammo=120"), 'Roadkill reward must grant a powerful medkit and five 30-round AK magazines');
