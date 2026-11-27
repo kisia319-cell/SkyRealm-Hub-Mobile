@@ -20,13 +20,14 @@ new vm.Script(coop, { filename: 'apocalypse-coop.js' });
 
 const expectedMove = [
 "function move(dt){",
+"  if(carRecovery.dialogActive)return;",
 "  let dx=moveX,dy=moveY;",
 "  if(keys.has('ArrowUp')||keys.has('w'))dy-=1;",
 "  if(keys.has('ArrowDown')||keys.has('s'))dy+=1;",
 "  if(keys.has('ArrowLeft')||keys.has('a'))dx-=1;",
 "  if(keys.has('ArrowRight')||keys.has('d'))dx+=1;",
 "  let len=Math.hypot(dx,dy);",
-"  if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=160*(wind>=.65?.82:wind>=.3?.94:1);const nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;}",
+"  if(len>.08){dx/=Math.max(1,len);dy/=Math.max(1,len);const speed=carRecovery.driving?360:160*(wind>=.65?.82:wind>=.3?.94:1),oldX=state.x,oldY=state.y,nx=state.x+dx*speed*dt,ny=state.y+dy*speed*dt;if(!blocked(nx,state.y))state.x=nx;if(!blocked(state.x,ny))state.y=ny;if(carRecovery.driving){const distance=Math.hypot(state.x-oldX,state.y-oldY);carRecovery.angle=Math.atan2(dy,dx);carRecovery.carX=state.x;carRecovery.carY=state.y;carRecovery.fuelTravel+=distance;while(carRecovery.fuelTravel>=1800&&carRecovery.fuel>0){carRecovery.fuelTravel-=1800;carRecovery.fuel--;}if(carRecovery.fuel<=0){carRecovery.fuel=0;carRecovery.driving=false;toast('Бензин закончился. Машина заглохла — найди заправку.');}}}",
 "}"
 ].join('\n');
 assert.equal(game.match(/function move\(dt\)\{[\s\S]*?\n\}/)?.[0], expectedMove, 'Player movement code must remain unchanged');
