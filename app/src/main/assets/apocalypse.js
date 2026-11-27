@@ -365,28 +365,66 @@ function building(b){
  ctx.moveTo(b.x,top);ctx.lineTo(b.x+b.w,top);ctx.lineTo(b.x+b.w,bottom);ctx.moveTo(b.x,bottom);ctx.lineTo(cx-47,bottom);ctx.moveTo(cx+47,bottom);ctx.lineTo(b.x+b.w,bottom);ctx.lineTo(b.x,top);ctx.stroke();
 }
 function drawSupplyCrate(x,y,scale=1,variant='field',opened=false){
- const palettes={field:['#3d4938','#7d7959','#b7a06b','#242d27','#d1bd8d'],medical:['#4b554b','#c7c5ad','#e0d8b8','#303b35','#a94d43'],military:['#303b3b','#68736a','#a99a72','#1d2828','#d0bd91']};
+ const palettes={
+  field:{top:'#66704f',front:'#48543d',side:'#303b2e',wood:'#8b805c',edge:'#b7a477',dark:'#202820',label:'#d8c99b',accent:'#c29b55'},
+  medical:{top:'#d0cbb5',front:'#a9a58f',side:'#777d70',wood:'#c6c0a8',edge:'#e6dfc6',dark:'#353d37',label:'#f0ead7',accent:'#b94e43'},
+  military:{top:'#52615a',front:'#35443e',side:'#202e2a',wood:'#687366',edge:'#b1a17b',dark:'#17211e',label:'#d9c9a0',accent:'#c18e42'}
+ };
  const p=palettes[variant]||palettes.field,pulse=.5+.5*Math.sin(time*.004+x*.013);
  ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
- ctx.fillStyle='#080d0b88';ctx.beginPath();ctx.ellipse(0,22,39,10,0,0,Math.PI*2);ctx.fill();
- const side=ctx.createLinearGradient(-31,-12,34,24);side.addColorStop(0,p[0]);side.addColorStop(.55,p[1]);side.addColorStop(1,p[3]);
- ctx.fillStyle=side;ctx.beginPath();ctx.moveTo(-34,-13);ctx.lineTo(28,-13);ctx.lineTo(35,-5);ctx.lineTo(35,20);ctx.lineTo(-29,20);ctx.lineTo(-35,13);ctx.closePath();ctx.fill();
- ctx.fillStyle=p[1];ctx.fillRect(-30,-9,60,26);
- for(let i=0;i<4;i++){const yy=-7+i*6;ctx.fillStyle=i%2?'#252e27':'#d1bd8d22';ctx.fillRect(-28,yy,56,2);}
- ctx.fillStyle=p[3];ctx.fillRect(-35,12,70,8);ctx.fillStyle=p[2];ctx.fillRect(-33,12,66,2);
- ctx.fillStyle='#202925';ctx.fillRect(-34,-13,7,33);ctx.fillRect(27,-13,7,33);ctx.fillStyle=p[2];ctx.fillRect(-33,-12,3,29);ctx.fillRect(30,-12,3,29);
- for(const xx of [-29,29])for(const yy of [-7,4,15]){ctx.fillStyle='#e0d1a3';ctx.beginPath();ctx.arc(xx,yy,1.4,0,Math.PI*2);ctx.fill();}
- ctx.fillStyle='#252d29';ctx.fillRect(-6,-12,12,34);ctx.fillStyle=p[2];ctx.fillRect(-2,-10,4,28);
- if(opened){
-  ctx.fillStyle='#111915';ctx.fillRect(-27,-17,54,7);ctx.save();ctx.translate(0,-16);ctx.rotate(-.2);ctx.fillStyle=p[0];ctx.fillRect(-34,-13,68,12);ctx.fillStyle=p[2];ctx.fillRect(-32,-12,64,3);ctx.fillStyle='#202a25';ctx.fillRect(-29,-3,58,3);ctx.restore();
-  ctx.fillStyle='#c7a66b';ctx.globalAlpha=.2+.13*pulse;ctx.fillRect(-22,-9,44,18);ctx.globalAlpha=1;
- }else{
-  const lid=ctx.createLinearGradient(0,-27,0,-8);lid.addColorStop(0,p[2]);lid.addColorStop(.35,p[1]);lid.addColorStop(1,p[0]);ctx.fillStyle=lid;
-  ctx.beginPath();ctx.moveTo(-36,-17);ctx.lineTo(-27,-27);ctx.lineTo(28,-27);ctx.lineTo(36,-17);ctx.lineTo(30,-9);ctx.lineTo(-31,-9);ctx.closePath();ctx.fill();ctx.strokeStyle='#202923';ctx.lineWidth=2;ctx.stroke();
-  ctx.fillStyle=p[2];ctx.fillRect(-30,-24,60,3);ctx.fillStyle='#242d27';ctx.fillRect(-7,-19,14,8);
+ // Grounding shadow and a chunky, three-dimensional crate body.
+ ctx.fillStyle='#080d0bc0';ctx.beginPath();ctx.ellipse(2,27,51,15,-.04,0,Math.PI*2);ctx.fill();
+ ctx.shadowColor='#000';ctx.shadowBlur=9;ctx.shadowOffsetY=5;
+ const body=ctx.createLinearGradient(-42,-8,43,25);body.addColorStop(0,p.top);body.addColorStop(.48,p.front);body.addColorStop(1,p.side);
+ ctx.fillStyle=body;ctx.beginPath();ctx.moveTo(-43,-15);ctx.lineTo(31,-15);ctx.lineTo(43,-5);ctx.lineTo(43,22);ctx.lineTo(-31,22);ctx.lineTo(-43,12);ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+ // Front wooden/composite slats, each with bevel, grain and weathering.
+ for(let i=0;i<4;i++){
+  const yy=-10+i*7;
+  ctx.fillStyle=i%2?p.front:p.wood;ctx.fillRect(-36,yy,72,6);
+  ctx.fillStyle='#e2d2a055';ctx.fillRect(-34,yy,68,1);
+  ctx.fillStyle='#10181355';ctx.fillRect(-35,yy+5,70,1);
+  ctx.strokeStyle='#171f1a66';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(-27+(i%2)*9,yy+3);ctx.lineTo(-7+(i%2)*9,yy+3);ctx.moveTo(13,yy+2);ctx.lineTo(27,yy+2);ctx.stroke();
  }
- ctx.fillStyle=p[4];ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(variant==='medical'?'MED':variant==='military'?'MIL':'SUPPLY',0,8);
- ctx.fillStyle=variant==='medical'?'#b84e43':'#d1b56e';ctx.fillRect(-10,18,20,3);ctx.strokeStyle='#171f1a';ctx.lineWidth=1.5;ctx.strokeRect(-35,-13,70,33);
+ // Reinforced end caps, corner protectors, cross-braces and rivets.
+ ctx.fillStyle=p.dark;ctx.fillRect(-43,-15,8,38);ctx.fillRect(35,-7,8,29);
+ ctx.fillStyle=p.edge;ctx.fillRect(-41,-13,3,33);ctx.fillRect(38,-5,2,24);
+ ctx.fillStyle=p.dark;ctx.beginPath();ctx.moveTo(-43,-15);ctx.lineTo(-32,-27);ctx.lineTo(34,-27);ctx.lineTo(43,-15);ctx.lineTo(35,-9);ctx.lineTo(-36,-9);ctx.closePath();ctx.fill();
+ ctx.strokeStyle=p.edge;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-39,-15);ctx.lineTo(-30,-24);ctx.lineTo(32,-24);ctx.lineTo(39,-15);ctx.stroke();
+ ctx.fillStyle=p.edge;ctx.fillRect(-34,19,68,3);ctx.fillStyle=p.dark;ctx.fillRect(-38,22,78,5);
+ for(const xx of [-37,37])for(const yy of [-10,1,12,21]){ctx.fillStyle='#e0d0a6';ctx.beginPath();ctx.arc(xx,yy,1.7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#252c25';ctx.beginPath();ctx.arc(xx-.4,yy-.4,.65,0,Math.PI*2);ctx.fill();}
+ // Broad securing straps and a central locking mechanism.
+ ctx.fillStyle=p.dark;ctx.fillRect(-13,-18,7,39);ctx.fillRect(7,-18,7,39);
+ ctx.fillStyle=p.edge;ctx.fillRect(-12,-17,2,36);ctx.fillRect(8,-17,2,36);
+ ctx.fillStyle='#171e1a';ctx.fillRect(-8,-15,16,15);ctx.fillStyle=p.accent;ctx.fillRect(-6,-13,12,10);ctx.fillStyle='#292f27';ctx.fillRect(-2,-11,4,7);
+ // Top lid: open crates visibly expose the inner cavity and lifted lid.
+ if(opened){
+  ctx.fillStyle='#101713';ctx.beginPath();ctx.moveTo(-34,-13);ctx.lineTo(31,-13);ctx.lineTo(34,9);ctx.lineTo(-31,9);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#171f1a';ctx.fillRect(-30,-9,60,15);
+  ctx.save();ctx.translate(0,-18);ctx.rotate(-.23);
+  ctx.fillStyle=p.side;ctx.beginPath();ctx.moveTo(-39,-5);ctx.lineTo(-31,-18);ctx.lineTo(31,-18);ctx.lineTo(39,-5);ctx.lineTo(34,4);ctx.lineTo(-34,4);ctx.closePath();ctx.fill();
+  ctx.fillStyle=p.top;ctx.fillRect(-32,-15,64,5);ctx.fillStyle=p.edge;ctx.fillRect(-29,-18,58,2);
+  ctx.strokeStyle=p.dark;ctx.lineWidth=2;ctx.strokeRect(-36,-6,72,10);ctx.restore();
+  ctx.save();ctx.globalAlpha=.25+.2*pulse;ctx.fillStyle=variant==='medical'?'#e4e0c0':'#e6c47c';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=15;ctx.fillRect(-23,-8,46,15);ctx.restore();
+  // A few readable silhouettes make the opened state unmistakable.
+  for(let i=0;i<3;i++){ctx.fillStyle=[p.accent,'#aeb6a0','#687c70'][i];ctx.fillRect(-18+i*16,-7-(i%2)*3,10,7);ctx.fillStyle='#d5c7a1';ctx.fillRect(-17+i*16,-8-(i%2)*3,8,2);}
+ }else{
+  const lid=ctx.createLinearGradient(0,-30,0,-8);lid.addColorStop(0,p.edge);lid.addColorStop(.38,p.top);lid.addColorStop(1,p.front);
+  ctx.fillStyle=lid;ctx.beginPath();ctx.moveTo(-43,-17);ctx.lineTo(-32,-30);ctx.lineTo(31,-30);ctx.lineTo(43,-17);ctx.lineTo(34,-9);ctx.lineTo(-36,-9);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=p.dark;ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#f0dfb055';ctx.fillRect(-30,-26,58,2);
+  ctx.fillStyle=p.dark;ctx.fillRect(-9,-20,18,9);ctx.fillStyle=p.accent;ctx.fillRect(-6,-18,12,5);
+  // Water-resistant canvas cover and diagonal hazard marking.
+  ctx.fillStyle='#10181355';ctx.beginPath();ctx.moveTo(-30,-27);ctx.lineTo(27,-27);ctx.lineTo(33,-17);ctx.lineTo(-35,-17);ctx.closePath();ctx.fill();
+ }
+ // Stencilled category plate, unique marking and serial strip.
+ ctx.fillStyle=p.dark;ctx.fillRect(-25,1,50,12);ctx.fillStyle=p.label;ctx.fillRect(-23,3,46,8);
+ ctx.fillStyle=p.dark;ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText(variant==='medical'?'MED / FIRST AID':variant==='military'?'MIL · FIELD KIT':'SUPPLY / RATIONS',0,9);
+ ctx.fillStyle=p.accent;ctx.fillRect(-20,16,40,3);ctx.fillStyle=p.dark;ctx.fillRect(-18,16,variant==='medical'?8:variant==='military'?25:15,3);
+ // Scratches, chipped paint, dust and small hazard chevrons.
+ ctx.strokeStyle='#e1d1a077';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-31,-3);ctx.lineTo(-25,-1);ctx.moveTo(20,-4);ctx.lineTo(29,-1);ctx.moveTo(-29,13);ctx.lineTo(-21,11);ctx.stroke();
+ ctx.fillStyle='#171f1a';for(let i=0;i<4;i++){ctx.fillRect(-30+i*5,24,3,2);}
+ if(variant==='military'){ctx.fillStyle='#d2b66e';ctx.beginPath();ctx.moveTo(25,-24);ctx.lineTo(32,-20);ctx.lineTo(25,-16);ctx.lineTo(18,-20);ctx.closePath();ctx.fill();ctx.fillStyle=p.dark;ctx.fillRect(24,-22,2,4);}
+ if(variant==='medical'){ctx.fillStyle='#b94e43';ctx.fillRect(-4,-25,8,3);ctx.fillRect(-1,-28,3,9);}
  ctx.restore();
 }
 function drawBuildingInterior(b){
