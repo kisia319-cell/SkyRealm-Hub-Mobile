@@ -2458,28 +2458,28 @@ function openCampaignMissionBoard(){
  const active=campaign.status==='active';
  showPanel('Борис · инженер связи',active?'«Связь ещё держится. Я вывел текущую цель на карту. Следи за метками — некоторые этапы находятся далеко друг от друга».':'«У меня есть частота военного ретранслятора. Если восстановим маяк, сможем найти колонну и пропавших людей. Это длинная операция по всей территории».',[{icon:'📡',name:active?'Продолжить операцию «Последний сигнал»':'Начать операцию «Последний сигнал»',count:active?'Этап '+(campaign.stage+1)+'/10 · '+campaignObjectiveText():'10 этапов · исследование, оборона, спасение и выбор финала',use:acceptCampaignMission}]);
 }
-function openCommanderBoard(){
+function openCommanderBoard(contactName='Соколов'){
  ensureDailyContract();
  const requirements={wood:6,kills:4,salvage:3},names={wood:'Собрать 6 древесины',kills:'Уничтожить 4 заражённых',salvage:'Разобрать 3 машины'};
  const target=requirements[state.contractType]||4,progress=Math.min(target,state.contractProgress),ready=progress>=target&&!state.contractClaimed;
- showPanel('Соколов · полевой штаб','«Поселению нужны люди, которые выполняют конкретные приказы. Контракт обновляется каждый день. Выполни задачу и забери снабжение здесь».',[{icon:'📜',name:'Контракт дня · '+names[state.contractType],count:progress+'/'+target+(state.contractClaimed?' · уже получена награда':'')},{icon:'🎁',name:ready?'Забрать награду за контракт':'Награда · 6 металла, 3 крепежа и 2 воды',count:ready?'готово':'сначала выполни приказ',use:ready?claimDailyContract:null}]);
+ showPanel(contactName+' · полевой штаб','«Поселению нужны люди, которые выполняют конкретные приказы. Контракт обновляется каждый день. Выполни задачу и забери снабжение здесь».',[{icon:'📜',name:'Контракт дня · '+names[state.contractType],count:progress+'/'+target+(state.contractClaimed?' · уже получена награда':'')},{icon:'🎁',name:ready?'Забрать награду за контракт':'Награда · 6 металла, 3 крепежа и 2 воды',count:ready?'готово':'сначала выполни приказ',use:ready?claimDailyContract:null}]);
 }
 function openMissionGiver(g){
  if(g.id==='mark'){openMark();return;}
- if(g.mission==='command'){openCommanderBoard();return;}
+ if(g.mission==='command'){openCommanderBoard(g.name);return;}
  if(g.mission==='story'){openStoryBoard();return;}
  if(g.mission==='campaign'){openCampaignMissionBoard();return;}
  if(g.mission==='signal'){
-  if(lastSignalMission?.status==='completed'){showPanel('Роман · радиосвязь','«Запись с борта найдена. Я сохранил координаты и передал их поселению».',[{icon:'✓',name:'Операция «Чёрный самолёт»',count:'Завершена'}]);return;}
+  if(lastSignalMission?.status==='completed'){showPanel(g.name+' · радиосвязь','«Запись с борта найдена. Я сохранил координаты и передал их поселению».',[{icon:'✓',name:'Операция «Чёрный самолёт»',count:'Завершена'}]);return;}
   beginLastSignalEvent();return;
  }
  if(g.mission==='salvage'){
   const next=wrecks.map((v,i)=>({v,i,d:Math.hypot(state.x-v.x,state.y-v.y)})).filter(v=>!v.v.done).sort((a,b)=>a.d-b.d)[0];
-  showPanel('Сева · механик-разборщик',next?'«Мне нужны детали с разбитых машин. Я отметил ближайший остов — разбери его и возвращайся к Марку за наградой».':'«В округе пока нет доступных машин. Марк обновит поручение с наступлением нового дня».',[{icon:'⚙️',name:next?'Отметить ближайшую аварийную машину':'Нет доступных машин',count:next?Math.round(next.d)+' м':'Ожидай новое поручение',use:next?()=>{activeWaypoint={name:'Аварийная машина',x:next.v.x,y:next.v.y};save();updateHud();document.getElementById('panel')?.classList.add('hidden');toast('Маршрут проложен к аварийной машине');}:null}]);return;
+  showPanel(g.name+' · механик-разборщик',next?'«Мне нужны детали с разбитых машин. Я отметил ближайший остов — разбери его и возвращайся к Марку за наградой».':'«В округе пока нет доступных машин. Марк обновит поручение с наступлением нового дня».',[{icon:'⚙️',name:next?'Отметить ближайшую аварийную машину':'Нет доступных машин',count:next?Math.round(next.d)+' м':'Ожидай новое поручение',use:next?()=>{activeWaypoint={name:'Аварийная машина',x:next.v.x,y:next.v.y};save();updateHud();document.getElementById('panel')?.classList.add('hidden');toast('Маршрут проложен к аварийной машине');}:null}]);return;
  }
  if(g.mission==='cache'){
   const next=explorationCaches.map((p,i)=>({p,i,d:Math.hypot(state.x-p.x,state.y-p.y)})).filter(v=>!foundCaches.has(v.i)).sort((a,b)=>a.d-b.d)[0];
-  showPanel('Анна · следопыт','«В старых районах ещё остались тайники. Я могу отметить ближайший известный сигнал, но добираться придётся самому».',[{icon:'🧭',name:next?'Отметить тайник · '+next.p.name:'Все известные тайники найдены',count:next?Math.round(next.d)+' м':'Проверь радиоузел позже',use:next?()=>{activeWaypoint={name:next.p.name,x:next.p.x,y:next.p.y};save();updateHud();document.getElementById('panel')?.classList.add('hidden');toast('Маршрут проложен к тайнику');}:null}]);return;
+  showPanel(g.name+' · следопыт','«В старых районах ещё остались тайники. Я могу отметить ближайший известный сигнал, но добираться придётся самому».',[{icon:'🧭',name:next?'Отметить тайник · '+next.p.name:'Все известные тайники найдены',count:next?Math.round(next.d)+' м':'Проверь радиоузел позже',use:next?()=>{activeWaypoint={name:next.p.name,x:next.p.x,y:next.p.y};save();updateHud();document.getElementById('panel')?.classList.add('hidden');toast('Маршрут проложен к тайнику');}:null}]);return;
  }
 }
 function interactMissionGiver(){

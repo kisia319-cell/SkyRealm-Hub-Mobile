@@ -522,3 +522,4 @@ assert.ok(game.includes("mission==='story'") && game.includes("mission==='signal
 assert.ok(game.includes("function openCommanderBoard()") && game.includes("g.mission==='command'"), 'The military NPC must offer the existing daily contract with its own dialogue');
 assert.ok(game.includes("id:'northCommander'") && game.includes("id:'northMedic'") && game.includes("id:'southMedic'") && game.includes("id:'southCommander'"), 'Mission contacts must cover northern and southern map regions');
 assert.ok(game.includes("const contact=missionGivers.map") && game.includes("Маршрут к контакту"), 'Clicking a mission letter on the map must set a route to that NPC');
+assert.ok(game.includes("showPanel(g.name+' · механик-разборщик'") && game.includes("showPanel(g.name+' · следопыт'") && game.includes("openCommanderBoard(g.name)"), 'Each mission contact must keep its own name in dialogue, including northern and southern counterparts');
