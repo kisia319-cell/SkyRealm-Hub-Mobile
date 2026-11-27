@@ -523,3 +523,11 @@ assert.ok(game.includes("function openCommanderBoard(contactName='Соколов
 assert.ok(game.includes("id:'northCommander'") && game.includes("id:'northMedic'") && game.includes("id:'southMedic'") && game.includes("id:'southCommander'"), 'Mission contacts must cover northern and southern map regions');
 assert.ok(game.includes("const contact=missionGivers.map") && game.includes("Маршрут к контакту"), 'Clicking a mission letter on the map must set a route to that NPC');
 assert.ok(game.includes("showPanel(g.name+' · механик-разборщик'") && game.includes("showPanel(g.name+' · следопыт'") && game.includes("openCommanderBoard(g.name)"), 'Each mission contact must keep its own name in dialogue, including northern and southern counterparts');
+
+assert.ok(game.includes("function openCarMechanicBoard()") && game.includes("dialogRemaining=30"), 'The mechanic mission must unlock after the first two story stages and include a 30-second briefing');
+assert.ok(game.includes("carPartLocations") && game.includes("floor:4") && game.includes("carRecovery.parts.every(Boolean)"), 'The SUV recovery mission must require five parts, including four across the mechanic house floors');
+assert.ok(game.includes("repairRemaining=36") && game.includes("repairStep>=5") && game.includes("repairRunning"), 'Vehicle repair must have five timed stages totaling about three minutes');
+assert.ok(game.includes("carRecovery.stage==='return'") && game.includes("Принять ключи и забрать машину"), 'The repaired vehicle must be returned to the mechanic before ownership is granted');
+assert.ok(game.includes("carRecovery.driving?360") && game.includes("fuelTravel>=1800") && game.includes("Бензин закончился"), 'The unique vehicle must be manually driven and consume fuel');
+assert.ok(game.includes("for(const r of rivers)") && game.includes("createRadialGradient") && game.includes("ДОМ ИЛЬИ"), 'The map must display terrain, rivers and mechanic mission landmarks');
+assert.ok(html.includes('id="carHud"') && html.includes('touch-action:none'), 'Vehicle fuel HUD and touch-swipe map interaction must be present');
