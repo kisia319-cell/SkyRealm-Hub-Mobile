@@ -533,3 +533,4 @@ assert.ok(game.includes("carRecovery.driving?360") && game.includes("fuelTravel>
 assert.ok(game.includes("for(const r of rivers)") && game.includes("createRadialGradient") && game.includes("ДОМ ИЛЬИ"), 'The map must display terrain, rivers and mechanic mission landmarks');
 assert.ok(html.includes('id="carHud"') && html.includes('touch-action:none'), 'Vehicle fuel HUD and touch-swipe map interaction must be present');
 assert.ok(!game.includes("Починить внедорожник · 18 металла") && game.includes("Внедорожник Ильи · миссия восстановления"), 'The old instant workshop recipe must not bypass the mechanic mission');
+assert.ok(game.includes("floor:1,x:460,y:535,label:'Блок предохранителей'") && game.includes("РЕМОНТ · '+Math.ceil(carRecovery.repairRemaining)"), 'The home part must be separated from the generic crate and the repair animation must show its active timer');
