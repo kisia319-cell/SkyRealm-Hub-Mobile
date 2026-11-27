@@ -509,7 +509,7 @@ assert.ok(game.includes("m.fillText(g.mission==='car_recovery'?(carRecovery.stag
 assert.ok(game.includes("mission==='story'") && game.includes("mission==='signal'") && game.includes("mission==='salvage'") && game.includes("mission==='cache'"), 'Existing story, crash, salvage and exploration missions must be discoverable from NPCs');
 assert.ok(game.includes("function openCommanderBoard(contactName='Соколов')") && game.includes("g.mission==='command'"), 'The military NPC must offer the existing daily contract with its own dialogue');
 assert.ok(game.includes("id:'northCommander'") && game.includes("id:'northMedic'") && game.includes("id:'southMedic'") && game.includes("id:'southCommander'"), 'Mission contacts must cover northern and southern map regions');
-assert.ok(game.includes("const contact=missionGivers.map") && game.includes("name:'Контакт: '+contact.g.name") && game.includes("activeWaypoint={name:'Пользовательский маршрут'"), 'Clicking a mission letter or empty map space must set a GPS route');
+assert.ok(game.includes("contact=missionGivers.map") && game.includes("name:'Контакт: '+contact.g.name") && game.includes("activeWaypoint={name:'Пользовательский маршрут'"), 'Clicking a mission letter or empty map space must set a GPS route');
 assert.ok(game.includes("showPanel(g.name+' · механик-разборщик'") && game.includes("showPanel(g.name+' · следопыт'") && game.includes("openCommanderBoard(g.name)"), 'Each mission contact must keep its own name in dialogue, including northern and southern counterparts');
 
 assert.ok(game.includes("function openCarMechanicBoard()") && game.includes("dialogRemaining=30"), 'The mechanic mission must unlock after the first two story stages and include a 30-second briefing');
