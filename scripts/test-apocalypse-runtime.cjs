@@ -543,3 +543,6 @@ assert.ok(game.includes("function roadkillInstallTurret()") && game.includes("fu
 assert.ok(game.includes("function updateRoadkillCarCrush()") && game.includes("combatDamageZombie(z,9999,now,'body')") && game.includes("function roadkillFireTurret()"), 'Vehicle collisions and turret fire must kill infected through animated combat damage');
 assert.ok(html.includes('id="roadkillMissionModal"') && html.includes('id="roadkillPartySize"') && html.includes('id="roadkillMissionStart"') && html.includes('id="roadkillHud"'), 'Roadkill mission briefing, party-size selection and HUD must exist');
 assert.ok(game.includes("powerMedkit:whole(saved.powerMedkit") && game.includes("roadkillGrantReward()") && game.includes("state.magAmmo=30;state.ammo=120"), 'Roadkill reward must grant a powerful medkit and five 30-round AK magazines');
+
+assert.ok(game.includes("updateZombies(dt,now);updateRoadkillMission(dt,now);") && game.includes("roadkillMission.status==='active'?1800:12000"), 'Roadkill mission loop must run continuously and recycle animated corpses without exhausting the mobile AI pool');
+assert.ok(game.includes("const roadkillHordeTexture=(()=>") && game.includes("for(let i=0;i<1500;i++)") && html.includes('id="roadkillClimbTouch"'), 'The 1,500-member horde must render as a cached crowd texture and expose a touch roof-climb control');
