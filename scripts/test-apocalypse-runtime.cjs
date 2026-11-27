@@ -461,6 +461,8 @@ assert.ok(game.includes("campaign-cache") && game.includes("campaign-relay") && 
 assert.ok(game.includes("longCampaign:campaign") && game.includes("campaignObjectiveText()"), 'Long operation progress must persist and appear in the objective HUD');
 assert.ok(game.includes("function campaignBeginInvestigation()") && game.includes("campaign-intel") && game.includes("campaign-frequency") && game.includes("campaign-archive"), 'Rescue branch must expand into a non-combat investigation, radio restoration and archive finale');
 assert.ok(game.includes("intel:whole(c.intel,0,0,3)") && game.includes("tunedNodes:whole(c.tunedNodes,0,0,3)"), 'Investigation and radio progress must persist across saves');
+assert.ok(game.includes("function chooseCampaignFrequency(freq)") && game.includes("[87.4,103.2,91.6]"), 'Radio restoration must be a clue-based frequency puzzle with three distinct correct channels');
+assert.ok(html.includes('id="campaignFrequencyModal"') && html.includes('id="campaignFrequency874"') && html.includes('id="campaignFrequency916"') && html.includes('id="campaignFrequency1032"'), 'Radio tuning must expose three selectable in-game frequencies');
 assert.ok(html.includes('id="campaignArchiveModal"') && html.includes('id="campaignBroadcastChoice"') && html.includes('id="campaignEncryptChoice"'), 'Archive investigation must offer two in-game story decisions');
 assert.ok(game.includes("const detailCount=Math.round(count*1.32)") && game.includes("gy+=36"), 'World material textures must receive additional procedural detail');
 
