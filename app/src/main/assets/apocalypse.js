@@ -99,7 +99,7 @@ let radioSignal=null,radioSignalNextAt=performance.now()+30000;
 let ambientEventNextAt=performance.now()+45000+Math.random()*35000;
 const randomEventSites=Array.isArray(saved.randomEventSites)?saved.randomEventSites.filter(v=>v&&['car','checkpoint','camp','gunfire','scream','convoy','quarantine','survivors','signal','horde','campaign','campaign-beacon-part','campaign-cache','campaign-relay','campaign-wave','campaign-convoy','campaign-extract'].includes(v.type)&&Number.isFinite(v.x)&&Number.isFinite(v.y)).slice(-40):[];
 const campaign=(()=>{const c=saved.longCampaign&&typeof saved.longCampaign==='object'?saved.longCampaign:{};return{status:['locked','active','complete'].includes(c.status)?c.status:'locked',stage:whole(c.stage,0,0,9),runId:whole(c.runId,Date.now(),1,Number.MAX_SAFE_INTEGER),unlockAt:Number.isFinite(c.unlockAt)?c.unlockAt:Date.now()+240000,x:bounded(c.x,0,WORLD_MIN,WORLD_MAX),y:bounded(c.y,0,WORLD_MIN,WORLD_MAX),caches:whole(c.caches,0,0,3),beaconParts:whole(c.beaconParts,0,0,3),beaconActivated:c.beaconActivated===true,wave:whole(c.wave,0,0,7),waveWanted:whole(c.waveWanted,0,0,12),waveSpawned:whole(c.waveSpawned,0,0,12),nextWaveAt:whole(c.nextWaveAt,0,0,Number.MAX_SAFE_INTEGER),siteId:typeof c.siteId==='string'?c.siteId:'',completedAt:whole(c.completedAt,0,0,Number.MAX_SAFE_INTEGER),choice:['rescue','abandon'].includes(c.choice)?c.choice:'',rescued:c.rescued===true,intel:whole(c.intel,0,0,3),tunedNodes:whole(c.tunedNodes,0,0,3),archiveChoice:['broadcast','encrypt'].includes(c.archiveChoice)?c.archiveChoice:'',ending:['hope','hardline'].includes(c.ending)?c.ending:''}})();
-const roadkillMission=(()=>{const m=saved.roadkillMission&&typeof saved.roadkillMission==='object'?saved.roadkillMission:{};return{status:['locked','preparing','active','complete','failed'].includes(m.status)?m.status:'locked',partySize:whole(m.partySize,1,1,4),kills:whole(m.kills,0,0,1500),spawned:whole(m.spawned,0,0,1500),total:1500,eventId:typeof m.eventId==='string'?m.eventId:'',x:bounded(m.x,0,WORLD_MIN,WORLD_MAX),y:bounded(m.y,0,WORLD_MIN,WORLD_MAX),targetX:bounded(m.targetX,0,WORLD_MIN,WORLD_MAX),targetY:bounded(m.targetY,0,WORLD_MIN,WORLD_MAX),nextSpawnAt:0,startedAt:whole(m.startedAt,0,0,Number.MAX_SAFE_INTEGER),turretKit:whole(m.turretKit,0,0,1),turretMounted:m.turretMounted===true,turretMag:whole(m.turretMag,77,0,77),turretReserve:whole(m.turretReserve,308,0,308),turretReloadAt:0,turretLastShotAt:0,rewarded:m.rewarded===true,loadoutGranted:m.loadoutGranted===true,localJoined:false,priorInfectedCap:whole(m.priorInfectedCap,prefs?.infectedCap||24,8,60)}})();
+const roadkillMission=(()=>{const m=saved.roadkillMission&&typeof saved.roadkillMission==='object'?saved.roadkillMission:{};return{status:['locked','preparing','active','complete','failed'].includes(m.status)?m.status:'locked',partySize:whole(m.partySize,1,1,4),kills:whole(m.kills,0,0,1500),spawned:whole(m.spawned,0,0,1500),total:1500,eventId:typeof m.eventId==='string'?m.eventId:'',x:bounded(m.x,0,WORLD_MIN,WORLD_MAX),y:bounded(m.y,0,WORLD_MIN,WORLD_MAX),targetX:bounded(m.targetX,0,WORLD_MIN,WORLD_MAX),targetY:bounded(m.targetY,0,WORLD_MIN,WORLD_MAX),nextSpawnAt:0,startedAt:whole(m.startedAt,0,0,Number.MAX_SAFE_INTEGER),turretKit:whole(m.turretKit,0,0,1),turretMounted:m.turretMounted===true,turretMag:whole(m.turretMag,77,0,77),turretReserve:whole(m.turretReserve,308,0,308),turretReloadAt:0,turretLastShotAt:0,rewarded:m.rewarded===true,loadoutGranted:m.loadoutGranted===true,localJoined:false,priorInfectedCap:whole(m.priorInfectedCap,24,8,60)}})();
 const storyArc=(()=>{const q=saved.storyArc&&typeof saved.storyArc==='object'?saved.storyArc:{};return{active:q.active===true,stage:whole(q.stage,0,0,3),progress:whole(q.progress,0,0,99),completed:q.completed===true}})();
 const carRecovery=(()=>{const c=saved.carRecovery&&typeof saved.carRecovery==='object'?saved.carRecovery:{};return{stage:['locked','briefing','parts','repair','return','owned'].includes(c.stage)?c.stage:'locked',parts:Array.from({length:5},(_,i)=>Array.isArray(c.parts)?c.parts[i]===true:false),dialogRemaining:bounded(c.dialogRemaining,0,0,30),dialogLine:whole(c.dialogLine,0,0,6),dialogActive:c.dialogActive===true,repairStep:whole(c.repairStep,0,0,5),repairRemaining:bounded(c.repairRemaining,0,0,36),repairRunning:c.repairRunning===true,repairPaused:c.repairPaused===true,repaired:c.repaired===true,carX:bounded(c.carX,2168,WORLD_MIN,WORLD_MAX),carY:bounded(c.carY,390,WORLD_MIN,WORLD_MAX),angle:bounded(c.angle,0,-Math.PI*2,Math.PI*2),maxSpeed:whole(c.maxSpeed,45,45,100),driving:false,localSeat:null,fuel:whole(c.fuel,0,0,60),fuelTravel:bounded(c.fuelTravel,0,0,6000),unlockedNotice:c.unlockedNotice===true}})();
 const CAR_HOME_ID='car_owner_house',CAR_HOME_NPC={x:3680,y:1500},CAR_SPAWN={x:2168,y:390};
@@ -2573,7 +2573,7 @@ function openRoadkillMissionBoard(){
  ]);
 }
 function roadkillBroadcast(kind,extra={}){
- const coop=window.ApocalypseCoop;if(coop?.room?.status==='running'&&coop.isOwner())coop.send({kind,mission:{status:roadkillMission.status,partySize:roadkillMission.partySize,kills:roadkillMission.kills,spawned:roadkillMission.spawned,total:1500,eventId:roadkillMission.eventId,x:roadkillMission.x,y:roadkillMission.y,targetX:roadkillMission.targetX,targetY:roadkillMission.targetY,turretMounted:roadkillMission.turretMounted,turretMag:roadkillMission.turretMag,turretReserve:roadkillMission.turretReserve},...extra});
+ const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind,mission:{status:roadkillMission.status,partySize:roadkillMission.partySize,kills:roadkillMission.kills,spawned:roadkillMission.spawned,total:1500,eventId:roadkillMission.eventId,x:roadkillMission.x,y:roadkillMission.y,targetX:roadkillMission.targetX,targetY:roadkillMission.targetY,turretMounted:roadkillMission.turretMounted,turretMag:roadkillMission.turretMag,turretReserve:roadkillMission.turretReserve},...extra});
 }
 function startRoadkillMission(){
  const count=whole(document.getElementById('roadkillPartySize')?.value,1,1,4),coop=window.ApocalypseCoop;
@@ -2607,7 +2607,7 @@ function roadkillFireTurret(){
  if(now<roadkillMission.turretReloadAt)return false;
  if(roadkillMission.turretMag<=0){
   if(roadkillMission.turretReserve<=0){toast('Турель израсходовала все 5 магазинов');return false;}
-  roadkillMission.turkillReloadAt=now+1900;roadkillMission.turretReloadAt=roadkillMission.turkillReloadAt;
+  roadkillMission.turretReloadAt=now+1900;
   return false;
  }
  if(now-roadkillMission.turretLastShotAt<105)return false;
@@ -2620,7 +2620,7 @@ function roadkillFireTurret(){
  combatDamageZombie(target,44,now,'body');
  if(roadkillTurretShots.length>14)roadkillTurretShots.shift();
  if(roadkillMission.turretMag===0&&roadkillMission.turretReserve>0){roadkillMission.turretReloadAt=now+1900;toast('ТУРЕЛЬ · автоматическая перезарядка');}
- const coop=window.ApocalypseCoop;if(coop?.room?.status==='running'&&coop.isOwner())coop.send({kind:'roadkill-turret-ammo',mag:roadkillMission.turretMag,reserve:roadkillMission.turretReserve,reloadAt:roadkillMission.turretReloadAt});
+ const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'roadkill-turret-ammo',mag:roadkillMission.turretMag,reserve:roadkillMission.turretReserve,reloadAt:roadkillMission.turretReloadAt});
  return true;
 }
 function updateRoadkillMission(dt,now){
@@ -2632,7 +2632,7 @@ function updateRoadkillMission(dt,now){
   const coop=window.ApocalypseCoop;if(coop?.room?.status==='running'&&coop.isOwner())coop.send({kind:'roadkill-turret-ammo',mag:roadkillMission.turretMag,reserve:roadkillMission.turretReserve,reloadAt:0});
  }
  if(state.hp<=0||deathHandled){roadkillMission.status='failed';prefs.infectedCap=roadkillMission.priorInfectedCap;save();roadkillBroadcast('roadkill-mission-state');toast('ОПЕРАЦИЯ ПРОВАЛЕНА · выживший погиб');return;}
- if(roadkillMission.status==='preparing'&&roadkillMission.turretMounted&&carRecovery.localSeat===0){
+ const remoteDriver=(coop?.getPlayers?.()||[]).some(p=>p.carSeat===0);if(roadkillMission.status==='preparing'&&roadkillMission.turretMounted&&(carRecovery.localSeat===0||remoteDriver)){
   roadkillMission.status='active';roadkillMission.localJoined=true;roadkillMission.nextSpawnAt=now+250;
   activeWaypoint={name:'Мёртвая трасса · финиш через орду',x:roadkillMission.targetX,y:roadkillMission.targetY};
   roadkillBroadcast('roadkill-mission-state');toast('ОРДА ВПЕРЕДИ · 1 500 заражённых · уничтожь 100 и доберись до финиша');
@@ -2674,6 +2674,7 @@ function updateRoadkillCarCrush(){
  }}
 }
 function updateRoadkillHud(){
+ if(performance.now()-roadkillLastHud<220)return;roadkillLastHud=performance.now();
  const host=document.getElementById('roadkillHud');if(!host)return;
  const show=roadkillIsLive()||roadkillMission.status==='complete'||roadkillMission.status==='failed';host.classList.toggle('hidden',!show);
  if(!show)return;
@@ -2692,10 +2693,10 @@ function drawRoadkillTurret(x,y,angle,scale){
  ctx.save();ctx.rotate(aim);ctx.fillStyle='#171f1b';ctx.fillRect(-4,-21,8,18);ctx.fillStyle='#647267';ctx.fillRect(-3,-51,6,34);ctx.fillStyle='#aab2a0';ctx.fillRect(-4,-51,8,5);ctx.fillStyle='#252e28';ctx.fillRect(-6,-58,12,9);ctx.fillStyle='#879183';ctx.fillRect(-2,-57,4,7);
  ctx.strokeStyle='#c6c1a5';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-8,-17);ctx.lineTo(-8,-28);ctx.lineTo(8,-28);ctx.lineTo(8,-17);ctx.stroke();
  if(flash){ctx.globalCompositeOperation='lighter';ctx.shadowColor='#ffd28a';ctx.shadowBlur=16;ctx.fillStyle='#fff0bd';ctx.beginPath();ctx.moveTo(0,-60);ctx.lineTo(-10,-75);ctx.lineTo(0,-70);ctx.lineTo(10,-75);ctx.closePath();ctx.fill();}
- ctx.restore();ctx.fillStyle='#d6c99d';ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText('M2 · 7.62',0,25);ctx.restore();
+ ctx.restore();ctx.fillStyle='#d6c99d';ctx.font='bold 7px system-ui';ctx.textAlign='center';ctx.fillText('M2 · 7.62',0,25);const gunnerPresent=carRecovery.localSeat===1||(window.ApocalypseCoop?.getPlayers?.()||[]).some(p=>p.carSeat===1);if(gunnerPresent){ctx.fillStyle='#17221b';ctx.beginPath();ctx.ellipse(-27,1,8,12,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#596b55';ctx.fillRect(-34,-13,14,18);ctx.fillStyle='#c58f6d';ctx.beginPath();ctx.arc(-27,-19,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#30372e';ctx.beginPath();ctx.arc(-27,-21,6,Math.PI,Math.PI*2);ctx.fill();}ctx.restore();
 }
 function drawRoadkillTurretEffects(){
- for(const s of roadkillTurretShots){ctx.save();ctx.globalAlpha=Math.max(0,s.life/.16);ctx.strokeStyle='#ffd48b';ctx.lineWidth=2;ctx.shadowColor='#ffd48b';ctx.shadowBlur=8;ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.tx,s.ty);ctx.stroke();ctx.restore();s.life-=.04;}
+ for(const s of roadkillTurretShots){const sx=w/2+(s.x-state.x)*cameraZoom,sy=h/2+(s.y-state.y)*cameraZoom,tx=w/2+(s.tx-state.x)*cameraZoom,ty=h/2+(s.ty-state.y)*cameraZoom;ctx.save();ctx.globalAlpha=Math.max(0,s.life/.16);ctx.strokeStyle='#ffd48b';ctx.lineWidth=2;ctx.shadowColor='#ffd48b';ctx.shadowBlur=8;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(tx,ty);ctx.stroke();ctx.restore();s.life-=.04;}
  for(let i=roadkillTurretShots.length-1;i>=0;i--)if(roadkillTurretShots[i].life<=0)roadkillTurretShots.splice(i,1);
 }
 function drawRoadkillHordeBackdrop(){
@@ -2743,7 +2744,7 @@ attack=function(){if(roadkillRoofGunner&&roadkillMission.turretMounted){roadkill
 const _inventoryItemsRoadkill=inventoryItems;
 inventoryItems=function(){const items=_inventoryItemsRoadkill();if(state.powerMedkit>0)items.unshift({icon:'🧰',name:'Мощная аптечка',count:state.powerMedkit,use:()=>{if(state.powerMedkit<1){toast('Мощных аптечек нет');return;}state.powerMedkit--;state.hp=100;state.infection=Math.max(0,state.infection-45);state.hydration=Math.min(100,state.hydration+20);save();updateHud();inventory();toast('Мощная аптечка использована · здоровье восстановлено');}});return items;};
 const _inventoryExpandedRoadkill=inventory;
-inventory=function(){_inventoryExpandedRoadkill();if(roadkillIsLive()&&roadkillMission.turretKit>0&&!roadkillMission.turretMounted)appendPanelAction('🔩','Станковая турель · выбрать для установки','1 комплект · X на крышу, затем E',()=>{roadkillTurretPlacementArmed=true;document.getElementById('panel')?.classList.add('hidden');toast('ТУРЕЛЬ ВЫБРАНА · нажми E, чтобы закрепить её на крыше');});if(roadkillMission.status==='complete')appendPanelAction('🏅','Операция «Мёртвая трасса» · выполнена','Награда получена',()=>toast('Операция уже завершена'));};
+inventory=function(){_inventoryExpandedRoadkill();appendPanelAction('🚙','Операция «Мёртвая трасса»','Орда 1 500 · 100 убийств',openRoadkillMissionBoard);if(roadkillIsLive()&&roadkillMission.turretKit>0&&!roadkillMission.turretMounted)appendPanelAction('🔩','Станковая турель · выбрать для установки','1 комплект · X на крышу, затем E',()=>{roadkillTurretPlacementArmed=true;document.getElementById('panel')?.classList.add('hidden');toast('ТУРЕЛЬ ВЫБРАНА · нажми E, чтобы закрепить её на крыше');});if(roadkillMission.status==='complete')appendPanelAction('🏅','Операция «Мёртвая трасса» · выполнена','Награда получена',()=>toast('Операция уже завершена'));};
 const _openWorkshopRoadkill=openWorkshop;
 openWorkshop=function(){_openWorkshopRoadkill();appendPanelAction('🚙','Операция «Мёртвая трасса»','Орда 1 500 · нужно 100 убийств',openRoadkillMissionBoard);};
 document.getElementById('roadkillMissionStart')?.addEventListener('click',startRoadkillMission);
@@ -2763,7 +2764,7 @@ window.addEventListener('apocalypse-coop-event',e=>{
  if(p.kind==='roadkill-turret-mounted'){roadkillMission.turretMounted=true;roadkillMission.turretKit=0;save();toast('Союзник установил крышную турель');}
  if(p.kind==='roadkill-turret-ammo'){roadkillMission.turretMag=whole(p.mag,roadkillMission.turretMag,0,77);roadkillMission.turretReserve=whole(p.reserve,roadkillMission.turretReserve,0,308);roadkillMission.turretReloadAt=Number(p.reloadAt)||0;}
  if(p.kind==='roadkill-mission-state'&&p.mission){Object.assign(roadkillMission,p.mission);save();}
- if(p.kind==='roadkill-kill'&&p.eventId===roadkillMission.eventId&&p.user_id!==coop.userId){roadkillMission.kills=Math.max(roadkillMission.kills,whole(p.kills,roadkillMission.kills,0,1500));updateRoadkillHud();save();}
+ if(p.kind==='roadkill-kill'&&p.eventId===roadkillMission.eventId&&p.user_id!==coop.userId){roadkillMission.kills=Math.min(1500,roadkillMission.kills+1);updateRoadkillHud();save();}
  if(p.kind==='roadkill-mission-complete'&&p.mission){Object.assign(roadkillMission,p.mission,{status:'complete'});prefs.infectedCap=roadkillMission.priorInfectedCap;roadkillGrantReward();save();toast('ОПЕРАЦИЯ ВЫПОЛНЕНА · награда получена');}
 });
 
