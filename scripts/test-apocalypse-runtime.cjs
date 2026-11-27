@@ -433,6 +433,10 @@ assert.ok(game.includes('function progressStoryArc(kind,amount=1)') && game.incl
 assert.ok(game.includes('function interactBaseStructure()') && game.includes("b.type==='storage'") && game.includes("b.type==='generator'") && game.includes("b.open=!b.open"), 'Base doors, storage and generators must be interactive');
 assert.ok(game.includes('function updateBaseStructureRaid(now)') && game.includes('base-structure-damaged') && game.includes('МОДУЛЬ БАЗЫ'), 'Zombie raids must damage and destroy modular base structures and synchronize in co-op');
 assert.ok(game.includes('Ремонт требует 2 дерева и 1 металл') && game.includes('base-structure-built'), 'Base modules must be repairable and their placement must synchronize');
+assert.ok(game.includes("'reinforcedWall','gate','farm','waterCollector','watchtower'") && game.includes('function drawBaseStructure(b,ghost=false,valid=true)'), 'Expanded base modules must be saved and have detailed in-game renderers');
+assert.ok(game.includes('function drawUniqueInteriorLayout(b,floor)') && game.includes('SPECIMEN ') && game.includes('ДОКАЗАТЕЛЬСТВА'), 'Specialist interiors must render detailed props, signage and room dressing');
+assert.ok(game.includes('baseFacilityTick') && game.includes('Грядка дала урожай') && game.includes('Сборщик наполнил резервуар') && game.includes('Сторожевая вышка уничтожила заражённого'), 'Powered base facilities must produce food, water and automated defense');
+assert.ok(game.includes('Двойные ворота') && game.includes('Бронированная стена') && game.includes('Сторожевая вышка'), 'Expanded base construction options must be visible in the construction menu');
 console.log('Apocalypse deep-audit tests passed: runtime boot/frame, corrupt saves, storage failure, survival systems, settings/HUD, co-op settlement sync, HTML assets, safe respawn, PC port, and unchanged movement.');
 
 // Release guard: ensure the CC0 radio bulletin and recorded zombie vocal variants are wired into cinematic playback.
