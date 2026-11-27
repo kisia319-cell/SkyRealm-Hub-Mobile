@@ -556,3 +556,9 @@ assert.ok(game.includes('window.ApocalypseWorlds=Object.freeze') && game.include
 
 assert.ok(game.includes('function guardFrameFunction(name,fn)') && game.includes("updateZombies=guardFrameFunction('updateZombies',updateZombies)") && game.includes("draw=guardFrameFunction('draw',draw)"), 'A failing update or render subsystem must be isolated so other gameplay systems keep running');
 assert.ok(coop.includes('async function waitForCompatiblePresence') && coop.includes('await waitForCompatiblePresence()') && coop.includes("localStorage.setItem('skyrealm_token',token)"), 'Co-op entry must wait for version presence and restore authenticated sessions');
+
+assert.ok(game.includes("const expected=['explore','salvage','explore'][storyArc.stage]") && game.includes('const goals=[3,3,2]'), 'Story arc must use varied investigation and salvage objectives rather than a generic kill counter');
+assert.ok(game.includes('function showMissionBriefing') && html.includes('id="missionBriefing"') && game.includes('showMissionBriefing(\'АРХИВ ВЫЖИВШИХ\''), 'Mission acceptance must use a dedicated dialogue briefing, not the backpack panel');
+assert.ok(html.includes('right:16px;bottom:max(16px') && html.includes('width:208px;height:140px') && html.includes('right:8px;left:auto'), 'Minimap must be moved right and enlarged');
+assert.ok(game.includes('function roadRoutePoints') && game.includes('const points=roadRoutePoints(state.x,state.y,activeWaypoint.x,activeWaypoint.y)') && game.includes('const route=roadRoutePoints(ox,oy,activeWaypoint.x,activeWaypoint.y)'), 'Map and minimap routes must follow the same road graph');
+assert.ok(game.includes("if(!storyArc.completed&&g.id!=='medic')continue"), 'Only first mission contact should show before story arc completion');
