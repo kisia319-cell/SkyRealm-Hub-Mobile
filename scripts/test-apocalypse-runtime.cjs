@@ -10,8 +10,10 @@ const game = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.js'
 const coop = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-coop.js'), 'utf8');
 const pc = fs.readFileSync(path.join(root, 'apocalypse_pc.py'), 'utf8');
 const cinematic3d = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-cinematic-3d.js'), 'utf8');
+const character3d = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-character-3d.js'), 'utf8');
 const workflow = fs.readFileSync(path.join(root, '.github/workflows/build-apocalypse-pc.yml'), 'utf8');
 new vm.Script(cinematic3d, { filename: 'apocalypse-cinematic-3d.js' });
+new vm.Script(character3d, { filename: 'apocalypse-character-3d.js' });
 
 new vm.Script(game, { filename: 'apocalypse.js' });
 new vm.Script(coop, { filename: 'apocalypse-coop.js' });
@@ -55,6 +57,9 @@ assert.ok(game.includes('const CHARACTER_TABS=') && game.includes('function buil
 assert.ok(game.includes("label:'Волосы'") && game.includes("label:'Кожа и глаза'") && game.includes("label:'Одежда'") && game.includes("label:'Снаряжение'") && game.includes("label:'Цвета'"), 'Character editor tabs must separate appearance categories');
 assert.ok(html.includes('.character-tab-nav') && html.includes('.character-tab-pane[hidden]') && html.includes('.character-preview-wrap{min-height:390px}'), 'Character editor must show focused tab panels with a persistent enlarged preview');
 assert.ok(game.includes('function characterArtworkSvg(v={},seed=0)') && game.includes('ellipse cx="83" cy="85"') && game.includes('const facialHair='), 'Every option thumbnail must show a detailed full character with distinct eyes and facial hair');
+assert.ok(game.includes('window.ApocalypseCharacter3D.update(artwork)') && !game.includes('return terrariaPortraitSvg(v);'), 'Character editor must use live 3D preview and detailed SVG thumbnails');
+assert.ok(html.includes('characterPreview3d') && html.includes('character3dReset') && html.includes('apocalypse-character-3d.js'), '3D editor canvas, orbit controls and renderer script must be wired');
+assert.ok(character3d.includes('function model(t)') && character3d.includes('noise(wp*38.)') && character3d.includes('pointermove') && character3d.includes('charHairStyle'), '3D model must use procedural materials, drag rotation and existing appearance controls');
 assert.ok(game.includes("querySelectorAll('#characterCreator .character-field')") && game.includes("groups[tab].appendChild(field)"), 'All appearance fields, including fields originally outside the main field container, must be moved into tabs');
 assert.ok(html.includes('avatar-eyes') && html.includes('avatar-nose') && html.includes('avatar-mouth') && html.includes('.avatar-beard'), 'Live character preview must render eyes, nose, mouth and beard details');
 assert.ok(game.includes('function characterOptionSvg') && game.includes('function renderCharacterOptionGalleries') && game.includes('function syncCharacterOptionGalleries'), 'Every character select must have an illustrated option gallery');
