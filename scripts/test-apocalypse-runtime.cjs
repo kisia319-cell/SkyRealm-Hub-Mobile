@@ -485,5 +485,8 @@ assert.ok(game.includes("function installCombatVisualPolish()") && game.includes
 assert.ok(game.includes("function fireProjectile()") && game.includes("const combatProjectiles=[]") && game.includes("function updateCombatProjectiles(dt,now)"), 'Projectile firearms must use real moving bullets');
 assert.ok(game.includes("function reloadWeapon()") && game.includes("magAmmo:whole(saved.magAmmo") && game.includes("weaponMagazineSize"), 'Weapon magazines, reserve ammunition and reload state must persist');
 assert.ok(game.includes("function combatTarget()") && game.includes("combatAimHeld") && game.includes("function drawCombatReticle()"), 'Mouse and mobile aiming controls must be wired');
-assert.ok(game.includes("z.hitReactUntil=now+360") && game.includes("z.knockX") && game.includes("function drawCombatProjectiles()"), 'Projectile hits must animate impact, stagger and knockback');
+assert.ok(game.includes("z.hitReactUntil=now+(hitPart==='head'?520:360)") && game.includes("z.knockX") && game.includes("function drawCombatProjectiles()"), 'Projectile hits must animate impact, stagger and knockback');
+assert.ok(game.includes('function drawCombatCasings()') && game.includes('combatCameraKick') && game.includes("function playCombatSound(kind,suppressed=false)"), 'Weapon shots must eject casings, shake the camera and play responsive sounds');
+assert.ok(game.includes("hitPart==='head'?2.15") && game.includes("z.legInjuryUntil") && game.includes("suppressor:whole(saved.weaponMods?.suppressor,0,0,1)"), 'Headshots, limb injuries and craftable suppressors must be implemented');
+assert.ok(game.includes("r.weapon==='shotgun'") && game.includes("r.nextShellAt=now+390") && game.includes("weaponMods.suppressor"), 'Shotgun must reload shell-by-shell and suppressor must affect shots');
 assert.ok(html.includes('id="reloadTouch"') && html.includes('id="aimTouch"') && html.includes('id="combatAmmoHud"'), 'Mobile combat controls and magazine HUD must exist');
