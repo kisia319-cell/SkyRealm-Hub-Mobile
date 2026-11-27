@@ -1870,7 +1870,7 @@ function openWorkshop(){showPanel('Мастерская','Верстак '+state
  {icon:'💧',name:'Фильтр дождевой воды · 7 металла + 4 дерева + 1 электроника',count:state.waterFilterLevel+'/2',use:()=>{if(state.waterFilterLevel>=2){toast('Фильтр улучшен до максимума');return;}if(state.electronicsPack<1){toast('Нужен комплект электроники');return;}if(craft({scrap:7,wood:4,bolts:0},()=>{state.electronicsPack--;state.waterFilterLevel++;})){toast('Фильтр воды установлен · уровень '+state.waterFilterLevel);openWorkshop();}}},
  {icon:'📡',name:'Сканер радиовышки · 8 металла + 3 крепежа + 1 электроника',count:state.scannerLevel?'установлен':'создать',use:()=>{if(state.scannerLevel){toast('Сканер уже установлен');return;}if(state.electronicsPack<1){toast('Нужен комплект электроники');return;}if(craft({scrap:8,wood:0,bolts:3},()=>{state.electronicsPack--;state.scannerLevel=1;})){toast('Сканер готов. Ищи радиовышку и нажимай E');openWorkshop();}}}
 ]);}
-function showPanel(title,body,items){document.getElementById('panelTitle').textContent=String(title||'Хранилище').toUpperCase();document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.className='storage-grid';box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot filled';slot.tabIndex=item.use?0:-1;slot.dataset.search=(String(item.name||'')+' '+String(item.count??'')+' '+String(item.icon||'')).toLocaleLowerCase('ru');let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent=typeof item.count==='string'?item.count:'×'+item.count;slot.append(art,name,count);if(item.use){slot.setAttribute('role','button');slot.setAttribute('aria-label',String(item.name||'Использовать'));slot.addEventListener('click',item.use);slot.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();item.use();}})}box.append(slot)});const search=document.getElementById('panelSearch');if(search){search.classList.remove('hidden');search.value='';search.oninput=()=>{const query=search.value.trim().toLocaleLowerCase('ru');let visible=0;box.querySelectorAll('.slot').forEach(slot=>{const match=!query||slot.dataset.search.includes(query);slot.hidden=!match;if(match)visible++;});const total=box.children.length;const count=document.getElementById('panelSearchCount');if(count)count.textContent=query?visible+'/'+total:'';const empty=document.getElementById('panelSearchEmpty');if(empty)empty.classList.toggle('hidden',visible!==0);};search.oninput();}document.getElementById('invHealth').textContent=state.hp;document.getElementById('invDay').textContent=state.day;document.getElementById('invSpeed').textContent=(wind>=.65?'82%':wind>=.3?'94%':'100%');document.getElementById('weight').textContent=(state.scrap*1.2+state.bandage*.2+state.food*.4).toFixed(1)+' / 40 кг';document.getElementById('panel').classList.remove('hidden');if(search)search.focus({preventScroll:true});}
+function showPanel(title,body,items){document.getElementById('panelTitle').textContent=String(title||'Хранилище').toUpperCase();document.getElementById('panelText').textContent=body;let box=document.getElementById('items');box.className='storage-grid';box.innerHTML='';items.forEach(item=>{let slot=document.createElement('div');slot.className='slot filled';slot.tabIndex=item.use?0:-1;slot.dataset.search=(String(item.name||'')+' '+String(item.count??'')+' '+String(item.icon||'')).toLocaleLowerCase('ru');let art=document.createElement('div');art.className='art';art.textContent=item.icon;let name=document.createElement('b');name.textContent=item.name;let count=document.createElement('small');count.textContent=typeof item.count==='string'?item.count:'×'+item.count;slot.append(art,name,count);if(item.use){slot.setAttribute('role','button');slot.setAttribute('aria-label',String(item.name||'Использовать'));slot.addEventListener('click',item.use);slot.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();item.use();}})}box.append(slot)});const search=document.getElementById('panelSearch');if(search){search.classList.remove('hidden');search.value='';search.oninput=()=>{const query=search.value.trim().toLocaleLowerCase('ru');let visible=0;box.querySelectorAll('.slot').forEach(slot=>{const match=!query||slot.dataset.search.includes(query);slot.hidden=!match;if(match)visible++;});const total=box.children.length;const count=document.getElementById('panelSearchCount');if(count)count.textContent=query?visible+'/'+total:'';const empty=document.getElementById('panelSearchEmpty');if(empty)empty.classList.toggle('hidden',visible!==0);};search.oninput();}document.getElementById('invHealth').textContent=state.hp;const armorLabel=document.getElementById('invArmor');if(armorLabel)armorLabel.textContent='+'+(state.armorLevel*8);document.getElementById('invDay').textContent=state.day;document.getElementById('invSpeed').textContent=(wind>=.65?'82%':wind>=.3?'94%':'100%');document.getElementById('weight').textContent=(state.scrap*1.2+state.bandage*.2+state.food*.4).toFixed(1)+' / 40 кг';document.getElementById('panel').classList.remove('hidden');if(search)search.focus({preventScroll:true});}
 
 
 function buildingContainerItems(entry){const icons={medInjector:'💉',energyDrink:'⚡',armorPlate:'🛡️',ammoCrate:'📦',weaponParts:'🔧',electronicsPack:'🔌',cleanWater:'💧'},names={medInjector:'Медицинский инъектор',energyDrink:'Энергетик',armorPlate:'Бронепластина',ammoCrate:'Ящик патронов',weaponParts:'Детали оружия',electronicsPack:'Комплект электроники',cleanWater:'Чистая вода'};return(entry?.contents||[]).map((v,index)=>({...v,index,key:v.item,icon:icons[v.item]||'📦',name:names[v.item]||v.item,count:1})).filter(v=>!v.picked).map(v=>({...v,tier:v.tier||'common'}));}
@@ -2554,7 +2554,7 @@ function roadkillIsLive(){return roadkillMission.status==='preparing'||roadkillM
 function roadkillGrantLoadout(){
  if(roadkillMission.loadoutGranted)return;
  roadkillMission.loadoutGranted=true;
- state.firearm='rifle';state.magAmmo=30;state.ammo=Math.max(state.ammo,120);
+ state.firearm='rifle';state.magAmmo=30;state.ammo=120;
  state.armorLevel=Math.max(state.armorLevel,3);state.bandage=Math.min(999999,state.bandage+3);
  save();updateHud();toast('БОЕВОЙ КОМПЛЕКТ: АК-47 · 5 магазинов · броня · 3 аптечки');
 }
@@ -2594,7 +2594,7 @@ function startRoadkillMission(){
  document.getElementById('roadkillMissionModal')?.classList.add('hidden');save();roadkillBroadcast('roadkill-mission-start');
  toast('БРИФИНГ ПРИНЯТ · заберись на крышу клавишей X, выбери турель в рюкзаке и нажми E');
 }
-function roadkillClimb(){if(!roadkillIsLive()||carRecovery.localSeat!==null||Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)>=185)return false;const coop=window.ApocalypseCoop,occupied=(coop?.getPlayers?.()||[]).some(p=>p.carSeat===1);if(occupied){toast('Место стрелка на крыше уже занято');return false;}carRecovery.localSeat=1;roadkillRoofGunner=true;roadkillMission.localJoined=true;state.x=carRecovery.carX;state.y=carRecovery.carY;save();updateHud();toast('Ты забрался на крышу · открой рюкзак и выбери станковую турель');return true;}
+function roadkillClimb(){if(!roadkillIsLive())return false;if(carRecovery.localSeat===1){roadkillRoofGunner=true;roadkillMission.localJoined=true;toast('Ты перешёл на крышу · выбери турель в рюкзаке');return true;}if(carRecovery.localSeat!==null||Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)>=185)return false;const coop=window.ApocalypseCoop,occupied=(coop?.getPlayers?.()||[]).some(p=>p.carSeat===1);if(occupied){toast('Место стрелка на крыше уже занято');return false;}carRecovery.localSeat=1;roadkillRoofGunner=true;roadkillMission.localJoined=true;state.x=carRecovery.carX;state.y=carRecovery.carY;save();updateHud();toast('Ты забрался на крышу · открой рюкзак и выбери станковую турель');return true;}
 function roadkillInstallTurret(){
  if(!roadkillRoofGunner||carRecovery.localSeat!==1){toast('Сначала заберись на крышу машины клавишей X');return;}
  if(roadkillMission.status!=='preparing'||roadkillMission.turretMounted){toast('Турель уже установлена или операция не готова');return;}
@@ -2676,7 +2676,7 @@ function updateRoadkillCarCrush(){
 }
 function updateRoadkillHud(){
  if(performance.now()-roadkillLastHud<220)return;roadkillLastHud=performance.now();
- const host=document.getElementById('roadkillHud'),climb=document.getElementById('roadkillClimbTouch');if(climb){const show=roadkillIsLive()&&carRecovery.localSeat===null&&Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)<185;climb.classList.toggle('hidden',!show);}
+ const host=document.getElementById('roadkillHud'),climb=document.getElementById('roadkillClimbTouch');if(climb){const show=roadkillIsLive()&&(carRecovery.localSeat===null||carRecovery.localSeat===1&&!roadkillRoofGunner)&&(carRecovery.localSeat===1||Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)<185);climb.classList.toggle('hidden',!show);}
  if(!host)return;
  const show=roadkillIsLive()||roadkillMission.status==='complete'||roadkillMission.status==='failed';host.classList.toggle('hidden',!show);
  if(!show)return;
@@ -2707,7 +2707,7 @@ function drawRoadkillHordeBackdrop(){
  ctx.save();ctx.translate(carRecovery.carX,carRecovery.carY);ctx.rotate(carRecovery.angle);ctx.globalAlpha=.84;ctx.drawImage(roadkillHordeTexture,-550,-2740,1100,2600);ctx.restore();
 }
 const _drawRoadkillZombies=drawZombies;
-drawZombies=function(){_drawRoadkillZombies();drawRoadkillHordeBackdrop();};
+drawZombies=function(){drawRoadkillHordeBackdrop();_drawRoadkillZombies();};
 const _drawRoadkillCar=drawRecoveryCar;
 drawRecoveryCar=function(x,y,angle=0,scale=1){_drawRoadkillCar(x,y,angle,scale);drawRoadkillTurret(x,y,angle,scale);};
 const _drawRoadkillEffects=draw;
@@ -2732,7 +2732,7 @@ interact=function(){
  _interactRoadkill();
 };
 const _interactCarRoadkill=interactCarRecovery;
-interactCarRecovery=function(){const wasRoof=roadkillRoofGunner;const result=_interactCarRoadkill();if(wasRoof&&carRecovery.localSeat===null)roadkillRoofGunner=false;return result;};
+interactCarRecovery=function(){if(roadkillIsLive()&&carRecovery.localSeat===null&&Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)<145&&(window.ApocalypseCoop?.getPlayers?.()||[]).some(p=>p.carSeat===0)){toast('Для места стрелка нажми X и заберись на крышу');return true;}const wasRoof=roadkillRoofGunner;const result=_interactCarRoadkill();if(wasRoof&&carRecovery.localSeat===null)roadkillRoofGunner=false;return result;};
 const _attackRoadkill=attack;
 attack=function(){if(roadkillRoofGunner&&roadkillMission.turretMounted){roadkillFireTurret();return;} _attackRoadkill();};
 const _inventoryItemsRoadkill=inventoryItems;
@@ -2746,7 +2746,7 @@ document.getElementById('roadkillClimbTouch')?.addEventListener('click',roadkill
 document.getElementById('roadkillMissionClose')?.addEventListener('click',()=>document.getElementById('roadkillMissionModal')?.classList.add('hidden'));
 window.addEventListener('keydown',e=>{
  const k=keyFromEvent(e);
- if(k==='x'&&gameActive&&roadkillIsLive()&&carRecovery.localSeat===null&&Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)<185){
+ if(k==='x'&&gameActive&&roadkillIsLive()&&(carRecovery.localSeat===null||carRecovery.localSeat===1)&& (carRecovery.localSeat===1||Math.hypot(state.x-carRecovery.carX,state.y-carRecovery.carY)<185)){
   roadkillClimb();e.preventDefault();e.stopPropagation();
  }
 },true);
