@@ -546,3 +546,10 @@ assert.ok(game.includes("powerMedkit:whole(saved.powerMedkit") && game.includes(
 
 assert.ok(game.includes("updateZombies(dt,now);updateRoadkillMission(dt,now);") && game.includes("roadkillMission.status==='active'?1800:12000"), 'Roadkill mission loop must run continuously and recycle animated corpses without exhausting the mobile AI pool');
 assert.ok(game.includes("const roadkillHordeTexture=(()=>") && game.includes("for(let i=0;i<1500;i++)") && html.includes('id="roadkillClimbTouch"'), 'The 1,500-member horde must render as a cached crowd texture and expose a touch roof-climb control');
+
+assert.ok(html.includes('id="miniRadar"') && html.includes('class="mini-radar"') && game.includes('function drawMiniRadar()') && game.includes("miniRadar.addEventListener('click',openPlayerMap)"), 'A persistent clickable minimap must replace the map button on desktop and mobile');
+assert.ok(game.includes('const apocalypseLoopCore=loop') && game.includes('gameplay loop continues') && game.includes('requestAnimationFrame(loop);'), 'An exception in a gameplay frame must not permanently stop the animation loop');
+assert.ok(html.includes('@media(pointer:fine){.joy,.control-hint,.attack-touch,.combat-touch,#action{display:none!important}}'), 'Touch-only attack, aim, reload and action buttons must be hidden on PC');
+assert.ok(html.includes('id="coopWorldPicker"') && html.includes('id="coopWorldList"') && html.includes('id="coopWorldName"') && html.includes('id="coopNewWorld"'), 'Co-op must have its own world selector and create-world panel');
+assert.ok(coop.includes('skyrealm_apocalypse_coop_worlds_v1') && coop.includes('function rememberCoopWorld') && coop.includes('function hostSavedWorld') && coop.includes('hostAndEnter') && coop.includes('apoc_coop_enter_world'), 'Co-op worlds must be saved separately and support host-and-enter with auto resume');
+assert.ok(game.includes('window.ApocalypseWorlds=Object.freeze') && game.includes("const id='coop_'+safe") && game.includes('worldCatalog.filter(world=>world.type!==\'coop\')'), 'Co-op saves must use separate world storage and remain out of the single-player world list');
