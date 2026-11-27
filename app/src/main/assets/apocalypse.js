@@ -2348,7 +2348,7 @@ document.getElementById('adminSkipMissions').onclick=()=>{
  const status=document.getElementById('adminStatus');
  const raw=document.getElementById('adminMissionNumbers').value.trim();
  const values=raw.split(',').map(v=>v.trim());
- if(!raw||values.some(v=>!/^\\d+$/.test(v))){status.textContent='Ошибка: введи номера через запятую, например 1,2.';return;}
+ if(!raw||values.some(v=>!/^\d+$/.test(v))){status.textContent='Ошибка: введи номера через запятую, например 1,2.';return;}
  const nums=[...new Set(values.map(Number))];
  if(nums.some(n=>n<1||n>6)){status.textContent='Допустимые номера миссий: от 1 до 6.';return;}
  const coop=window.ApocalypseCoop;
