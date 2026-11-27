@@ -2307,6 +2307,58 @@ document.getElementById('menuExit').onclick=exitGame;
 document.getElementById('deathRespawn').onclick=respawn;
 document.getElementById('deathMenu').onclick=leaveToMenu;
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.close==='settingsOverlay'){closeSettings();return;}const target=document.getElementById(b.dataset.close);if(target)target.classList.add('hidden')}));
+function adminSkipMissionNumber(n){
+ if(n>=1&&n<=3){
+  storyArc.active=n<3;storyArc.stage=n;storyArc.progress=0;
+  if(n===3)storyArc.completed=true;
+  return 'Архив выживших · глава '+n;
+ }
+ if(n===4){
+  campaign.status='complete';campaign.stage=9;campaign.completedAt=Date.now();campaign.ending=campaign.ending||'hardline';
+  for(let i=randomEventSites.length-1;i>=0;i--)if(randomEventSites[i].source==='long-campaign')randomEventSites.splice(i,1);
+  activeWaypoint=null;
+  return 'Последний сигнал';
+ }
+ if(n===5){
+  lastSignalMission={status:'completed',stage:2,phase:5,evidence:[true,true,true],wave:3,valves:[true,true],x:state.x,y:state.y};
+  activeWaypoint=null;
+  return 'Чёрный самолёт';
+ }
+ if(n===6){
+  carRecovery.stage='owned';carRecovery.parts=[true,true,true,true,true];carRecovery.repairStep=5;carRecovery.repairRemaining=0;carRecovery.repairRunning=false;carRecovery.repairPaused=false;carRecovery.repaired=true;carRecovery.dialogActive=false;carRecovery.fuel=Math.max(1,carRecovery.fuel);
+  state.vehicleRepaired=true;activeWaypoint=null;
+  return 'Восстановление автомобиля';
+ }
+ return '';
+}
+function adminUnlockPanel(){
+ const tools=document.getElementById('adminTools'),status=document.getElementById('adminStatus');
+ if(document.getElementById('adminPassword').value==='122311'){
+  tools.hidden=false;status.textContent='Доступ разрешён. Выбери номера миссий.';
+  document.getElementById('adminPassword').value='';
+ }else{tools.hidden=true;status.textContent='Неверный пароль.';}
+}
+document.getElementById('adminOpen').onclick=()=>{
+ const panel=document.getElementById('adminPanel');panel.hidden=!panel.hidden;
+ if(!panel.hidden){document.getElementById('adminTools').hidden=true;document.getElementById('adminStatus').textContent='Введите пароль для доступа.';document.getElementById('adminPassword').focus();}
+};
+document.getElementById('adminUnlock').onclick=adminUnlockPanel;
+document.getElementById('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')adminUnlockPanel();});
+document.getElementById('adminSkipMissions').onclick=()=>{
+ const status=document.getElementById('adminStatus');
+ const raw=document.getElementById('adminMissionNumbers').value.trim();
+ const values=raw.split(',').map(v=>v.trim());
+ if(!raw||values.some(v=>!/^\\d+$/.test(v))){status.textContent='Ошибка: введи номера через запятую, например 1,2.';return;}
+ const nums=[...new Set(values.map(Number))];
+ if(nums.some(n=>n<1||n>6)){status.textContent='Допустимые номера миссий: от 1 до 6.';return;}
+ const coop=window.ApocalypseCoop;
+ if(coop?.room?.status==='running'&&!coop.isOwner()){status.textContent='В совместном мире пропускать миссии может только владелец комнаты.';return;}
+ const skipped=nums.map(adminSkipMissionNumber);
+ save();updateHud();drawPlayerMap();
+ document.getElementById('adminMissionNumbers').value='';
+ status.textContent='Пропущено: '+skipped.join(', ')+'. Прогресс сохранён.';
+ toast('Администратор пропустил миссии: '+nums.join(', '));
+};
 document.getElementById('settingsSave').onclick=()=>{prefs.effects=document.getElementById('settingEffects').value;prefs.joy=Number(document.getElementById('settingJoy').value);prefs.motion=document.getElementById('settingMotion').checked;prefs.hints=document.getElementById('settingHints').checked;prefs.weather=document.getElementById('settingWeather').checked;prefs.ambientAudio=document.getElementById('settingAmbientAudio').checked;prefs.infectedCap=whole(document.getElementById('settingInfectedCap').value,18,8,24);prefs.eventFrequency=bounded(document.getElementById('settingEventFrequency').value,1,.5,1.8);prefs.autosaveSeconds=whole(document.getElementById('settingAutosave').value,5,5,30);prefs.autoSprint=document.getElementById('settingAutoSprint').checked;prefs.showHydration=document.getElementById('settingHydration').checked;prefs.survivalDifficulty=document.getElementById('settingSurvivalDifficulty').value;prefs.renderDistance=document.getElementById('settingRenderDistance').value;prefs.showEnemyHealth=document.getElementById('settingEnemyHealth').checked;prefs.showSurvivalHud=document.getElementById('settingSurvivalHud').checked;prefs.maxFps=Number(document.getElementById('settingMaxFps').value);let persisted=true;try{localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs));if(window.pywebview?.api?.save_apocalypse_settings)window.pywebview.api.save_apocalypse_settings(prefs);}catch(_){persisted=false}applySettings();closeSettings();toast(persisted?'Настройки сохранены и применены':'Настройки применены, но браузер не смог их сохранить')};
 document.getElementById('settingsDefaults').onclick=()=>{Object.assign(prefs,{effects:'high',joy:100,motion:true,hints:true,weather:true,ambientAudio:true,infectedCap:18,eventFrequency:1,autosaveSeconds:5,autoSprint:false,showHydration:true,survivalDifficulty:'standard',renderDistance:'normal',maxFps:60,showEnemyHealth:true,showSurvivalHud:true});try{localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs));if(window.pywebview?.api?.save_apocalypse_settings)window.pywebview.api.save_apocalypse_settings(prefs);}catch(_){}applySettings();toast('Стандартные настройки восстановлены');};
 document.getElementById('settingsReset').onclick=()=>{if(confirm('Удалить сохранение Apocalypse на этом устройстве? Это нельзя отменить.')){try{localStorage.removeItem(STORE);location.reload()}catch(_){toast('Не удалось удалить сохранение: хранилище недоступно')}}};
