@@ -465,6 +465,8 @@ assert.ok(game.includes("function chooseCampaignFrequency(freq)") && game.includ
 assert.ok(html.includes('id="campaignFrequencyModal"') && html.includes('id="campaignFrequency874"') && html.includes('id="campaignFrequency916"') && html.includes('id="campaignFrequency1032"'), 'Radio tuning must expose three selectable in-game frequencies');
 assert.ok(html.includes('id="campaignArchiveModal"') && html.includes('id="campaignBroadcastChoice"') && html.includes('id="campaignEncryptChoice"'), 'Archive investigation must offer two in-game story decisions');
 assert.ok(game.includes("const detailCount=Math.round(count*1.32)") && game.includes("gy+=36"), 'World material textures must receive additional procedural detail');
+assert.ok(game.includes('for(let i=0;i<(balanced?18:32);i++)') && game.includes('const moving=Math.hypot(moveX,moveY)>.08') && game.includes('Layer 2: directional wind streaks'), 'World ambience must include quality-scaled particles, wind streaks and animated footfalls');
+assert.ok(game.includes('third micro-detail pass adds chipped paint') && html.includes('Visual polish: clearer surfaces') && html.includes('min-width:44px') && html.includes('focus-visible'), 'Material microdetail and accessible responsive control feedback must be present');
 
 assert.ok(game.includes("function campaignSpawnBeaconParts()") && game.includes("campaign-beacon-part"), "Beacon must spawn three distinct repair nodes");
 assert.ok(game.includes("ПОДКЛЮЧИТЬ КАБЕЛЬ") && game.includes("ЗАМЕНИТЬ ПРЕДОХРАНИТЕЛЬ") && game.includes("ВЫРОВНЯТЬ АНТЕННУ"), "Beacon repair must require cable, fuse and antenna tasks");
