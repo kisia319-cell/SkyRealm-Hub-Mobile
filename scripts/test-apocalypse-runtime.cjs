@@ -481,3 +481,9 @@ assert.ok(game.includes("entry.contents.every(v=>v.picked)") && game.includes("i
 assert.ok(game.includes("const combatVisualEffects=[]") && game.includes("function drawCombatVisualEffects()"), 'Combat visual feedback must be available');
 assert.ok(game.includes("type:'shot'") && game.includes("type:'impact'") && game.includes("type:'melee'"), 'Ranged shots, impacts and melee swings must have distinct effects');
 assert.ok(game.includes("function installCombatVisualPolish()") && game.includes("ctx.shadowBlur=13"), 'Held firearms must receive detailed procedural weapon polish and muzzle flash');
+
+assert.ok(game.includes("function fireProjectile()") && game.includes("const combatProjectiles=[]") && game.includes("function updateCombatProjectiles(dt,now)"), 'Projectile firearms must use real moving bullets');
+assert.ok(game.includes("function reloadWeapon()") && game.includes("magAmmo:whole(saved.magAmmo") && game.includes("weaponMagazineSize"), 'Weapon magazines, reserve ammunition and reload state must persist');
+assert.ok(game.includes("function combatTarget()") && game.includes("combatAimHeld") && game.includes("function drawCombatReticle()"), 'Mouse and mobile aiming controls must be wired');
+assert.ok(game.includes("z.hitReactUntil=now+360") && game.includes("z.knockX") && game.includes("function drawCombatProjectiles()"), 'Projectile hits must animate impact, stagger and knockback');
+assert.ok(html.includes('id="reloadTouch"') && html.includes('id="aimTouch"') && html.includes('id="combatAmmoHud"'), 'Mobile combat controls and magazine HUD must exist');
