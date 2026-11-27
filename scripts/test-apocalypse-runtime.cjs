@@ -532,3 +532,4 @@ assert.ok(game.includes("carRecovery.stage==='return'") && game.includes("При
 assert.ok(game.includes("carRecovery.driving?360") && game.includes("fuelTravel>=1800") && game.includes("Бензин закончился"), 'The unique vehicle must be manually driven and consume fuel');
 assert.ok(game.includes("for(const r of rivers)") && game.includes("createRadialGradient") && game.includes("ДОМ ИЛЬИ"), 'The map must display terrain, rivers and mechanic mission landmarks');
 assert.ok(html.includes('id="carHud"') && html.includes('touch-action:none'), 'Vehicle fuel HUD and touch-swipe map interaction must be present');
+assert.ok(!game.includes("Починить внедорожник · 18 металла") && game.includes("Внедорожник Ильи · миссия восстановления"), 'The old instant workshop recipe must not bypass the mechanic mission');
