@@ -60,7 +60,7 @@ const mark={x:610,y:400};
 const missionGivers=[
  {id:'mark',name:'Марк',role:'Координатор поселения',x:610,y:400,letter:'M',color:'#e8bd62',mission:'daily',avatar:{skin:'#c58f6d',hair:'#46362b',shirt:'#566b4b',trim:'#c6b783',pants:'#353c32',boots:'#292c27',hairStyle:'short',outfit:'ranger',backpack:'small',beard:'short'}},
  {id:'medic',name:'Вера',role:'Полевой медик',x:4500,y:1510,letter:'H',color:'#82d6b2',mission:'story',avatar:{skin:'#e4b58f',hair:'#7a4b38',shirt:'#e1ded0',trim:'#9bcdb6',pants:'#39453e',boots:'#252d28',hairStyle:'ponytail',outfit:'medic',backpack:'medic'}},
- {id:'commander',name:'Соколов',role:'Бывший командир',x:7930,y:1510,letter:'C',color:'#e58b68',mission:'daily',avatar:{skin:'#b9805e',hair:'#302a25',shirt:'#515b52',trim:'#c1a16e',pants:'#343b36',boots:'#242923',hairStyle:'military',outfit:'military',headgear:'helmet',backpack:'tactical',beard:'stubble'}},
+ {id:'commander',name:'Соколов',role:'Бывший командир',x:7930,y:1510,letter:'C',color:'#e58b68',mission:'command',avatar:{skin:'#b9805e',hair:'#302a25',shirt:'#515b52',trim:'#c1a16e',pants:'#343b36',boots:'#242923',hairStyle:'military',outfit:'military',headgear:'helmet',backpack:'tactical',beard:'stubble'}},
  {id:'scout',name:'Роман',role:'Радиоразведчик',x:8750,y:9740,letter:'R',color:'#86c9e6',mission:'signal',avatar:{skin:'#d7a77e',hair:'#493b2d',shirt:'#536b70',trim:'#b4c7a0',pants:'#343e3a',boots:'#252b27',hairStyle:'messy',outfit:'scout',backpack:'tactical'}},
  {id:'engineer',name:'Борис',role:'Инженер связи',x:6860,y:11040,letter:'E',color:'#d9b76e',mission:'campaign',avatar:{skin:'#c99470',hair:'#5a4937',shirt:'#80694b',trim:'#d8bd83',pants:'#3d4036',boots:'#282c25',hairStyle:'short',outfit:'mechanic',headgear:'cap',backpack:'large',beard:'full'}},
  {id:'mechanic',name:'Сева',role:'Механик-разборщик',x:17080,y:10480,letter:'S',color:'#c7a6e8',mission:'salvage',avatar:{skin:'#d4a17b',hair:'#39302b',shirt:'#656b54',trim:'#c4ad83',pants:'#353a35',boots:'#292b26',hairStyle:'spiky',outfit:'mechanic',backpack:'small',beard:'stubble'}},
@@ -2454,8 +2454,15 @@ function openCampaignMissionBoard(){
  const active=campaign.status==='active';
  showPanel('Борис · инженер связи',active?'«Связь ещё держится. Я вывел текущую цель на карту. Следи за метками — некоторые этапы находятся далеко друг от друга».':'«У меня есть частота военного ретранслятора. Если восстановим маяк, сможем найти колонну и пропавших людей. Это длинная операция по всей территории».',[{icon:'📡',name:active?'Продолжить операцию «Последний сигнал»':'Начать операцию «Последний сигнал»',count:active?'Этап '+(campaign.stage+1)+'/10 · '+campaignObjectiveText():'10 этапов · исследование, оборона, спасение и выбор финала',use:acceptCampaignMission}]);
 }
+function openCommanderBoard(){
+ ensureDailyContract();
+ const requirements={wood:6,kills:4,salvage:3},names={wood:'Собрать 6 древесины',kills:'Уничтожить 4 заражённых',salvage:'Разобрать 3 машины'};
+ const target=requirements[state.contractType]||4,progress=Math.min(target,state.contractProgress),ready=progress>=target&&!state.contractClaimed;
+ showPanel('Соколов · полевой штаб','«Поселению нужны люди, которые выполняют конкретные приказы. Контракт обновляется каждый день. Выполни задачу и забери снабжение здесь».',[{icon:'📜',name:'Контракт дня · '+names[state.contractType],count:progress+'/'+target+(state.contractClaimed?' · уже получена награда':'')},{icon:'🎁',name:ready?'Забрать награду за контракт':'Награда · 6 металла, 3 крепежа и 2 воды',count:ready?'готово':'сначала выполни приказ',use:ready?claimDailyContract:null}]);
+}
 function openMissionGiver(g){
  if(g.id==='mark'){openMark();return;}
+ if(g.id==='commander'){openCommanderBoard();return;}
  if(g.mission==='story'){openStoryBoard();return;}
  if(g.mission==='campaign'){openCampaignMissionBoard();return;}
  if(g.mission==='signal'){
