@@ -2633,13 +2633,13 @@ function updateRoadkillMission(dt,now){
   const loaded=Math.min(77,roadkillMission.turretReserve);roadkillMission.turretMag=loaded;roadkillMission.turretReserve-=loaded;roadkillMission.turretReloadAt=0;roadkillMission.turretEmptyNotice=false;
   const coop=window.ApocalypseCoop;if(coop?.room?.status==='running'&&coop.isOwner())coop.send({kind:'roadkill-turret-ammo',mag:roadkillMission.turretMag,reserve:roadkillMission.turretReserve,reloadAt:0});
  }
- const remoteDriver=(coop?.getPlayers?.()||[]).some(p=>p.carSeat===0);if(roadkillMission.status==='preparing'&&roadkillMission.turretMounted&&(carRecovery.localSeat===0||remoteDriver)){
+ const crew=coop?.getPlayers?.()||[],remoteDriver=crew.some(p=>p.carSeat===0),remoteGunner=crew.some(p=>p.carSeat===1),occupiedSeats=crew.filter(p=>Number.isInteger(p.carSeat)).length+(carRecovery.localSeat!==null?1:0),gunnerReady=roadkillMission.partySize===1||(carRecovery.localSeat===1||remoteGunner),crewReady=occupiedSeats>=roadkillMission.partySize;if(roadkillMission.status==='preparing'&&roadkillMission.turretMounted&&(carRecovery.localSeat===0||remoteDriver)&&gunnerReady&&crewReady){
   roadkillMission.status='active';roadkillMission.localJoined=true;roadkillMission.nextSpawnAt=now+250;
   activeWaypoint={name:'Мёртвая трасса · финиш через орду',x:roadkillMission.targetX,y:roadkillMission.targetY};
   roadkillBroadcast('roadkill-mission-state');toast('ОРДА ВПЕРЕДИ · 1 500 заражённых · уничтожь 100 и доберись до финиша');
  }
  if(roadkillMission.status!=='active')return;
- if(carRecovery.localSeat===1)roadkillMission.localJoined=true;
+ if(carRecovery.localSeat!==null)roadkillMission.localJoined=true;
  if(roadkillMission.localJoined&&carRecovery.localSeat===null){
   roadkillMission.status='failed';prefs.infectedCap=roadkillMission.priorInfectedCap;save();roadkillBroadcast('roadkill-mission-state');toast('ОПЕРАЦИЯ ПРОВАЛЕНА · покидать машину во время заезда нельзя');return;
  }
@@ -2724,6 +2724,8 @@ combatDamageZombie=function(z,damage,now,part='body'){
  }
  return result;
 };
+const _showDeathRoadkill=showDeath;
+showDeath=function(){if(roadkillIsLive()){roadkillMission.status='failed';prefs.infectedCap=roadkillMission.priorInfectedCap;save();roadkillBroadcast('roadkill-mission-state');} _showDeathRoadkill();};
 const _interactRoadkill=interact;
 interact=function(){
  if(roadkillRoofGunner&&roadkillTurretPlacementArmed){roadkillInstallTurret();return;}
