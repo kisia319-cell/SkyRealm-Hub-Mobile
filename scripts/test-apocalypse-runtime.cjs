@@ -464,7 +464,7 @@ for (const siteType of ['campaign','campaign-beacon-part','campaign-beacon-activ
   assert.ok(campaignRestore.includes("'" + siteType + "'"), 'Campaign location type must survive world reload: ' + siteType);
 }
 assert.ok(campaignRestore.includes("source==='long-campaign'") && campaignRestore.includes("source!=='long-campaign'") && campaignRestore.includes(".slice(-80)"), 'Long-campaign locations must be retained separately from the capped ambient event history');
-assert.ok(skyrealmHtml.includes('data:image/jpeg;base64,') && (skyrealmHtml.match(/src="realm\.jpg"/g)||[]).length === 5, 'SkyRealm preview images must use an embedded fallback instead of missing relative assets');
+assert.ok(skyrealmHtml.includes('data:image/jpeg;base64,') && (skyrealmHtml.match(/<img[^>]+src="realm\.jpg"/g)||[]).length === 5, 'SkyRealm preview images must use an embedded fallback instead of missing relative assets');
 assert.ok(game.includes("function campaignBeginInvestigation()") && game.includes("campaign-intel") && game.includes("campaign-frequency") && game.includes("campaign-archive"), 'Rescue branch must expand into a non-combat investigation, radio restoration and archive finale');
 assert.ok(game.includes("intel:whole(c.intel,0,0,3)") && game.includes("tunedNodes:whole(c.tunedNodes,0,0,3)"), 'Investigation and radio progress must persist across saves');
 assert.ok(game.includes("function chooseCampaignFrequency(freq)") && game.includes("[87.4,103.2,91.6]"), 'Radio restoration must be a clue-based frequency puzzle with three distinct correct channels');
