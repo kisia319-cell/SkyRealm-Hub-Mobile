@@ -624,7 +624,7 @@
     walletCents=Math.max(0,walletCents-cfg.gold);hunger=Math.max(0,hunger-cfg.hunger);
     const candidates=inventoryItems.filter(i=>i.count>0&&!['Деревянный меч','Топор','Кирка'].includes(i.name)).sort(()=>Math.random()-.5);
     let remaining=cfg.items;
-    for(const item of candidates){if(remaining<=0)break;const wanted=currentDifficulty==='hell'?Math.max(1,Math.ceil(item.count*(.35+Math.random()*.4)):Math.min(item.count,1+Math.floor(Math.random()*2));const amount=Math.min(item.count,wanted,remaining);if(amount<=0)continue;item.count-=amount;remaining-=amount;if(Math.random()<cfg.dropChance&&lootDrops.length<76){lootDrops.push({x:deathX+(Math.random()-.5)*48,y:deathY+(Math.random()-.5)*42,name:item.name,count:amount,life:240,phase:Math.random()*6.28});dropped+=amount;}}
+    for(const item of candidates){if(remaining<=0)break;const wanted=currentDifficulty==='hell'?Math.max(1,Math.ceil(item.count*(.35+Math.random()*.4))):Math.min(item.count,1+Math.floor(Math.random()*2));const amount=Math.min(item.count,wanted,remaining);if(amount<=0)continue;item.count-=amount;remaining-=amount;if(Math.random()<cfg.dropChance&&lootDrops.length<76){lootDrops.push({x:deathX+(Math.random()-.5)*48,y:deathY+(Math.random()-.5)*42,name:item.name,count:amount,life:240,phase:Math.random()*6.28});dropped+=amount;}}
     if(caveMode){caveMode=false;player.x=caveReturn.x;player.y=caveReturn.y;}
     inHouse=false;mineMode=false;tradeWorldMode=false;player.hp=100;player.x=bedSpawn.x;player.y=bedSpawn.y;player.vx=player.vy=0;dodgeTimer=0;monsters.length=0;
     updateVitals();renderInventory();updateWalletHud();
