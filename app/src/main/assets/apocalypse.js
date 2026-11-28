@@ -670,6 +670,18 @@ function radioSignalSafePoint(originX,originY,baseAngle,minDistance,maxDistance)
  }
  return{x:Math.max(WORLD_MIN+120,Math.min(WORLD_MAX-120,originX+Math.cos(baseAngle)*minDistance)),y:Math.max(WORLD_MIN+120,Math.min(WORLD_MAX-120,originY+Math.sin(baseAngle)*minDistance))};
 }
+function radioSignalFragmentPoint(relayX,relayY,dx,dy,index){
+ const clampX=x=>Math.max(WORLD_MIN+85,Math.min(WORLD_MAX-85,x));
+ const clampY=y=>Math.max(WORLD_MIN+85,Math.min(WORLD_MAX-85,y));
+ let x=clampX(relayX+dx),y=clampY(relayY+dy);
+ if(!blocked(x,y)&&!insideBuilding(x,y))return{x,y};
+ for(let attempt=0;attempt<16;attempt++){
+  const angle=(index+attempt)*2.399963, distance=115+attempt*13;
+  x=clampX(relayX+Math.cos(angle)*distance);y=clampY(relayY+Math.sin(angle)*distance);
+  if(!blocked(x,y)&&!insideBuilding(x,y))return{x,y};
+ }
+ return{x:clampX(relayX+dx*.5),y:clampY(relayY+dy*.5)};
+}
 function radioSignalWaypoint(){
  if(!radioSignal)return null;
  if(radioSignal.phase===2){
@@ -765,7 +777,7 @@ function interactRadioSignal(){
  if(radioSignal.phase===0){openRadioSignalModal('tune');return true;}
  if(radioSignal.phase===1){
   radioSignal.phase=2;const offsets=[[-142,-78],[154,-58],[4,166]];
-  radioSignal.fragments=radioSignal.fragments.map((v,i)=>({...v,x:radioSignal.relayX+offsets[i][0],y:radioSignal.relayY+offsets[i][1],found:false}));
+  radioSignal.fragments=radioSignal.fragments.map((v,i)=>({...v,...radioSignalFragmentPoint(radioSignal.relayX,radioSignal.relayY,offsets[i][0],offsets[i][1],i),found:false}));
   setRadioSignalWaypoint();save();broadcastRadioSignalState();updateRadioSignalHud();
   toast('Ретранслятор ожил. В буфере три фрагмента: голос диспетчера, координаты и последние секунды записи. Ищи три пульсирующие метки вокруг антенны.');
   return true;
@@ -799,7 +811,7 @@ function chooseRadioSignalOutcome(choice){
  const clean=radioSignal.cleanDecode&&radioSignal.attempts===0;
  if(clean){state.scrap+=2;grantSkillXP(65);message+=' Чистый перехват: бонус +2 металла и 65 опыта.';}else grantSkillXP(40);
  state.radioFinds++;const completedName=radioSignalProfile(kind).name;radioSignal=null;
- if(activeWaypoint?.name?.startsWith('Радиосигнал')||activeWaypoint?.name?.startsWith('Фрагмент передачи'))activeWaypoint=null;
+ if(activeWaypoint?.name?.startsWith('Радиосигнал')||activeWaypoint?.name?.startsWith('Фрагмент передачи')||activeWaypoint?.name?.startsWith('Радиоприёмник'))activeWaypoint=null;
  radioSignalNextAt=Date.now()+55000+Math.random()*45000;
  closeRadioSignalModal();save();broadcastRadioSignalState();updateHud();drawPlayerMap();toast(completedName+' · операция завершена. '+message);
 }
@@ -809,7 +821,7 @@ window.addEventListener('apocalypse-coop-event',e=>{
   radioSignal=normaliseRadioSignal(p.radioSignal);if(Number.isFinite(p.radioSignalNextAt))radioSignalNextAt=p.radioSignalNextAt;
   if(p.activeWaypoint&&typeof p.activeWaypoint.name==='string'&&Number.isFinite(p.activeWaypoint.x)&&Number.isFinite(p.activeWaypoint.y))activeWaypoint={name:p.activeWaypoint.name,x:p.activeWaypoint.x,y:p.activeWaypoint.y};
   else if(radioSignal)activeWaypoint=radioSignalWaypoint();
-  else if(activeWaypoint?.name?.startsWith('Радиосигнал')||activeWaypoint?.name?.startsWith('Фрагмент передачи'))activeWaypoint=null;
+  else if(activeWaypoint?.name?.startsWith('Радиосигнал')||activeWaypoint?.name?.startsWith('Фрагмент передачи')||activeWaypoint?.name?.startsWith('Радиоприёмник'))activeWaypoint=null;
   save();updateRadioSignalHud();drawPlayerMap();
  }
  if(p.kind==='world'&&p.user_id===coop.room?.owner_id&&p.radioSignal!==undefined){
@@ -849,7 +861,7 @@ function updateRadioSignal(now){
  const roll=Math.random(),kind=roll<.32?'cache':roll<.58?'medical':roll<.84?'survivors':'convoy';
  const profile=radioSignalProfile(kind),frequency=kind==='medical'?87.4:kind==='survivors'?103.2:91.6,angle=Math.random()*Math.PI*2;
  const relay=radioSignalSafePoint(x,y,angle,360,560),offsets=[[-142,-78],[154,-58],[4,166]];
- radioSignal={id:'radio_'+clock.toString(36)+'_'+Math.floor(Math.random()*9999),kind,phase:0,x,y,relayX:relay.x,relayY:relay.y,frequency,attempts:0,quality:100,expiresAt:clock+210000,cleanDecode:true,fragments:offsets.map((o,i)=>({x:relay.x+o[0],y:relay.y+o[1],found:false,text:profile.fragments[i]}))};
+ radioSignal={id:'radio_'+clock.toString(36)+'_'+Math.floor(Math.random()*9999),kind,phase:0,x,y,relayX:relay.x,relayY:relay.y,frequency,attempts:0,quality:100,expiresAt:clock+210000,cleanDecode:true,fragments:offsets.map((o,i)=>({...radioSignalFragmentPoint(relay.x,relay.y,o[0],o[1],i),found:false,text:profile.fragments[i]}))};
  toast('ВХОДЯЩАЯ ПЕРЕДАЧА · '+profile.speaker+': «'+profile.incoming.slice(0,92)+'…» Открой карту и найди аварийную метку. У тебя около 3,5 минут на перехват.');
  setRadioSignalWaypoint();save();broadcastRadioSignalState();updateRadioSignalHud();
 }
