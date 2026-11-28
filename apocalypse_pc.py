@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 
 import webview
 
-APP_VERSION = "apocalypse-pc-v1.23.0"
+APP_VERSION = "apocalypse-pc-v1.23.1"
 # Cinematic remaster: procedural materials, aircraft detail, crash debris and camera cuts.
 APOCALYPSE_SETTINGS_PATH = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PrimeHub" / "apocalypse-settings.json"
 
