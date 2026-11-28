@@ -868,6 +868,7 @@ function updateRadioSignal(now){
 function drawRadioSignal(){
  if(!radioSignal)return;
  const s=radioSignal,pulse=1+Math.sin(time*.006)*.18;
+ if(s.kind==='cache')drawSupplyCrate(s.x,s.y,1.24,'field',false);
  const color=s.kind==='medical'?'#8fd3b0':s.kind==='survivors'?'#9dc5ef':s.kind==='convoy'?'#e59b69':'#e6c783';
  ctx.save();ctx.translate(s.x,s.y);
  ctx.fillStyle='#111b17';ctx.beginPath();ctx.ellipse(0,20,35,10,0,0,Math.PI*2);ctx.fill();
