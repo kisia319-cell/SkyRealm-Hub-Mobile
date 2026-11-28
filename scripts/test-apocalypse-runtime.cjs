@@ -6,6 +6,8 @@ const path = require('node:path');
 
 const root = process.cwd();
 const html = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.html'), 'utf8');
+const skyrealmHtml = fs.readFileSync(path.join(root, 'app/src/main/assets/skyrealm/index.html'), 'utf8');
+const skyrealmGame = fs.readFileSync(path.join(root, 'app/src/main/assets/skyrealm/game/game.js'), 'utf8');
 const game = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse.js'), 'utf8');
 const coop = fs.readFileSync(path.join(root, 'app/src/main/assets/apocalypse-coop.js'), 'utf8');
 const pc = fs.readFileSync(path.join(root, 'apocalypse_pc.py'), 'utf8');
@@ -14,6 +16,7 @@ const character3d = fs.readFileSync(path.join(root, 'app/src/main/assets/apocaly
 const workflow = fs.readFileSync(path.join(root, '.github/workflows/build-apocalypse-pc.yml'), 'utf8');
 new vm.Script(cinematic3d, { filename: 'apocalypse-cinematic-3d.js' });
 new vm.Script(character3d, { filename: 'apocalypse-character-3d.js' });
+new vm.Script(skyrealmGame, { filename: 'skyrealm/game/game.js' });
 
 new vm.Script(game, { filename: 'apocalypse.js' });
 new vm.Script(coop, { filename: 'apocalypse-coop.js' });
@@ -453,6 +456,15 @@ assert.ok(game.includes("function chooseCampaignPath(choice)") && game.includes(
 assert.ok(html.includes('id="campaignChoiceModal"') && html.includes('id="campaignRescueChoice"') && html.includes('id="campaignAbandonChoice"'), 'Story branch must provide in-game choice controls');
 assert.ok(game.includes("campaign-cache") && game.includes("campaign-relay") && game.includes("campaign-convoy"), 'Long operation must include scavenging, relay repair and convoy objectives');
 assert.ok(game.includes("longCampaign:campaign") && game.includes("campaignObjectiveText()"), 'Long operation progress must persist and appear in the objective HUD');
+const campaignRestoreStart = game.indexOf('const randomEventSites=');
+const campaignRestoreEnd = game.indexOf('const campaign=', campaignRestoreStart);
+const campaignRestore = game.slice(campaignRestoreStart, campaignRestoreEnd);
+assert.ok(campaignRestoreStart >= 0 && campaignRestoreEnd > campaignRestoreStart, 'Saved world events must have a dedicated restore filter');
+for (const siteType of ['campaign','campaign-beacon-part','campaign-beacon-active','campaign-cache','campaign-relay','campaign-wave','campaign-convoy','campaign-rescue','campaign-intel','campaign-frequency','campaign-archive','campaign-extract']) {
+  assert.ok(campaignRestore.includes("'" + siteType + "'"), 'Campaign location type must survive world reload: ' + siteType);
+}
+assert.ok(campaignRestore.includes("source==='long-campaign'") && campaignRestore.includes("source!=='long-campaign'") && campaignRestore.includes(".slice(-80)"), 'Long-campaign locations must be retained separately from the capped ambient event history');
+assert.ok(skyrealmHtml.includes('data:image/jpeg;base64,') && (skyrealmHtml.match(/src="realm\.jpg"/g)||[]).length === 5, 'SkyRealm preview images must use an embedded fallback instead of missing relative assets');
 assert.ok(game.includes("function campaignBeginInvestigation()") && game.includes("campaign-intel") && game.includes("campaign-frequency") && game.includes("campaign-archive"), 'Rescue branch must expand into a non-combat investigation, radio restoration and archive finale');
 assert.ok(game.includes("intel:whole(c.intel,0,0,3)") && game.includes("tunedNodes:whole(c.tunedNodes,0,0,3)"), 'Investigation and radio progress must persist across saves');
 assert.ok(game.includes("function chooseCampaignFrequency(freq)") && game.includes("[87.4,103.2,91.6]"), 'Radio restoration must be a clue-based frequency puzzle with three distinct correct channels');
