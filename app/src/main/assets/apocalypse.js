@@ -95,7 +95,15 @@ function setBuildMode(on,type='barricade'){buildMode=!!on;buildType=type;documen
 function rotateBuild(){if(!buildMode)return;buildAngle=(buildAngle+Math.PI/4)%(Math.PI*2);}
 function placeBarricade(){if(!buildMode)return;const p=buildCandidate();if(!canPlaceBarricade(p)){toast('Здесь нельзя строить: место занято');return;}if(['wall','floor','door','storage','generator','reinforcedWall','gate','farm','waterCollector','watchtower'].includes(buildType)){const costs={wall:{wood:5,scrap:2,bolts:1},floor:{wood:4,scrap:1},door:{wood:4,scrap:3,bolts:2},storage:{wood:6,scrap:3,bolts:2},generator:{wood:8,scrap:8,bolts:4,electronicsPack:2},reinforcedWall:{wood:4,scrap:8,bolts:4},gate:{wood:5,scrap:9,bolts:5},farm:{wood:8,scrap:2,bolts:2},waterCollector:{wood:6,scrap:5,bolts:3},watchtower:{wood:12,scrap:10,bolts:6,electronicsPack:1}}[buildType];if(baseStructures.length>=120){toast('Лимит модулей базы достигнут · 120');setBuildMode(false);return;}if(Object.entries(costs).some(([k,v])=>(state[k]||0)<v)){toast('Не хватает материалов: '+Object.entries(costs).filter(([k,v])=>(state[k]||0)<v).map(([k,v])=>k+' '+v).join(', '));setBuildMode(false);return;}for(const [k,v] of Object.entries(costs))state[k]-=v;const structure={id:'base_'+Date.now().toString(36)+'_'+baseStructures.length,type:buildType,x:p.x,y:p.y,angle:p.angle,hp:100,level:1,open:false,online:false,contents:{}};baseStructures.push(structure);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running'&&coop.isOwner())coop.send({kind:'base-structure-built',structure});save();setBuildMode(false);toast(({wall:'Деревянная стена построена',floor:'Настил установлен',door:'Дверь установлена',storage:'Хранилище построено',generator:'Генератор установлен',reinforcedWall:'Металлическая стена усилена',gate:'Двойные ворота установлены',farm:'Грядка подготовлена',waterCollector:'Сборщик воды установлен',watchtower:'Сторожевая вышка построена'})[buildType]);return;}if(buildType==='spikes'){if(state.scrap<2||state.wood<4||state.bolts<1){toast('Ловушка требует 2 металла, 4 дерева и 1 крепёж');setBuildMode(false);return;}if(spikeTraps.length>=36){toast('Лимит ловушек достигнут');setBuildMode(false);return;}state.scrap-=2;state.wood-=4;state.bolts--;const trap={x:p.x,y:p.y,angle:p.angle,charges:3};spikeTraps.push(trap);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'spike-trap-built',trap});save();setBuildMode(false);toast('Шипованная ловушка установлена · 3 срабатывания');return;}if(state.scrap<2||state.wood<3){toast('Не хватает ресурсов: нужно 2 металла и 3 дерева');setBuildMode(false);return;}if(barricades.length>=24){toast('Лимит укреплений достигнут');setBuildMode(false);return;}state.scrap-=2;state.wood-=3;const placed={x:p.x,y:p.y,angle:p.angle};barricades.push(placed);const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'barricade-built',barricade:placed});save();setBuildMode(false);toast('Баррикада установлена');}
 let gameActive=false,lastNet=0,deathHandled=false,respawnUntil=0,mobileQuickMenuResume=false,settingsResumeGame=false,sprintHeld=false,sprintActive=false,sprintLocked=false,mapResumeGame=false;
-let radioSignal=null,radioSignalNextAt=performance.now()+30000;
+function normaliseRadioSignal(raw){
+ if(!raw||typeof raw!=='object'||!['cache','medical','survivors','convoy'].includes(raw.kind)||!Number.isFinite(raw.x)||!Number.isFinite(raw.y))return null;
+ const frequencies=[87.4,91.6,103.2],phase=whole(raw.phase,0,0,3);
+ const offsets=[[-142,-78],[154,-58],[4,166]];
+ const fragments=Array.isArray(raw.fragments)?raw.fragments.slice(0,3).map((v,i)=>({x:bounded(v?.x,raw.relayX??raw.x,WORLD_MIN,WORLD_MAX),y:bounded(v?.y,raw.relayY??raw.y,WORLD_MIN,WORLD_MAX),found:v?.found===true,text:String(v?.text||'Фрагмент передачи '+(i+1)).slice(0,220)})):[];
+ while(fragments.length<3)fragments.push({x:bounded(raw.relayX??raw.x,0,WORLD_MIN,WORLD_MAX)+offsets[fragments.length][0],y:bounded(raw.relayY??raw.y,0,WORLD_MIN,WORLD_MAX)+offsets[fragments.length][1],found:false,text:'Фрагмент передачи '+(fragments.length+1)});
+ return{id:typeof raw.id==='string'?raw.id.slice(0,48):'radio_restored',kind:raw.kind,phase,x:bounded(raw.x,0,WORLD_MIN,WORLD_MAX),y:bounded(raw.y,0,WORLD_MIN,WORLD_MAX),relayX:bounded(raw.relayX,raw.x,WORLD_MIN,WORLD_MAX),relayY:bounded(raw.relayY,raw.y,WORLD_MIN,WORLD_MAX),frequency:frequencies.includes(Number(raw.frequency))?Number(raw.frequency):91.6,attempts:whole(raw.attempts,0,0,9),quality:whole(raw.quality,100,0,100),expiresAt:Number.isFinite(raw.expiresAt)?Math.max(0,raw.expiresAt):0,cleanDecode:raw.cleanDecode!==false,fragments};
+}
+let radioSignal=normaliseRadioSignal(saved.radioSignal),radioSignalNextAt=Number.isFinite(saved.radioSignalNextAt)?Math.max(Date.now(),saved.radioSignalNextAt):Date.now()+30000,radioSignalModalResume=false;
 let ambientEventNextAt=performance.now()+45000+Math.random()*35000;
 const randomEventSites=Array.isArray(saved.randomEventSites)?(()=>{const valid=saved.randomEventSites.filter(v=>v&&['car','checkpoint','camp','gunfire','scream','convoy','quarantine','survivors','signal','horde','campaign','campaign-beacon-part','campaign-beacon-active','campaign-cache','campaign-relay','campaign-wave','campaign-convoy','campaign-rescue','campaign-intel','campaign-frequency','campaign-archive','campaign-extract'].includes(v.type)&&Number.isFinite(v.x)&&Number.isFinite(v.y));const campaignSites=valid.filter(v=>v.source==='long-campaign');const ambientSites=valid.filter(v=>v.source!=='long-campaign').slice(-Math.max(0,40-campaignSites.length));return campaignSites.concat(ambientSites).slice(-80);})():[];
 const campaign=(()=>{const c=saved.longCampaign&&typeof saved.longCampaign==='object'?saved.longCampaign:{};return{status:['locked','active','complete'].includes(c.status)?c.status:'locked',stage:whole(c.stage,0,0,9),runId:whole(c.runId,Date.now(),1,Number.MAX_SAFE_INTEGER),unlockAt:Number.isFinite(c.unlockAt)?c.unlockAt:Date.now()+240000,x:bounded(c.x,0,WORLD_MIN,WORLD_MAX),y:bounded(c.y,0,WORLD_MIN,WORLD_MAX),caches:whole(c.caches,0,0,3),beaconParts:whole(c.beaconParts,0,0,3),beaconActivated:c.beaconActivated===true,wave:whole(c.wave,0,0,7),waveWanted:whole(c.waveWanted,0,0,12),waveSpawned:whole(c.waveSpawned,0,0,12),nextWaveAt:whole(c.nextWaveAt,0,0,Number.MAX_SAFE_INTEGER),siteId:typeof c.siteId==='string'?c.siteId:'',completedAt:whole(c.completedAt,0,0,Number.MAX_SAFE_INTEGER),choice:['rescue','abandon'].includes(c.choice)?c.choice:'',rescued:c.rescued===true,intel:whole(c.intel,0,0,3),tunedNodes:whole(c.tunedNodes,0,0,3),archiveChoice:['broadcast','encrypt'].includes(c.archiveChoice)?c.archiveChoice:'',ending:['hope','hardline'].includes(c.ending)?c.ending:''}})();
@@ -253,7 +261,7 @@ const foundShelterCaches=new Set(Array.isArray(saved.foundShelterCaches)?saved.f
 const supplyShelters=Array.from({length:60},(_,i)=>{const col=i%10,row=Math.floor(i/10);return{id:i,x:-5200+col*1180+(row%2)*90,y:-2800+row*1120,w:112,h:88,loot:[{icon:'🥫',name:'Консервы',count:1+(i%3)},{icon:'🩹',name:'Аптечка',count:i%4===0?1:0},{icon:'🔩',name:'Крепёж',count:1+(i%2)},{icon:'💧',name:'Чистая вода',count:i%3===0?1:0}]};});
  const supplyShelterContents=saved.supplyShelterContents&&typeof saved.supplyShelterContents==='object'?saved.supplyShelterContents:{};
  for(const s of supplyShelters){if(!Array.isArray(supplyShelterContents[s.id]))supplyShelterContents[s.id]=foundShelterCaches.has(s.id)?[]:s.loot.filter(v=>v.count>0).map(v=>({icon:v.icon,name:v.name,key:v.name==='Консервы'?'food':v.name==='Аптечка'?'bandage':v.name==='Крепёж'?'bolts':'cleanWater',count:v.count}));if(s.id%7===0&&!foundShelterCaches.has(s.id)&&!supplyShelterContents[s.id].some(v=>v.key==='waterFilter'))supplyShelterContents[s.id].push({icon:'🧰',name:'Фильтр воды',key:'waterFilter',count:1});}
-function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,magAmmo:state.magAmmo,longCampaign:campaign,roadkillMission,character:{...colors},lastSignalMission,starterKnifeSpawnVersion,spawnCampfireX:spawnCampfire.x,spawnCampfireY:spawnCampfire.y,spawnCampfireLevel,spawnCampfireUntil,activeInterior,interiorReturn,worldClock,generatorRepaired,generatorOnline,flashlight:!!saved.flashlight,starterKnife,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,spikeTraps,baseStructures,foundCaches:[...foundCaches],explorationCacheContents,discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],shelterLoot,foundShelterCaches:[...foundShelterCaches],supplyShelterContents,buildingLoot,buildingFloors,interiorEvidence,homeFurnitureLoot,homeRestedDay,homeWorkbenchDay,homeRadioDay,supplyDrop,mapMarkers,activeWaypoint,bonusLives,bonusLivesActive,randomEventSites,storyArc,carRecovery}));try{window.dispatchEvent(new Event('apocalypse-local-save'));}catch(_){}return true;}catch(_){return false;}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify({...state,magAmmo:state.magAmmo,longCampaign:campaign,roadkillMission,character:{...colors},lastSignalMission,starterKnifeSpawnVersion,spawnCampfireX:spawnCampfire.x,spawnCampfireY:spawnCampfire.y,spawnCampfireLevel,spawnCampfireUntil,activeInterior,interiorReturn,worldClock,generatorRepaired,generatorOnline,flashlight:!!saved.flashlight,starterKnife,wrecks:wrecks.map(v=>v.done),harvestedTrees:[...harvestedTrees],barricades,spikeTraps,baseStructures,foundCaches:[...foundCaches],explorationCacheContents,discoveredLandmarks:[...discoveredLandmarks],visitedStores:[...visitedStores],storeLoot,lootedShelters:[...lootedShelters],shelterLoot,foundShelterCaches:[...foundShelterCaches],supplyShelterContents,buildingLoot,buildingFloors,interiorEvidence,homeFurnitureLoot,homeRestedDay,homeWorkbenchDay,homeRadioDay,supplyDrop,mapMarkers,activeWaypoint,radioSignal,radioSignalNextAt,bonusLives,bonusLivesActive,randomEventSites,storyArc,carRecovery}));try{window.dispatchEvent(new Event('apocalypse-local-save'));}catch(_){}return true;}catch(_){return false;}}
 function feedSpawnCampfire(){if(!nearSpawnCampfire())return false;if(state.wood<1){toast('Для костра нужно 1 дерево');return false;}state.wood--;spawnCampfireUntil=Math.max(Date.now(),spawnCampfireUntil)+180000;save();updateHud();toast('Костёр поддержан · +3 минуты защиты');return true;}
 function upgradeSpawnCampfire(){if(!nearSpawnCampfire())return false;if(spawnCampfireLevel>=10){toast('Костёр достиг максимального уровня');return false;}const cost=spawnCampfireUpgradeCost();if(state.wood<cost){toast('Для улучшения нужно '+cost+' дерева');return false;}state.wood-=cost;spawnCampfireLevel++;save();updateHud();toast('Костёр улучшен · радиус защиты '+(30+(spawnCampfireLevel-1)*10)+' блоков');return true;}
 function drawSpawnCampfire(){const x=spawnCampfire.x,y=spawnCampfire.y,active=spawnCampfireActive(),radius=spawnCampfireRadius(),left=spawnCampfireRemaining();ctx.save();if(active){const pulse=.96+Math.sin(time*.0025)*.025;ctx.fillStyle='#e68a3320';ctx.beginPath();ctx.arc(x,y,radius*pulse,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f2b66b66';ctx.lineWidth=2;ctx.setLineDash([13,12]);ctx.beginPath();ctx.arc(x,y,radius*pulse,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}ctx.translate(x,y);ctx.fillStyle='#10140f9c';ctx.beginPath();ctx.ellipse(0,17,45,13,0,0,Math.PI*2);ctx.fill();for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.fillStyle=['#5d6254','#77705e','#454c42'][i%3];ctx.beginPath();ctx.ellipse(Math.cos(a)*25,Math.sin(a)*8+5,9,6,a,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#282f28';ctx.lineWidth=1.5;ctx.stroke();}ctx.lineCap='round';ctx.strokeStyle='#4a3020';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(-19,8);ctx.lineTo(18,-1);ctx.moveTo(-15,-2);ctx.lineTo(17,10);ctx.stroke();ctx.strokeStyle='#9a7044';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-19,7);ctx.lineTo(18,-2);ctx.moveTo(-15,-3);ctx.lineTo(17,9);ctx.stroke();if(active){const flicker=Math.sin(time*.018)*3;ctx.shadowColor='#ff7b28';ctx.shadowBlur=24;ctx.fillStyle='#f05b24';ctx.beginPath();ctx.moveTo(-13,8);ctx.quadraticCurveTo(-20,-13,-5,-27-flicker);ctx.quadraticCurveTo(-3,-15,1,-34-flicker);ctx.quadraticCurveTo(20,-12,12,8);ctx.closePath();ctx.fill();ctx.fillStyle='#ffb34f';ctx.beginPath();ctx.moveTo(-6,8);ctx.quadraticCurveTo(-8,-8,1,-20-flicker);ctx.quadraticCurveTo(13,-4,7,8);ctx.closePath();ctx.fill();ctx.fillStyle='#fff0ad';ctx.beginPath();ctx.ellipse(1,5,4,7,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}else{ctx.fillStyle='#282c27';ctx.beginPath();ctx.ellipse(0,3,12,5,0,0,Math.PI*2);ctx.fill();}ctx.restore();ctx.save();ctx.translate(x,y-64);ctx.fillStyle='#3b2b1d';ctx.fillRect(-54,-22,108,30);ctx.strokeStyle='#b18a55';ctx.lineWidth=2;ctx.strokeRect(-54,-22,108,30);ctx.fillStyle='#f0d5a0';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('КОСТЁР · УР. '+spawnCampfireLevel,0,-10);ctx.fillStyle='#201b15';ctx.fillRect(-43,-3,86,6);const progress=active?Math.min(1,left/180000):0;ctx.fillStyle=active?'#f2a34c':'#6a5140';ctx.fillRect(-42,-2,84*progress,4);ctx.fillStyle='#f5dfb1';ctx.font='9px system-ui';ctx.fillText(active?Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0')+' · '+Math.round(30+(spawnCampfireLevel-1)*10)+' БЛОКОВ':'ПОТУХ · E — ДРОВА',0,20);ctx.restore();}
@@ -643,65 +651,223 @@ function streetLamp(x,y){ctx.fillStyle='#202821';ctx.fillRect(x-3,y-4,6,48);ctx.
 function drawDistrictDetails(){for(const y of [-8000,-4500,-1000,600,4100,7600,10000,13500,17000,20500])for(let x=WORLD_MIN+420;x<WORLD_MAX;x+=900){if(Math.abs(x-state.x)<w&&Math.abs(y-state.y)<h)streetLamp(x,y-92);}for(const x of [-8000,-4500,-1000,2700,6200,9700,10000,13500,17000,20500])for(let y=WORLD_MIN+420;y<WORLD_MAX;y+=900){if(Math.abs(x-state.x)<w&&Math.abs(y-state.y)<h)streetLamp(x+78,y);}}
 function wreck(v){car(v.x,v.y,1.05,.06);if(!v.done){ctx.strokeStyle='#e6c783';ctx.lineWidth=2;ctx.beginPath();ctx.arc(v.x,v.y,21+Math.sin(time*.004)*3,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#e6c783';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('ДЕТАЛИ',v.x,v.y-31)}}
 function smoke(x,y){if(prefs.effects==='low')return;for(let i=0;i<5;i++){let yy=(time*.00015+i*.21)%1;ctx.globalAlpha=(1-yy)*.2;ctx.fillStyle='#c5c5b8';ctx.beginPath();ctx.arc(x+Math.sin(time*.0006+i)*11,y-yy*52,5+yy*11,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
-function updateRadioSignal(now){
- if(!gameActive||activeInterior)return;
- if(radioSignal){
-  if(now>=radioSignal.expiresAt){radioSignal=null;radioSignalNextAt=now+25000;toast('Радиосигнал потерян. Скоро появится новый.');}
+const RADIO_SIGNAL_FREQUENCIES=[87.4,91.6,103.2];
+function radioSignalProfile(kind){
+ const profiles={
+  cache:{name:'КОНТЕЙНЕР СНАБЖЕНИЯ',speaker:'ДИСПЕТЧЕР',incoming:'«…диспетчерская, это рейс 14. Контейнеры оставлены у старой дороги. Повторяю: груз нельзя отдавать военным. Батарея передатчика садится…»',clue:'В конце записи диспетчер трижды называет резервный канал: «девяносто один и шесть».',fragments:['«…маркировка контейнера жёлтая. Не вскрывайте пломбу до сверки номера…»','«…код груза 4–1–7. Внутри фильтры, еда и крепёж. Охрана ушла на юг…»','«…если штаб спросит, скажите: контейнер потерян. Координаты передам по резервному каналу…»']},
+  medical:{name:'МЕДИЦИНСКИЙ ПУНКТ',speaker:'ВЕРА',incoming:'«…медицинская группа, приём. В полевом пункте остались препараты и журнал пациентов. У нас раненые, но основной канал заглушён…»',clue:'В медицинском журнале указан аварийный канал бригады: 87,4 МГц.',fragments:['«…ампулы переложены в холодный ящик. Температуру не превышать…»','«…двое раненых эвакуированы, один остался в процедурной. Аптечки на нижней полке…»','«…передайте Вере: журнал пациентов сохранился. Последняя запись сделана перед закрытием сектора…»']},
+  survivors:{name:'ГРУППА ВЫЖИВШИХ',speaker:'РОМАН',incoming:'«…Роман, ты нас слышишь? Нас трое. Один ранен. Мы спрятались за бетонной стеной, но заражённые идут на звук…»',clue:'Три коротких импульса повторяются на аварийном канале 103,2 МГц.',fragments:['«…мы не выйдем на дорогу. Там двое в форме и они стреляют во всё, что движется…»','«…у нас осталось две бутылки воды. Слышали мотор на востоке, потом всё стихло…»','«…если придёт помощь, не включайте фары. Подайте три коротких сигнала и ждите ответа…»']},
+  convoy:{name:'ПРОПАВШАЯ КОЛОННА',speaker:'СОКОЛОВ',incoming:'«…патруль, докладываю: колонна остановлена у разбитого путепровода. В машине связи осталась карта маршрута. Нас обходят с фланга…»',clue:'В бортовом журнале колонны отмечен служебный резервный канал 91,6 МГц.',fragments:['«…головная машина потеряла колесо. Топливо и боекомплект оставлены в кузове…»','«…на карте отмечен безопасный объезд через старый пост. Мост больше не держит вес…»','«…приказ: не бросать журнал колонны. В нём координаты склада и список пропавших…»']}
+ };
+ return profiles[kind]||profiles.cache;
+}
+function radioSignalSafePoint(originX,originY,baseAngle,minDistance,maxDistance){
+ for(let attempt=0;attempt<28;attempt++){
+  const angle=baseAngle+attempt*.71,distance=minDistance+(attempt%7)*(maxDistance-minDistance)/7;
+  const x=Math.max(WORLD_MIN+120,Math.min(WORLD_MAX-120,originX+Math.cos(angle)*distance));
+  const y=Math.max(WORLD_MIN+120,Math.min(WORLD_MAX-120,originY+Math.sin(angle)*distance));
+  if(!blocked(x,y)&&!insideBuilding(x,y))return{x,y};
+ }
+ return{x:Math.max(WORLD_MIN+120,Math.min(WORLD_MAX-120,originX+Math.cos(baseAngle)*minDistance)),y:Math.max(WORLD_MIN+120,Math.min(WORLD_MAX-120,originY+Math.sin(baseAngle)*minDistance))};
+}
+function radioSignalWaypoint(){
+ if(!radioSignal)return null;
+ if(radioSignal.phase===2){
+  const next=radioSignal.fragments.map((v,i)=>({...v,i,d:Math.hypot(state.x-v.x,state.y-v.y)})).filter(v=>!v.found).sort((a,b)=>a.d-b.d)[0];
+  if(next)return{name:'Фрагмент передачи · '+(next.i+1)+'/3',x:next.x,y:next.y};
+ }
+ const names=['Полевая рация · расшифровка','Удалённый ретранслятор','Сбор фрагментов записи','Радиоприёмник · решение'];
+ return{name:names[radioSignal.phase]||'Радиосигнал',x:radioSignal.x,y:radioSignal.y};
+}
+function setRadioSignalWaypoint(){
+ if(!radioSignal||campaign.status==='active'||lastSignalMission?.status==='active')return;
+ const target=radioSignalWaypoint();if(!target)return;
+ activeWaypoint={name:target.name,x:target.x,y:target.y};suppressedRouteKey='';drawPlayerMap();
+}
+function broadcastRadioSignalState(){
+ const coop=window.ApocalypseCoop;
+ if(coop?.room?.status==='running'&&coop.isOwner())coop.send({kind:'radio-signal-state',radioSignal:radioSignal?{...radioSignal,fragments:radioSignal.fragments.map(v=>({...v}))}:null,radioSignalNextAt,activeWaypoint:activeWaypoint?{...activeWaypoint}:null});
+}
+function updateRadioSignalHud(){
+ const host=document.getElementById('radioSignalHud');if(!host)return;
+ if(!radioSignal){host.classList.add('hidden');return;}
+ host.classList.remove('hidden');
+ const stages=['ДЕКОДИРОВАНИЕ ПЕРЕДАЧИ','ПОИСК РЕТРАНСЛЯТОРА','СБОР ФРАГМЕНТОВ','РЕШЕНИЕ ПО ПЕРЕДАЧЕ'];
+ const progress=radioSignal.phase===2?radioSignal.fragments.filter(v=>v.found).length+'/3':radioSignal.phase===3?'3/3':radioSignal.phase===1?'1/3':'0/3';
+ const title=document.getElementById('radioSignalHudTitle'),step=document.getElementById('radioSignalHudStep'),quality=document.getElementById('radioSignalHudQuality');
+ if(title)title.textContent=radioSignalProfile(radioSignal.kind).name;
+ if(step)step.textContent=(radioSignal.phase+1)+'/4 · '+stages[radioSignal.phase]+' · '+progress;
+ if(quality)quality.textContent='ЧИСТОТА '+radioSignal.quality+'%'+(radioSignal.attempts?' · ПОПЫТОК '+radioSignal.attempts:'');
+}
+function openRadioSignalModal(mode='tune'){
+ if(!radioSignal)return;
+ const modal=document.getElementById('radioSignalModal'),stage=document.getElementById('radioSignalStage'),title=document.getElementById('radioSignalTitle'),body=document.getElementById('radioSignalText'),telemetry=document.getElementById('radioSignalTelemetry'),choices=document.getElementById('radioSignalChoices');
+ if(!modal||!stage||!title||!body||!telemetry||!choices)return;
+ if(modal.classList.contains('hidden'))radioSignalModalResume=gameActive;
+ gameActive=false;keys.clear();moveX=moveY=0;
+ const profile=radioSignalProfile(radioSignal.kind);choices.innerHTML='';
+ if(mode==='tune'){
+  stage.textContent='ВХОДЯЩАЯ ПЕРЕДАЧА · 01 / 04';title.textContent='РАСШИФРОВАТЬ СИГНАЛ';
+  body.textContent=profile.incoming+' '+profile.clue+(radioSignal.attempts>=2?' Повторный фильтр выделил частоту, но помехи всё ещё мешают точному приёму.':'');
+  telemetry.textContent='ЧИСТОТА '+radioSignal.quality+'% · ПОПЫТКИ '+radioSignal.attempts+' · ВЫБЕРИ НЕСУЩУЮ ЧАСТОТУ';
+  RADIO_SIGNAL_FREQUENCIES.forEach(freq=>{const button=document.createElement('button');button.type='button';button.textContent=freq.toFixed(1).replace('.',',')+' МГц';button.addEventListener('click',()=>chooseRadioSignalFrequency(freq));choices.appendChild(button);});
+  choices.className='campaign-frequency-grid';
+ }else{
+  stage.textContent='ПЕРЕДАЧА ВОССТАНОВЛЕНА · 04 / 04';title.textContent='КАК ПОСТУПИТЬ С ИНФОРМАЦИЕЙ?';
+  body.textContent=profile.speaker+': '+radioSignal.fragments.map(v=>v.text).join(' ');
+  telemetry.textContent='СОБРАНО 3 / 3 ФРАГМЕНТА · '+(radioSignal.attempts===0?'ПЕРЕХВАТ БЕЗ ОШИБОК':'КАЧЕСТВО ЗАПИСИ '+radioSignal.quality+'%');
+  const outcomes=radioSignal.kind==='cache'?[['warehouse','Доставить груз в поселение','Штаб получит припасы и крепёж'],['coordinates','Передать координаты другим выжившим','Меньше добычи сейчас, больше доверия']]:
+   radioSignal.kind==='medical'?[['treatment','Открыть медицинский запас','Аптечки, инъектор и помощь поселению'],['field','Взять полевой комплект','Больше личных медицинских припасов']]:
+   radioSignal.kind==='survivors'?[['quiet','Организовать тихую эвакуацию','Помощь выжившим и доверие поселения'],['decoy','Передать ложный сигнал','Отвести угрозу и получить боеприпасы']]:
+   [['documents','Сохранить журнал колонны','Маршрут, крепёж и детали'],['supplies','Забрать оставшийся груз','Боеприпасы и продовольствие']];
+  choices.className='radio-signal-choice-grid';
+  outcomes.forEach(([key,label,description])=>{const button=document.createElement('button');button.type='button';button.className='radio-signal-choice';const strong=document.createElement('strong');strong.textContent=label;const small=document.createElement('small');small.textContent=description;button.append(strong,small);button.addEventListener('click',()=>chooseRadioSignalOutcome(key));choices.appendChild(button);});
+ }
+ modal.classList.remove('hidden');
+}
+function closeRadioSignalModal(){
+ const modal=document.getElementById('radioSignalModal');if(modal)modal.classList.add('hidden');
+ if(radioSignalModalResume){radioSignalModalResume=false;gameActive=true;focusGame();}
+}
+function chooseRadioSignalFrequency(frequency){
+ if(!radioSignal||radioSignal.phase!==0)return;
+ const coop=window.ApocalypseCoop;
+ if(coop?.room?.status==='running'&&!coop.isOwner()){toast('Настройку общего радиоканала выполняет владелец мира');return;}
+ if(Number(frequency)!==radioSignal.frequency){
+  radioSignal.attempts=Math.min(9,radioSignal.attempts+1);radioSignal.quality=Math.max(15,radioSignal.quality-22);radioSignal.cleanDecode=false;
+  save();broadcastRadioSignalState();openRadioSignalModal('tune');toast('Частота не совпала. Помехи усилились — прослушай повторяющийся фрагмент.');
   return;
  }
- if(now<radioSignalNextAt)return;
+ closeRadioSignalModal();radioSignal.phase=1;radioSignal.expiresAt=0;radioSignal.x=radioSignal.relayX;radioSignal.y=radioSignal.relayY;
+ setRadioSignalWaypoint();save();broadcastRadioSignalState();updateRadioSignalHud();
+ toast('Частота '+radioSignal.frequency.toFixed(1).replace('.',',')+' МГц зафиксирована. Сигнал уходит дальше — найди удалённый ретранслятор.');
+}
+function radioSignalActionLabel(){
+ if(!radioSignal)return '';
+ const distance=Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y);
+ if(radioSignal.phase===2){
+  const piece=radioSignal.fragments.map((v,i)=>({...v,i,d:Math.hypot(state.x-v.x,state.y-v.y)})).filter(v=>!v.found&&v.d<76).sort((a,b)=>a.d-b.d)[0];
+  if(piece)return'Снять фрагмент записи '+(radioSignal.fragments.filter(v=>v.found).length+1)+'/3';
+  if(distance<112)return'Проверить приёмник · '+radioSignal.fragments.filter(v=>v.found).length+'/3';
+ }
+ if(distance<112){
+  if(radioSignal.phase===0)return'Настроить частоту радиомаяка';
+  if(radioSignal.phase===1)return'Активировать ретранслятор';
+  if(radioSignal.phase===3)return'Принять решение по передаче';
+ }
+ return '';
+}
+function interactRadioSignal(){
+ if(!radioSignal)return false;
+ const action=radioSignalActionLabel();if(!action)return false;
+ const coop=window.ApocalypseCoop;
+ if(coop?.room?.status==='running'&&!coop.isOwner()){toast('Радиооперацию в общем мире координирует владелец комнаты');return true;}
+ if(radioSignal.phase===0){openRadioSignalModal('tune');return true;}
+ if(radioSignal.phase===1){
+  radioSignal.phase=2;const offsets=[[-142,-78],[154,-58],[4,166]];
+  radioSignal.fragments=radioSignal.fragments.map((v,i)=>({...v,x:radioSignal.relayX+offsets[i][0],y:radioSignal.relayY+offsets[i][1],found:false}));
+  setRadioSignalWaypoint();save();broadcastRadioSignalState();updateRadioSignalHud();
+  toast('Ретранслятор ожил. В буфере три фрагмента: голос диспетчера, координаты и последние секунды записи. Ищи три пульсирующие метки вокруг антенны.');
+  return true;
+ }
+ if(radioSignal.phase===2){
+  const piece=radioSignal.fragments.map((v,i)=>({...v,i,d:Math.hypot(state.x-v.x,state.y-v.y)})).filter(v=>!v.found&&v.d<76).sort((a,b)=>a.d-b.d)[0];
+  if(!piece){toast('Приёмник удерживает '+radioSignal.fragments.filter(v=>v.found).length+'/3 фрагмента. Подойди к ближайшей пульсирующей метке.');return true;}
+  radioSignal.fragments[piece.i].found=true;const count=radioSignal.fragments.filter(v=>v.found).length;
+  toast('Фрагмент '+count+'/3 · '+radioSignal.fragments[piece.i].text);
+  if(count>=3){radioSignal.phase=3;activeWaypoint={name:'Радиоприёмник · решение',x:radioSignal.x,y:radioSignal.y};suppressedRouteKey='';save();broadcastRadioSignalState();updateRadioSignalHud();openRadioSignalModal('outcome');}
+  else{setRadioSignalWaypoint();save();broadcastRadioSignalState();updateRadioSignalHud();}
+  return true;
+ }
+ if(radioSignal.phase===3){openRadioSignalModal('outcome');return true;}
+ return false;
+}
+function chooseRadioSignalOutcome(choice){
+ if(!radioSignal||radioSignal.phase!==3)return;
+ const coop=window.ApocalypseCoop;
+ if(coop?.room?.status==='running'&&!coop.isOwner()){toast('Решение по общей передаче принимает владелец мира');return;}
+ const kind=radioSignal.kind;let message='';
+ if(kind==='cache'&&choice==='warehouse'){state.scrap+=6;state.food+=4;state.bolts+=2;message='Груз доставлен в поселение: +6 металла, +4 еды и +2 крепежа.';}
+ else if(kind==='cache'&&choice==='coordinates'){state.scrap+=3;state.electronicsPack++;state.survivorTrust=Math.min(100,state.survivorTrust+4);message='Координаты тайника переданы другим выжившим: +3 металла, +1 электроника и +4 доверия.';}
+ else if(kind==='medical'&&choice==='treatment'){state.bandage+=3;state.medInjector++;state.hp=Math.min(100,state.hp+20);state.survivorTrust=Math.min(100,state.survivorTrust+2);message='Медицинский запас передан поселению: +3 аптечки, +1 инъектор и +20 здоровья.';}
+ else if(kind==='medical'&&choice==='field'){state.bandage+=2;state.cleanWater+=3;state.hp=Math.min(100,state.hp+30);message='Полевой комплект получен: +2 аптечки, +3 воды и +30 здоровья.';}
+ else if(kind==='survivors'&&choice==='quiet'){state.survivorTrust=Math.min(100,state.survivorTrust+6);state.food+=5;state.bandage++;message='Выжившие получили тихий маршрут к лагерю: +6 доверия, +5 еды и аптечка.';}
+ else if(kind==='survivors'&&choice==='decoy'){state.survivorTrust=Math.min(100,state.survivorTrust+2);state.ammo+=24;state.scrap+=4;message='Ложная передача отвела заражённых от укрытия: +24 патрона, +4 металла и +2 доверия.';}
+ else if(kind==='convoy'&&choice==='documents'){state.scrap+=5;state.bolts+=5;state.weaponParts+=2;state.survivorTrust=Math.min(100,state.survivorTrust+2);message='Журнал колонны сохранён: +5 металла, +5 крепежа и +2 детали оружия.';}
+ else if(kind==='convoy'&&choice==='supplies'){state.scrap+=3;state.ammo+=28;state.food+=3;message='Оставшийся груз доставлен: +28 патронов, +3 еды и +3 металла.';}
+ else return;
+ const clean=radioSignal.cleanDecode&&radioSignal.attempts===0;
+ if(clean){state.scrap+=2;grantSkillXP(65);message+=' Чистый перехват: бонус +2 металла и 65 опыта.';}else grantSkillXP(40);
+ state.radioFinds++;const completedName=radioSignalProfile(kind).name;radioSignal=null;
+ if(activeWaypoint?.name?.startsWith('Радиосигнал')||activeWaypoint?.name?.startsWith('Фрагмент передачи'))activeWaypoint=null;
+ radioSignalNextAt=Date.now()+55000+Math.random()*45000;
+ closeRadioSignalModal();save();broadcastRadioSignalState();updateHud();drawPlayerMap();toast(completedName+' · операция завершена. '+message);
+}
+window.addEventListener('apocalypse-coop-event',e=>{
+ const p=e.detail,coop=window.ApocalypseCoop;if(!p||!coop||p.user_id===coop.userId)return;
+ if(p.kind==='radio-signal-state'){
+  radioSignal=normaliseRadioSignal(p.radioSignal);if(Number.isFinite(p.radioSignalNextAt))radioSignalNextAt=p.radioSignalNextAt;
+  if(p.activeWaypoint&&typeof p.activeWaypoint.name==='string'&&Number.isFinite(p.activeWaypoint.x)&&Number.isFinite(p.activeWaypoint.y))activeWaypoint={name:p.activeWaypoint.name,x:p.activeWaypoint.x,y:p.activeWaypoint.y};
+  else if(radioSignal)activeWaypoint=radioSignalWaypoint();
+  else if(activeWaypoint?.name?.startsWith('Радиосигнал')||activeWaypoint?.name?.startsWith('Фрагмент передачи'))activeWaypoint=null;
+  save();updateRadioSignalHud();drawPlayerMap();
+ }
+ if(p.kind==='world'&&p.user_id===coop.room?.owner_id&&p.radioSignal!==undefined){
+  radioSignal=normaliseRadioSignal(p.radioSignal);if(Number.isFinite(p.radioSignalNextAt))radioSignalNextAt=p.radioSignalNextAt;
+  if(p.activeWaypoint&&typeof p.activeWaypoint.name==='string'&&Number.isFinite(p.activeWaypoint.x)&&Number.isFinite(p.activeWaypoint.y))activeWaypoint={name:p.activeWaypoint.name,x:p.activeWaypoint.x,y:p.activeWaypoint.y};
+  else if(radioSignal)activeWaypoint=radioSignalWaypoint();
+  save();updateRadioSignalHud();drawPlayerMap();
+ }
+});
+document.getElementById('radioSignalClose')?.addEventListener('click',closeRadioSignalModal);
+document.getElementById('radioSignalModal')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeRadioSignalModal();});
+function updateRadioSignal(now){
+ if(!gameActive||activeInterior)return;
+ const coop=window.ApocalypseCoop;if(coop?.room?.status==='running'&&!coop.isOwner())return;
+ const clock=Date.now();
+ if(radioSignal){
+  if(radioSignal.phase===0&&radioSignal.expiresAt>0&&clock>=radioSignal.expiresAt){
+   radioSignal=null;radioSignalNextAt=clock+25000;
+   if(activeWaypoint?.name?.startsWith('Радиосигнал'))activeWaypoint=null;
+   save();broadcastRadioSignalState();updateRadioSignalHud();drawPlayerMap();toast('Передача сорвалась. Частота исчезла в помехах; новый аварийный вызов появится позже.');
+  }
+  return;
+ }
+ if(campaign.status==='active'||lastSignalMission?.status==='active'||roadkillMission.status==='active'){
+  if(clock>=radioSignalNextAt)radioSignalNextAt=clock+18000;
+  return;
+ }
+ if(clock<radioSignalNextAt)return;
  let x=state.x,y=state.y,found=false;
  for(let attempt=0;attempt<24;attempt++){
-  const angle=Math.random()*Math.PI*2,distance=520+Math.random()*330;
-  const nx=Math.max(WORLD_MIN+90,Math.min(WORLD_MAX-90,state.x+Math.cos(angle)*distance));
-  const ny=Math.max(WORLD_MIN+90,Math.min(WORLD_MAX-90,state.y+Math.sin(angle)*distance));
+  const angle=Math.random()*Math.PI*2,distance=560+Math.random()*310;
+  const nx=Math.max(WORLD_MIN+120,Math.min(WORLD_MAX-120,state.x+Math.cos(angle)*distance));
+  const ny=Math.max(WORLD_MIN+120,Math.min(WORLD_MAX-120,state.y+Math.sin(angle)*distance));
   if(!blocked(nx,ny)&&!insideBuilding(nx,ny)){x=nx;y=ny;found=true;break;}
  }
- if(!found){radioSignalNextAt=now+18000;return;}
- const roll=Math.random();
- const kind=roll<.45?'cache':roll<.75?'medical':'survivors';
- radioSignal={x,y,kind,expiresAt:now+150000};
- const label=kind==='cache'?'контейнер снабжения':kind==='medical'?'медицинский пункт':'выжившие просят помощи';
- toast('Новый радиосигнал: '+label+'. Найди маяк на карте.');
+ if(!found){radioSignalNextAt=clock+18000;return;}
+ const roll=Math.random(),kind=roll<.32?'cache':roll<.58?'medical':roll<.84?'survivors':'convoy';
+ const profile=radioSignalProfile(kind),frequency=kind==='medical'?87.4:kind==='survivors'?103.2:91.6,angle=Math.random()*Math.PI*2;
+ const relay=radioSignalSafePoint(x,y,angle,360,560),offsets=[[-142,-78],[154,-58],[4,166]];
+ radioSignal={id:'radio_'+clock.toString(36)+'_'+Math.floor(Math.random()*9999),kind,phase:0,x,y,relayX:relay.x,relayY:relay.y,frequency,attempts:0,quality:100,expiresAt:clock+210000,cleanDecode:true,fragments:offsets.map((o,i)=>({x:relay.x+o[0],y:relay.y+o[1],found:false,text:profile.fragments[i]}))};
+ toast('ВХОДЯЩАЯ ПЕРЕДАЧА · '+profile.speaker+': «'+profile.incoming.slice(0,92)+'…» Открой карту и найди аварийную метку. У тебя около 3,5 минут на перехват.');
+ setRadioSignalWaypoint();save();broadcastRadioSignalState();updateRadioSignalHud();
 }
 function drawRadioSignal(){
  if(!radioSignal)return;
  const s=radioSignal,pulse=1+Math.sin(time*.006)*.18;
- const color=s.kind==='medical'?'#8fd3b0':s.kind==='survivors'?'#9dc5ef':'#e6c783';
- ctx.save();
- // A physical event site, not only a floating marker.
- if(s.kind==='cache'){drawSupplyCrate(s.x,s.y,1.24,'field',false);}
- else if(s.kind==='medical'){ctx.fillStyle='#3e5145';ctx.fillRect(s.x-26,s.y-15,52,30);ctx.fillStyle='#d3d1b8';ctx.fillRect(s.x-19,s.y-10,38,20);ctx.fillStyle='#a94d43';ctx.fillRect(s.x-4,s.y-8,8,16);ctx.fillRect(s.x-10,s.y-2,20,4);ctx.strokeStyle='#252e29';ctx.strokeRect(s.x-26,s.y-15,52,30);}
- else{ctx.fillStyle='#353f36';ctx.fillRect(s.x-25,s.y-16,50,32);ctx.fillStyle='#7c8065';ctx.fillRect(s.x-20,s.y-11,40,22);ctx.fillStyle='#b9a16c';ctx.fillRect(s.x-3,s.y-8,6,16);ctx.fillRect(s.x-9,s.y-3,18,6);ctx.strokeStyle='#242d28';ctx.strokeRect(s.x-25,s.y-16,50,32);}
- const glow=ctx.createRadialGradient(s.x,s.y,2,s.x,s.y,92);
- glow.addColorStop(0,color+'55');glow.addColorStop(1,color+'00');
- ctx.fillStyle=glow;ctx.beginPath();ctx.arc(s.x,s.y,92,0,Math.PI*2);ctx.fill();
- ctx.strokeStyle=color;ctx.lineWidth=2;ctx.globalAlpha=.85;
- ctx.beginPath();ctx.arc(s.x,s.y,18*pulse,0,Math.PI*2);ctx.stroke();
- ctx.globalAlpha=.55;ctx.beginPath();ctx.arc(s.x,s.y,31/pulse,0,Math.PI*2);ctx.stroke();
- ctx.globalAlpha=1;ctx.fillStyle='#172019';ctx.beginPath();ctx.arc(s.x,s.y,11,0,Math.PI*2);ctx.fill();
- ctx.fillStyle=color;ctx.font='bold 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('!',s.x,s.y);
- ctx.font='bold 10px system-ui';ctx.textBaseline='alphabetic';ctx.fillText('РАДИОСИГНАЛ',s.x,s.y-27);
+ const color=s.kind==='medical'?'#8fd3b0':s.kind==='survivors'?'#9dc5ef':s.kind==='convoy'?'#e59b69':'#e6c783';
+ ctx.save();ctx.translate(s.x,s.y);
+ ctx.fillStyle='#111b17';ctx.beginPath();ctx.ellipse(0,20,35,10,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#394b40';ctx.fillRect(-24,4,48,13);ctx.fillStyle='#758b77';ctx.fillRect(-19,7,38,5);
+ ctx.strokeStyle='#263a31';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,6);ctx.lineTo(0,-52);ctx.stroke();
+ ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-14,-42);ctx.lineTo(14,-42);ctx.moveTo(-9,-32);ctx.lineTo(9,-32);ctx.stroke();
+ ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,-53,5+Math.sin(time*.009)*2,0,Math.PI*2);ctx.fill();
+ ctx.globalAlpha=.22+.14*pulse;ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-42,24*pulse,Math.PI*1.12,Math.PI*1.88);ctx.stroke();ctx.beginPath();ctx.arc(0,-42,38/pulse,Math.PI*1.12,Math.PI*1.88);ctx.stroke();ctx.globalAlpha=1;
+ ctx.fillStyle='#172019';ctx.beginPath();ctx.arc(0,-14,10,0,Math.PI*2);ctx.fill();ctx.fillStyle=color;ctx.font='bold 14px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.phase===0?'?':s.phase===3?'✓':'!',0,-14);
+ ctx.font='bold 9px system-ui';ctx.textBaseline='alphabetic';ctx.fillText(s.phase===0?'РАЦИЯ':s.phase===1?'РЕТРАНСЛЯТОР':'ПЕРЕХВАТ',0,-69);
  ctx.restore();
-}
-function completeRadioSignal(){
- if(!radioSignal)return;
- const kind=radioSignal.kind;radioSignal=null;state.radioFinds++;
- if(kind==='cache'){
-  const metal=2+Math.floor(Math.random()*3),food=1+Math.floor(Math.random()*2);
-  state.scrap+=metal;state.food+=food;
-  if(Math.random()<.35)state.bandage++;
-  toast('Контейнер найден: металлолом +'+metal+', еда +'+food+(state.bandage?' · аптечки '+state.bandage:''));
- }else if(kind==='medical'){
-  const kits=1+Math.floor(Math.random()*2);
-  state.bandage+=kits;state.food++;state.hp=Math.min(100,state.hp+20);
-  toast('Медпункт найден: аптечки +'+kits+', еда +1, здоровье восстановлено');
- }else{
-  state.survivorTrust++;state.food+=2;state.scrap++;
-  toast('Выжившие спасены: доверие +1, еда +2, металлолом +1');
- }
- radioSignalNextAt=performance.now()+55000+Math.random()*45000;
- save();updateHud();
+ if(s.phase===2){s.fragments.forEach((v,i)=>{if(v.found)return;const p=.75+Math.sin(time*.006+i)*.2;ctx.save();ctx.translate(v.x,v.y);ctx.globalAlpha=.6+p*.4;ctx.fillStyle=color+'44';ctx.beginPath();ctx.arc(0,0,19*p,0,Math.PI*2);ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.strokeRect(-11,-11,22,22);ctx.fillStyle=color;ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i+1).padStart(2,'0'),0,0);ctx.restore();});}
 }
 function drawMark(){ctx.fillStyle='#151d18';ctx.beginPath();ctx.ellipse(mark.x,mark.y+16,14,5,0,0,7);ctx.fill();rect(mark.x-9,mark.y-1,18,20,'#6d7950');rect(mark.x-7,mark.y+17,6,12,'#363e31');rect(mark.x+2,mark.y+17,6,12,'#363e31');rect(mark.x-12,mark.y+1,5,15,'#cba17b');rect(mark.x+7,mark.y+1,5,15,'#cba17b');ctx.fillStyle='#d4a77d';ctx.beginPath();ctx.arc(mark.x,mark.y-13,9,0,7);ctx.fill();rect(mark.x-10,mark.y-21,20,7,'#45463a');rect(mark.x-4,mark.y-13,2,2,'#222');rect(mark.x+3,mark.y-13,2,2,'#222');ctx.fillStyle='#f0d7a5';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('МАРК',mark.x,mark.y-34)}
 let playerAction={type:'',until:0,started:0};
@@ -1179,6 +1345,7 @@ function nearbyActionLabel(){
    return 'Осмотреть обломки самолёта';
   }
  }
+ const radioAction=radioSignalActionLabel();if(radioAction)return radioAction;
  if(nearSpawnCampfire())return 'Подкинуть дерево в костёр';
  if(!starterKnife.picked&&Math.hypot(state.x-starterKnife.x,state.y-starterKnife.y)<74)return 'Подобрать стартовый нож';
  if(Math.hypot(state.x-survivorCamp.bench.x,state.y-survivorCamp.bench.y)<105)return 'Лавка улучшений';
@@ -1258,7 +1425,7 @@ function openCarMechanicBoard(){
  showPanel('Илья · автомеханик','«Ключи у тебя. Береги машину и следи за бензином».',[{icon:'🚙',name:'Твой внедорожник',count:Math.round(carRecovery.fuel)+' л'},{icon:'⛽',name:'Заправка',count:'На бензоколонках по карте'}]);
 }
 function waypointKey(p){return p?String(p.name)+'|'+Math.round(p.x/20)+'|'+Math.round(p.y/20):'';}
-function missionWaypointCandidate(){if(carRecovery.stage==='briefing'||carRecovery.stage==='locked'&&carMissionUnlocked())return{name:'Илья · автомеханик',x:CAR_HOME_NPC.x,y:CAR_HOME_NPC.y};if(carRecovery.stage==='parts')return carRecovery.parts[0]?{name:'Дом Ильи · детали на этажах',x:CAR_HOME_NPC.x,y:CAR_HOME_NPC.y}:{name:'Внедорожник Ильи · аккумулятор',x:CAR_SPAWN.x,y:CAR_SPAWN.y};if(carRecovery.stage==='repair')return{name:'Внедорожник Ильи · ремонт',x:carRecovery.carX,y:carRecovery.carY};if(carRecovery.stage==='return')return{name:'Дом Ильи · вернуть внедорожник',x:CAR_HOME_NPC.x,y:CAR_HOME_NPC.y};if(campaign.status==='active')return campaignMissionTarget();if(lastSignalMission?.status==='active')return{name:'Маяк бедствия',x:lastSignalMission.x,y:lastSignalMission.y};if(radioSignal)return{name:'Радиосигнал',x:radioSignal.x,y:radioSignal.y};if(state.quest<5){const next=wrecks.filter(v=>!v.done).reduce((best,v)=>{const d=Math.hypot(v.x-state.x,v.y-state.y);return !best||d<best.d?{v,d}:best;},null);if(next)return{name:'Аварийная машина · детали',x:next.v.x,y:next.v.y};}if(state.quest>=5&&state.dayReward!==state.day)return{name:'Марк · награда поселения',x:mark.x,y:mark.y};return null;}
+function missionWaypointCandidate(){if(carRecovery.stage==='briefing'||carRecovery.stage==='locked'&&carMissionUnlocked())return{name:'Илья · автомеханик',x:CAR_HOME_NPC.x,y:CAR_HOME_NPC.y};if(carRecovery.stage==='parts')return carRecovery.parts[0]?{name:'Дом Ильи · детали на этажах',x:CAR_HOME_NPC.x,y:CAR_HOME_NPC.y}:{name:'Внедорожник Ильи · аккумулятор',x:CAR_SPAWN.x,y:CAR_SPAWN.y};if(carRecovery.stage==='repair')return{name:'Внедорожник Ильи · ремонт',x:carRecovery.carX,y:carRecovery.carY};if(carRecovery.stage==='return')return{name:'Дом Ильи · вернуть внедорожник',x:CAR_HOME_NPC.x,y:CAR_HOME_NPC.y};if(campaign.status==='active')return campaignMissionTarget();if(lastSignalMission?.status==='active')return{name:'Маяк бедствия',x:lastSignalMission.x,y:lastSignalMission.y};if(radioSignal)return radioSignalWaypoint();if(state.quest<5){const next=wrecks.filter(v=>!v.done).reduce((best,v)=>{const d=Math.hypot(v.x-state.x,v.y-state.y);return !best||d<best.d?{v,d}:best;},null);if(next)return{name:'Аварийная машина · детали',x:next.v.x,y:next.v.y};}if(state.quest>=5&&state.dayReward!==state.day)return{name:'Марк · награда поселения',x:mark.x,y:mark.y};return null;}
 function syncMissionWaypoint(){if(activeWaypoint)return;const target=missionWaypointCandidate();if(!target||waypointKey(target)===suppressedRouteKey)return;activeWaypoint={name:String(target.name||'Цель задания').slice(0,36),x:target.x,y:target.y};save();}
 function updateWaypointArrival(){if(!activeWaypoint)return;const d=Math.hypot(state.x-activeWaypoint.x,state.y-activeWaypoint.y);if(d<(carRecovery.localSeat!==null?155:105)){const name=activeWaypoint.name;suppressedRouteKey=waypointKey(activeWaypoint);activeWaypoint=null;save();drawPlayerMap();toast('Ты прибыл: '+name);}}
 function updateCarRecovery(dt){
@@ -1372,6 +1539,7 @@ function updateConvenienceHud(){
  }
 }
 function updateHud(){
+ updateRadioSignalHud();
  const now=performance.now();if(now-lastHudUpdate<125)return;lastHudUpdate=now;
  const ammoHud=document.getElementById('combatAmmoHud');if(ammoHud){ammoHud.style.display=state.firearm?'block':'none';ammoHud.textContent=state.firearm?(state.magAmmo+' / '+weaponMagazineSize(state.firearm)+'  ·  '+state.ammo+' в запасе'+(combatReload?'  ·  ЗАРЯДКА':'')):'НЕТ ОРУЖИЯ';ammoHud.classList.toggle('reloading',!!combatReload);ammoHud.classList.toggle('empty',!!state.firearm&&state.magAmmo===0&&!combatReload);}
  const reloadBtn=document.getElementById('reloadTouch');if(reloadBtn)reloadBtn.disabled=!state.firearm||!!combatReload||state.ammo<=0||state.magAmmo>=weaponMagazineSize(state.firearm);const aimBtn=document.getElementById('aimTouch');if(aimBtn){aimBtn.classList.toggle('active',combatAimHeld);aimBtn.disabled=!state.firearm;}
@@ -1823,7 +1991,7 @@ function openTrader(){
  ]);
 }
 function interact(){
- if(!gameActive)return;triggerPlayerAction('interact',460);if(activeInterior){interactInterior();return;}if(interactCarRecovery())return;if(interactBaseStructure())return;if(nearSpawnCampfire()){feedSpawnCampfire();return;}
+ if(!gameActive)return;triggerPlayerAction('interact',460);if(activeInterior){interactInterior();return;}if(interactCarRecovery())return;if(interactBaseStructure())return;if(radioSignal&&interactRadioSignal())return;if(nearSpawnCampfire()){feedSpawnCampfire();return;}
  if(lastSignalMission&&lastSignalMission.status==='active'&&Math.hypot(state.x-lastSignalMission.x,state.y-lastSignalMission.y)<260){
   if(lastSignalMission.stage===0){startCrashSiteCinematic();return;}
   if(lastSignalMission.stage===1){
@@ -1913,7 +2081,7 @@ function interact(){
  if(shelter&&!lootedShelters.has(shelter.id)&&Math.hypot(state.x-(shelter.x+shelter.w/2+72),state.y-(shelter.y+shelter.h-168))<82){
   if(!Array.isArray(shelterLoot[shelter.id]))shelterLoot[shelter.id]=[{icon:'🥫',name:'Консервы',key:'food',count:3},{icon:'🩹',name:'Аптечка',key:'bandage',count:1},{icon:'🪵',name:'Дерево',key:'wood',count:2}];openLootTransfer('Запасы убежища','Перетащи каждый припас в рюкзак. Можно забрать только нужное.',shelterLoot[shelter.id],(item,count)=>{state[item.key]=Math.min(999999,(state[item.key]||0)+count);const found=shelterLoot[shelter.id].find(v=>v.key===item.key);if(found)found.count=0;shelterLoot[shelter.id]=shelterLoot[shelter.id].filter(v=>v.count>0);if(!shelterLoot[shelter.id].length){lootedShelters.add(shelter.id);state.survivorTrust++;}return true;});return;
  }
- if(interactMissionGiver())return;if(interactExpansion())return;if(radioSignal&&Math.hypot(state.x-radioSignal.x,state.y-radioSignal.y)<98){completeRadioSignal();return}if(Math.hypot(state.x-mark.x,state.y-mark.y)<75){openMark();return}let index=wrecks.findIndex(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65);if(index>=0){const coop=window.ApocalypseCoop;wrecks[index].done=true;state.quest++;state.scrap++;state.bolts++;progressContract('salvage',1);toast('Детали найдены · '+state.quest+'/5');save();if(coop?.room?.status==='running')coop.send({kind:'wreck-claimed',index,quest:state.quest,by:coop.userId});return}const treeIndex=trees.findIndex((t,i)=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48);if(treeIndex>=0){trees[treeIndex].harvested=true;harvestedTrees.add(treeIndex);state.wood+=2;progressContract('wood',2);toast('Собрано древесины: +2');save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'tree-harvested',index:treeIndex});return}toast(indoor?'Осмотри помещение: E у полок и ящиков':'Подойди ближе к дереву, машине, зданию или радиомаяку')}
+ if(interactMissionGiver())return;if(interactExpansion())return;if(Math.hypot(state.x-mark.x,state.y-mark.y)<75){openMark();return}let index=wrecks.findIndex(v=>!v.done&&Math.hypot(state.x-v.x,state.y-v.y)<65);if(index>=0){const coop=window.ApocalypseCoop;wrecks[index].done=true;state.quest++;state.scrap++;state.bolts++;progressContract('salvage',1);toast('Детали найдены · '+state.quest+'/5');save();if(coop?.room?.status==='running')coop.send({kind:'wreck-claimed',index,quest:state.quest,by:coop.userId});return}const treeIndex=trees.findIndex((t,i)=>!t.harvested&&Math.hypot(state.x-t.x,state.y-t.y)<48);if(treeIndex>=0){trees[treeIndex].harvested=true;harvestedTrees.add(treeIndex);state.wood+=2;progressContract('wood',2);toast('Собрано древесины: +2');save();const coop=window.ApocalypseCoop;if(coop?.room?.status==='running')coop.send({kind:'tree-harvested',index:treeIndex});return}toast(indoor?'Осмотри помещение: E у полок и ящиков':'Подойди ближе к дереву, машине, зданию или радиомаяку')}
 function drawOneBarricade(b,ghost=false,valid=true){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Number(b.angle)||0);ctx.globalAlpha=ghost?.58:1;ctx.fillStyle=ghost?(valid?'#4de18a55':'#ff554e66'):'#171d18aa';ctx.fillRect(-34,13,68,9);for(let i=0;i<4;i++){ctx.fillStyle=ghost?(valid?'#7fffb0':'#ff8980'):(i%2?'#806c4d':'#9a8056');ctx.fillRect(-32,-13+i*7,64,5);ctx.strokeStyle=ghost?(valid?'#c8ffe0':'#ffd0c9'):'#3a3327';ctx.lineWidth=1;ctx.strokeRect(-32,-13+i*7,64,5);}ctx.fillStyle=ghost?(valid?'#45d986':'#d94e49'):'#4c4939';ctx.fillRect(-27,-21,6,42);ctx.fillRect(21,-21,6,42);if(ghost){ctx.globalAlpha=.22;ctx.fillStyle=valid?'#3cff91':'#ff4038';ctx.beginPath();ctx.arc(0,0,48,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=valid?'#72ffad':'#ff716a';ctx.lineWidth=3;ctx.strokeRect(-36,-25,72,50);}ctx.restore();}
 function drawBarricades(){for(const b of barricades)drawOneBarricade(b,false,true);}function drawBaseStructure(b,ghost=false,valid=true){
  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Number(b.angle)||0);ctx.globalAlpha=ghost?.72:1;
@@ -3280,5 +3448,5 @@ installCombatVisualPolish();
 function installCombatAimWeaponPolish(){const previous=drawHeldWeapon;drawHeldWeapon=function(){if(!state.firearm){previous();return;}const angle=combatAimAngle(),screenAngle=Math.atan2(Math.sin(angle),Math.cos(angle));ctx.save();ctx.translate(w/2+13,h/2+8);ctx.rotate(screenAngle+combatRecoil*.13);ctx.translate(-combatRecoil*5,0);const metal=ctx.createLinearGradient(-7,-7,30,8);metal.addColorStop(0,'#101713');metal.addColorStop(.28,'#66746a');metal.addColorStop(.48,'#252f29');metal.addColorStop(.72,'#8b9585');metal.addColorStop(1,'#1a211c');ctx.fillStyle='#080d0b';ctx.fillRect(-9,-5,39,10);ctx.fillStyle=metal;ctx.fillRect(-6,-4,33,7);ctx.fillStyle='#161d19';ctx.fillRect(3,3,8,12);ctx.fillStyle='#70573e';ctx.fillRect(3,7,8,8);ctx.fillStyle='#aab2a2';ctx.fillRect(4,-7,14,2);ctx.fillRect(10,-9,3,3);ctx.fillStyle='#1b231e';ctx.fillRect(20,-2,12,4);ctx.fillStyle='#d2c49b';ctx.fillRect(30,-1,3,2);ctx.strokeStyle='#c3c9b7';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(-4,-4);ctx.lineTo(21,-4);ctx.moveTo(7,-6);ctx.lineTo(7,-9);ctx.moveTo(12,-6);ctx.lineTo(12,-9);ctx.stroke();if(performance.now()-combatLastShot<95){const flash=1-(performance.now()-combatLastShot)/95;ctx.globalAlpha=flash;ctx.globalCompositeOperation='lighter';ctx.shadowColor='#ffd68a';ctx.shadowBlur=18;ctx.fillStyle='#fff0bb';ctx.beginPath();ctx.moveTo(32,-3);ctx.lineTo(45,-8-flash*7);ctx.lineTo(40,0);ctx.lineTo(47,5+flash*6);ctx.lineTo(31,3);ctx.closePath();ctx.fill();}ctx.restore();};}
 installCombatAimWeaponPolish();
 
-window.ApocalypseGame=Object.freeze({getBaseConstructionStats:()=>({count:baseStructures.length,walls:baseStructures.filter(v=>v.type==='wall').length,floors:baseStructures.filter(v=>v.type==='floor').length,doors:baseStructures.filter(v=>v.type==='door').length,storage:baseStructures.filter(v=>v.type==='storage').length,generators:baseStructures.filter(v=>v.type==='generator').length}),getNewSystemsStats:()=>({skillXP:state.skillXP,skillPoints:state.skillPoints,skillLevels:{...state.skillLevels},weaponMods:{...state.weaponMods},baseDefenseLevel:state.baseDefenseLevel,defenseAmmo:state.defenseAmmo}),getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getDayReward:()=>state.dayReward,getClock:()=>worldClock,getMovementStats:()=>({stamina:state.stamina,maxStamina:maxStamina(),runUpgrade:state.runUpgrade,sprinting:sprintActive}),getSpawnCampfireStats:()=>({x:spawnCampfire.x,y:spawnCampfire.y,playerX:state.x,playerY:state.y,near:nearSpawnCampfire(),active:spawnCampfireActive(),level:spawnCampfireLevel,remaining:spawnCampfireRemaining(),gameActive,inside:!!activeInterior}),getHomeSystemStats:()=>({homes:Object.keys(homeFurnitureLoot).length,slotsPerFloor:homeFurnitureSlots.length,roomCount:4}),getLastSignalStats:()=>lastSignalMission?{...lastSignalMission,guards:zombies.filter(z=>z.eventId==='last_signal_guard').length}:null,getUpgradeStats:()=>({run:state.runUpgrade,ammo:state.ammoUpgrade,ammoCapacity:ammoCapacity(),ammo:state.ammo}),getConvenienceStats:()=>({hp:state.hp,stamina:state.stamina,bandage:state.bandage,food:state.food,cleanWater:state.cleanWater,hydration:state.hydration,infection:state.infection,bodyTemp:state.bodyTemp,crewCount:state.crewCount,crewRole:state.crewRole,workbenchLevel:state.workbenchLevel,weaponDurability:state.weaponDurability,antibiotics:state.antibiotics,campfireBuilt:state.campfireBuilt,campfireFuel:state.campfireFuel,vehicleRepaired:state.vehicleRepaired,fuel:state.fuel,safehouseLevel:state.safehouseLevel,contractType:state.contractType,contractProgress:state.contractProgress,medInjector:state.medInjector,energyDrink:state.energyDrink,ammoCrate:state.ammoCrate,armorPlate:state.armorPlate,weaponParts:state.weaponParts,activeWaypoint:activeWaypoint?{...activeWaypoint}:null}),getSaveSnapshot:()=>{try{return localStorage.getItem(STORE)||'';}catch(_){return ''; }},getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,generatorRepaired,generatorOnline,safehouseLevel:state.safehouseLevel,baseDefenseLevel:state.baseDefenseLevel,defenseAmmo:state.defenseAmmo,crewCount:state.crewCount,crewRole:state.crewRole,workbenchLevel:state.workbenchLevel,campfireBuilt:state.campfireBuilt,campfireFuel:state.campfireFuel,vehicleRepaired:state.vehicleRepaired,fuel:state.fuel,raidDay:state.raidDay,cleanWater:state.cleanWater,hydration:state.hydration,contractDay:state.contractDay,contractType:state.contractType,contractProgress:state.contractProgress,contractClaimed:state.contractClaimed,hordeDefenders:zombies.filter(z=>z.eventId).map(z=>({x:z.x,y:z.y,kind:z.kind,eventId:z.eventId,hp:z.hp})),spikeTraps:spikeTraps.map(t=>({x:t.x,y:t.y,angle:t.angle,charges:t.charges})),worldEvents:randomEventSites.map(v=>({...v})),mapMarkers:mapMarkers.map(v=>({...v})),activeWaypoint:activeWaypoint?{...activeWaypoint}:null,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();try{const creatorMode=sessionStorage.getItem('apoc_open_character_creator');if(creatorMode){sessionStorage.removeItem('apoc_open_character_creator');setTimeout(()=>openCharacterCreator(creatorMode==='new'),180);}else if(sessionStorage.getItem('apoc_open_world_manager')==='1'){sessionStorage.removeItem('apoc_open_world_manager');setTimeout(showWorldManager,180);}else if(sessionStorage.getItem('apoc_play_cinematic')==='1'){sessionStorage.removeItem('apoc_play_cinematic');setTimeout(startIntroCinematic,180);}}catch(_){}if(!Number.isFinite(saved.spawnCampfireX)||!Number.isFinite(saved.spawnCampfireY)){const actualSpawn=findSafeSpawn(440,390);spawnCampfire.x=actualSpawn.x;spawnCampfire.y=actualSpawn.y;}save();requestAnimationFrame(loop);
+window.ApocalypseGame=Object.freeze({getRadioSignalStats:()=>radioSignal?{kind:radioSignal.kind,phase:radioSignal.phase,quality:radioSignal.quality,attempts:radioSignal.attempts,fragmentsFound:radioSignal.fragments.filter(v=>v.found).length,expiresAt:radioSignal.expiresAt}:null,getBaseConstructionStats:()=>({count:baseStructures.length,walls:baseStructures.filter(v=>v.type==='wall').length,floors:baseStructures.filter(v=>v.type==='floor').length,doors:baseStructures.filter(v=>v.type==='door').length,storage:baseStructures.filter(v=>v.type==='storage').length,generators:baseStructures.filter(v=>v.type==='generator').length}),getNewSystemsStats:()=>({skillXP:state.skillXP,skillPoints:state.skillPoints,skillLevels:{...state.skillLevels},weaponMods:{...state.weaponMods},baseDefenseLevel:state.baseDefenseLevel,defenseAmmo:state.defenseAmmo}),getWrecks:()=>wrecks.map(v=>v.done),getQuest:()=>state.quest,getDay:()=>state.day,getDayReward:()=>state.dayReward,getClock:()=>worldClock,getMovementStats:()=>({stamina:state.stamina,maxStamina:maxStamina(),runUpgrade:state.runUpgrade,sprinting:sprintActive}),getSpawnCampfireStats:()=>({x:spawnCampfire.x,y:spawnCampfire.y,playerX:state.x,playerY:state.y,near:nearSpawnCampfire(),active:spawnCampfireActive(),level:spawnCampfireLevel,remaining:spawnCampfireRemaining(),gameActive,inside:!!activeInterior}),getHomeSystemStats:()=>({homes:Object.keys(homeFurnitureLoot).length,slotsPerFloor:homeFurnitureSlots.length,roomCount:4}),getLastSignalStats:()=>lastSignalMission?{...lastSignalMission,guards:zombies.filter(z=>z.eventId==='last_signal_guard').length}:null,getUpgradeStats:()=>({run:state.runUpgrade,ammo:state.ammoUpgrade,ammoCapacity:ammoCapacity(),ammo:state.ammo}),getConvenienceStats:()=>({hp:state.hp,stamina:state.stamina,bandage:state.bandage,food:state.food,cleanWater:state.cleanWater,hydration:state.hydration,infection:state.infection,bodyTemp:state.bodyTemp,crewCount:state.crewCount,crewRole:state.crewRole,workbenchLevel:state.workbenchLevel,weaponDurability:state.weaponDurability,antibiotics:state.antibiotics,campfireBuilt:state.campfireBuilt,campfireFuel:state.campfireFuel,vehicleRepaired:state.vehicleRepaired,fuel:state.fuel,safehouseLevel:state.safehouseLevel,contractType:state.contractType,contractProgress:state.contractProgress,medInjector:state.medInjector,energyDrink:state.energyDrink,ammoCrate:state.ammoCrate,armorPlate:state.armorPlate,weaponParts:state.weaponParts,activeWaypoint:activeWaypoint?{...activeWaypoint}:null}),getSaveSnapshot:()=>{try{return localStorage.getItem(STORE)||'';}catch(_){return ''; }},getWorldState:()=>({wrecks:wrecks.map(v=>v.done),quest:state.quest,day:state.day,worldClock,generatorRepaired,generatorOnline,safehouseLevel:state.safehouseLevel,baseDefenseLevel:state.baseDefenseLevel,defenseAmmo:state.defenseAmmo,crewCount:state.crewCount,crewRole:state.crewRole,workbenchLevel:state.workbenchLevel,campfireBuilt:state.campfireBuilt,campfireFuel:state.campfireFuel,vehicleRepaired:state.vehicleRepaired,fuel:state.fuel,raidDay:state.raidDay,cleanWater:state.cleanWater,hydration:state.hydration,contractDay:state.contractDay,contractType:state.contractType,contractProgress:state.contractProgress,contractClaimed:state.contractClaimed,hordeDefenders:zombies.filter(z=>z.eventId).map(z=>({x:z.x,y:z.y,kind:z.kind,eventId:z.eventId,hp:z.hp})),spikeTraps:spikeTraps.map(t=>({x:t.x,y:t.y,angle:t.angle,charges:t.charges})),worldEvents:randomEventSites.map(v=>({...v})),radioSignal:radioSignal?{...radioSignal,fragments:radioSignal.fragments.map(v=>({...v}))}:null,radioSignalNextAt,mapMarkers:mapMarkers.map(v=>({...v})),activeWaypoint:activeWaypoint?{...activeWaypoint}:null,barricades:barricades.map(b=>({...b})),harvestedTrees:[...harvestedTrees]}),save});setupJoystick();daily();resize();ensureSafeSpawn();try{const creatorMode=sessionStorage.getItem('apoc_open_character_creator');if(creatorMode){sessionStorage.removeItem('apoc_open_character_creator');setTimeout(()=>openCharacterCreator(creatorMode==='new'),180);}else if(sessionStorage.getItem('apoc_open_world_manager')==='1'){sessionStorage.removeItem('apoc_open_world_manager');setTimeout(showWorldManager,180);}else if(sessionStorage.getItem('apoc_play_cinematic')==='1'){sessionStorage.removeItem('apoc_play_cinematic');setTimeout(startIntroCinematic,180);}}catch(_){}if(!Number.isFinite(saved.spawnCampfireX)||!Number.isFinite(saved.spawnCampfireY)){const actualSpawn=findSafeSpawn(440,390);spawnCampfire.x=actualSpawn.x;spawnCampfire.y=actualSpawn.y;}save();requestAnimationFrame(loop);
 })();
