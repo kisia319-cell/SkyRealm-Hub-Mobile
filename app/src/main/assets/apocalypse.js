@@ -2878,10 +2878,12 @@ function drawMiniRadar(){
  const radar=document.getElementById('miniRadar'),shell=document.getElementById('miniRadarShell');if(!radar||!shell)return;
  const rc=radar.getContext('2d');if(!rc)return;
  const rw=radar.width||520,rh=radar.height||360;
- rc.clearRect(0,0,rw,rh);
  if(!gameActive||document.body.classList.contains('menu-open')||document.body.classList.contains('dialogue-open')){shell.style.display='none';return;}
  shell.style.display='block';
  const now=performance.now(),minimapInterval=isAndroidDevice?110:75;if(now-miniRadarLastDraw<minimapInterval)return;miniRadarLastDraw=now;
+ // Do not clear the canvas until the next scheduled redraw is ready. Clearing
+ // before the throttle check made the persistent minimap flash blank every frame.
+ rc.clearRect(0,0,rw,rh);
  const ui=rw/160,scale=.038*ui*miniRadarZoom,cx=rw/2,cy=rh*.53,ox=state.x,oy=state.y,px=x=>cx+(x-ox)*scale,py=y=>cy+(y-oy)*scale;
  const visibleX=rw/(2*scale),visibleY=rh/(2*scale);
  rc.save();rc.beginPath();rc.roundRect(0,0,rw,rh,9*ui);rc.clip();
