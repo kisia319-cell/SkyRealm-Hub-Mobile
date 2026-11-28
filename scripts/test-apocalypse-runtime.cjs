@@ -448,7 +448,7 @@ assert.ok(game.includes("site.source==='alpha-hunt'?'ОХОТА: АЛЬФА'") &
 assert.ok(game.includes("function installApocalypseVisualRemaster()") && game.includes("const oldTree=tree") && game.includes("const oldZombies=drawZombies") && game.includes("const oldBuilding=building"), 'Visual remaster must cover world geometry, trees, buildings and infected');
 
 assert.ok(game.includes("function updateCampaign(now)") && game.includes("function interactCampaign()"), 'Long multi-stage survivor operation must update and interact');
-assert.ok(game.includes("campaign.wave<7") && game.includes("Date.now()+150000") && game.includes("campaign-extract") && game.includes("campaign-rescue"), 'Long operation must contain timed defense waves, a rescue branch and an extraction finale');
+assert.ok(game.includes("campaign.wave<7") && game.includes("Date.now()+30000") && game.includes("campaign-extract") && game.includes("campaign-rescue"), 'Long operation must contain seven defense waves with active breaks, a rescue branch and an extraction finale');
 assert.ok(game.includes("function chooseCampaignPath(choice)") && game.includes("campaign.choice=choice") && game.includes("campaign.rescued=true") && game.includes("campaign.ending='hardline'"), 'Story decisions must branch into distinct rescue and hardline endings');
 assert.ok(html.includes('id="campaignChoiceModal"') && html.includes('id="campaignRescueChoice"') && html.includes('id="campaignAbandonChoice"'), 'Story branch must provide in-game choice controls');
 assert.ok(game.includes("campaign-cache") && game.includes("campaign-relay") && game.includes("campaign-convoy"), 'Long operation must include scavenging, relay repair and convoy objectives');
