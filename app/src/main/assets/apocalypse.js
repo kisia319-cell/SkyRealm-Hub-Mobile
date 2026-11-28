@@ -1547,7 +1547,7 @@ function campaignPlaceSite(type,x,y,label,remaining=0){campaignRemoveSites();con
 function campaignSpawnWave(type,count,now){const site=campaignPlaceSite(type,campaign.x,campaign.y,type==='campaign-wave'?'УДЕРЖИВАЙ РАДИОУЗЕЛ':type==='campaign-convoy'?'ЗАСАДА У КОЛОННЫ':'ПОСЛЕДНИЙ РУБЕЖ',0);campaign.waveWanted=count;campaign.waveSpawned=0;for(let i=0;i<count&&zombies.length<prefs.infectedCap;i++){const a=i*2.399,r=105+(i%3)*31,x=site.x+Math.cos(a)*r,y=site.y+Math.sin(a)*r;if(blocked(x,y))continue;const kind=['runner','crawler','night','brute','armored','stalker','spitter'][i%7],before=zombies.length;spawnZombie(x,y,kind,site.id);if(zombies.length>before){campaign.waveSpawned++;const coop=window.ApocalypseCoop;if(coop?.room?.status==='running'&&coop.isOwner())coop.send({kind:'zombie-spawn',x,y,ztype:kind,eventId:site.id});}}site.remaining=campaign.waveSpawned;campaign.waveStartedAt=Date.now();activeWaypoint={name:site.label,x:site.x,y:site.y};save();}
 function campaignBeginDefense(now){
  campaign.stage=3;campaign.wave=1;campaign.nextWaveAt=0;campaignSpawnWave('campaign-wave',5,now);
- const next=campaignMissionTarget();if(next)activeWaypoint={name:next.name,x:next.y,y:next.y};
+ const next=campaignMissionTarget();if(next)activeWaypoint={name:next.name,x:next.x,y:next.y};
  toast('ОПЕРАЦИЯ «ПОСЛЕДНИЙ СИГНАЛ»: удерживай радиорелейный узел. Впереди семь волн, каждая следующая будет опаснее.');
  save();
 }
@@ -1751,13 +1751,12 @@ function dailyContractWaypoint(){
  return next?{name:'Контракт штаба · архив '+(state.contractProgress+1)+'/'+target,x:next.b.x+next.b.w/2,y:next.b.y+next.b.h+38}:{name:'Марк · сдать контракт',x:mark.x,y:mark.y};
 }
 function progressContract(kind,amount=1){
+ const contractRouteActive=activeWaypoint?.name?.startsWith('Контракт штаба')||activeWaypoint?.name==='Марк · сдать контракт';
  progressStoryArc(kind,amount);
  if(state.contractDay!==state.day){state.contractDay=state.day;state.contractProgress=0;state.contractClaimed=false;}
  if(state.contractType===kind&&!state.contractClaimed){
   state.contractProgress=Math.min(99,state.contractProgress+Math.max(0,amount));
-  if(activeWaypoint?.name?.startsWith('Контракт штаба')||activeWaypoint?.name==='Марк · сдать контракт'){
-   activeWaypoint=dailyContractWaypoint();save();drawPlayerMap();
-  }
+  if(contractRouteActive){activeWaypoint=dailyContractWaypoint();save();drawPlayerMap();}
  }
 }
 function ensureDailyContract(){if(state.contractDay===state.day&&['salvage','explore'].includes(state.contractType))return;state.contractDay=state.day;state.contractType=['salvage','explore'][state.day%2];state.contractProgress=0;state.contractClaimed=false;}
