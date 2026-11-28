@@ -252,7 +252,7 @@ assert.ok(saved.x >= -11963 && saved.x <= 23963 && saved.y >= -11963 && saved.y 
 assert.equal(saved.hp, 100, 'invalid saved health must be normalized');
 assert.equal(saved.scrap, 0, 'negative inventory values must be normalized');
 assert.equal(saved.day, 1, 'invalid day counter must be normalized');
-assert.equal(saved.quest, 3, 'quest progress must be bounded');
+assert.equal(saved.quest, 5, 'quest progress must be bounded to the expanded five-site Mark mission');
 assert.equal(saved.wrecks[0], false, 'malformed wreck flags must not mark scavenging complete');
 assert.ok(saved.worldClock >= 0 && saved.worldClock < 1, 'saved day/night phase must be normalized');
 harness.runFrame();
