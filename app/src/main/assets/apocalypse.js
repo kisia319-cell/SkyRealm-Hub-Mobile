@@ -2448,6 +2448,7 @@ document.getElementById('settingsSave').onclick=()=>{prefs.effects=document.getE
 document.getElementById('settingsDefaults').onclick=()=>{Object.assign(prefs,{effects:'high',joy:100,motion:true,hints:true,weather:true,ambientAudio:true,infectedCap:18,eventFrequency:1,autosaveSeconds:5,autoSprint:false,showHydration:true,survivalDifficulty:'standard',renderDistance:'normal',maxFps:60,showEnemyHealth:true,showSurvivalHud:true});try{localStorage.setItem('skyrealm_apocalypse_settings_v1',JSON.stringify(prefs));if(window.pywebview?.api?.save_apocalypse_settings)window.pywebview.api.save_apocalypse_settings(prefs);}catch(_){}applySettings();toast('Стандартные настройки восстановлены');};
 document.getElementById('settingsReset').onclick=()=>{if(confirm('Удалить сохранение Apocalypse на этом устройстве? Это нельзя отменить.')){try{localStorage.removeItem(STORE);location.reload()}catch(_){toast('Не удалось удалить сохранение: хранилище недоступно')}}};
 document.getElementById('mapButton').onclick=openPlayerMap;
+let miniRadarZoom=1;
 const miniRadar=document.getElementById('miniRadar');
 function changeMiniRadarZoom(delta){miniRadarZoom=Math.max(.65,Math.min(2.05,Math.round((miniRadarZoom+delta)*100)/100));drawMiniRadar();}
 if(miniRadar){
@@ -2461,7 +2462,6 @@ if(miniRadar){
 }
 document.getElementById('miniRadarZoomOut')?.addEventListener('click',e=>{e.stopPropagation();changeMiniRadarZoom(-.18);});
 document.getElementById('miniRadarZoomIn')?.addEventListener('click',e=>{e.stopPropagation();changeMiniRadarZoom(.18);});
-let miniRadarZoom=1;
 function drawMiniRadar(){
  const radar=document.getElementById('miniRadar'),shell=document.getElementById('miniRadarShell');if(!radar||!shell)return;
  const rc=radar.getContext('2d');if(!rc)return;
